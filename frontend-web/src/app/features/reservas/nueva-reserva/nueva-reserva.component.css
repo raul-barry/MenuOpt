@@ -1,0 +1,274 @@
+/* CASO DE USO: CU20, CU21 - Nueva Reserva y Mapa 2D de Disponibilidad */
+
+.reserva-header {
+  margin-bottom: 1.5rem;
+}
+
+.filters-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+/* Canvas Viewport */
+.canvas-wrapper {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 520px;
+  margin-bottom: 1.5rem;
+}
+
+.canvas-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: 600px;
+  background-color: #ffffff;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.05);
+  background-image: 
+    radial-gradient(#cbd5e1 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(226, 232, 240, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 232, 240, 0.4) 1px, transparent 1px);
+  background-size: 24px 24px, 120px 120px, 120px 120px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Mesas en Mapa de Disponibilidad */
+.mesa-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+/* Formas geométricas */
+.mesa-forma-redonda {
+  border-radius: 50% !important;
+  width: 76px;
+  height: 76px;
+}
+
+.mesa-forma-cuadrada {
+  border-radius: 10px;
+  width: 76px;
+  height: 76px;
+}
+
+.mesa-forma-rectangular {
+  border-radius: 8px;
+  width: 110px;
+  height: 72px;
+}
+
+/* Estados de Disponibilidad */
+.mesa-disp-disponible {
+  background: #ffffff;
+  border: 2.5px solid #10b981;
+  color: #065f46;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.15), 0 2px 4px -2px rgba(16, 185, 129, 0.1);
+}
+
+.mesa-disp-disponible:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+  border-color: #059669;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+  z-index: 40;
+}
+
+.mesa-disp-no-disponible {
+  background: #f8fafc;
+  border: 2px dashed #ef4444;
+  color: #991b1b;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mesa-disp-no-compatible {
+  background: #f8fafc;
+  border: 2px dotted #f59e0b;
+  color: #92400e;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mesa-disp-seleccionada {
+  background: #eff6ff !important;
+  border: 3px solid #2563eb !important;
+  color: #1e40af !important;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.3), 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+  transform: translate(-50%, -50%) scale(1.08) !important;
+  z-index: 50 !important;
+}
+
+/* Contenido interno de la mesa */
+.mesa-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: 100%;
+  padding: 4px;
+}
+
+.mesa-numero {
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1.1;
+}
+
+.mesa-capacidad {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.mesa-estado-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.tag-disponible {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tag-no-disponible {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tag-no-compatible {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tag-seleccionada {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Leyenda */
+.legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-badge {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.badge-disp {
+  border: 2px solid #10b981;
+  background: #ecfdf5;
+}
+
+.badge-nodisp {
+  border: 2px dashed #ef4444;
+  background: #fef2f2;
+}
+
+.badge-nocomp {
+  border: 2px dotted #f59e0b;
+  background: #fffbeb;
+}
+
+.badge-sel {
+  border: 2px solid #2563eb;
+  background: #eff6ff;
+}
+
+/* Panel de Combinaciones */
+.combinaciones-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.comb-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.comb-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.comb-card:hover {
+  border-color: #94a3b8;
+}
+
+/* Resumen y Confirmación */
+.resumen-card {
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}

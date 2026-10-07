@@ -1,0 +1,282 @@
+.pedido-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.header-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-back {
+  font-size: 0.85rem;
+  color: var(--primary, #2563eb);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+.titulo {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+}
+
+.subtitulo {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.reserva-badge {
+  margin-top: 0.75rem;
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.pedido-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .pedido-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.search-box {
+  margin-bottom: 1rem;
+}
+
+.platos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.plato-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.plato-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+.plato-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.plato-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.plato-precio {
+  font-weight: 700;
+  color: var(--primary, #2563eb);
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+.plato-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.3;
+}
+
+.plato-meta {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.carrito-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 1.25rem;
+  position: sticky;
+  top: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.carrito-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.carrito-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.carrito-vacio {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted, #64748b);
+}
+
+.icon-vacio {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.carrito-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed var(--border, #e2e8f0);
+}
+
+.item-detalles {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.item-nombre {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.item-unitario {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+}
+
+.item-controles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-qty {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: #f1f5f9;
+  border-radius: 4px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-qty:hover {
+  background: #e2e8f0;
+}
+
+.qty-num {
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+.item-subtotal {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-del {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.observaciones-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.carrito-total-panel {
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.total-fila {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+.gran-total {
+  font-size: 1.1rem;
+  color: inherit;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.precio-destacado {
+  color: var(--primary, #2563eb);
+}
+
+.carrito-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.spinner-sm {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,208 @@
+<div class="asistente-container">
+  <!-- Cabecera -->
+  <div class="header-card">
+    <div class="header-main">
+      <div>
+        <span class="badge badge-primary">INTELIGENCIA ARTIFICIAL (CU26)</span>
+        <h1 class="titulo">🤖 Asistente Gastronómico MenuOpt</h1>
+        <p class="subtitulo">
+          Escribe tu solicitud en lenguaje natural. El asistente estructurará tus datos para que puedas crear tu planificación con un solo clic.
+        </p>
+      </div>
+      <div>
+        <button class="btn btn-outline btn-sm" (click)="limpiarConversacion()">
+          🔄 Nueva Consulta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas de éxito o error -->
+  <div *ngIf="mensajeExito()" class="alert alert-success">
+    🎉 {{ mensajeExito() }}
+  </div>
+  <div *ngIf="error()" class="alert alert-danger">
+    ⚠️ {{ error() }}
+  </div>
+
+  <!-- Layout de Chat y Resumen Estructurado -->
+  <div class="chat-layout">
+    <!-- Columna Izquierda: Mensajes del Chat -->
+    <div class="chat-columna">
+      <div class="mensajes-scroll">
+        <div
+          *ngFor="let msg of mensajes()"
+          class="mensaje-burbuja"
+          [class.mensaje-usuario]="msg.emisor === 'usuario'"
+          [class.mensaje-asistente]="msg.emisor === 'asistente'"
+        >
+          <div class="avatar">
+            {{ msg.emisor === 'usuario' ? '👤' : '🤖' }}
+          </div>
+          <div class="contenido">
+            <div class="texto">{{ msg.texto }}</div>
+            <div class="hora">{{ msg.fecha | date:'HH:mm' }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="procesando()" class="mensaje-burbuja mensaje-asistente">
+          <div class="avatar">🤖</div>
+          <div class="contenido">
+            <div class="texto typing">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              Analizando tu solicitud...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sugerencias rápidas -->
+      <div class="sugerencias-panel" *ngIf="mensajes().length <= 2">
+        <span class="sugerencias-label">💡 Ejemplos de consulta:</span>
+        <div class="sugerencias-tags">
+          <button
+            *ngFor="let ej of ejemplosSugeridos"
+            class="badge-sugerencia"
+            (click)="usarEjemplo(ej)"
+          >
+            {{ ej }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Input de Texto y Botón Enviar -->
+      <div class="input-area">
+        <textarea
+          rows="2"
+          class="form-control chat-textarea"
+          [(ngModel)]="mensajeInput"
+          placeholder="Escribe tu solicitud aquí... (ej. 'Tengo 300 Bs y somos 10 personas para almorzar')"
+          (keydown.enter)="$event.preventDefault(); enviarMensaje()"
+          [disabled]="procesando()"
+          maxlength="1000"
+        ></textarea>
+        <button
+          class="btn btn-primary btn-enviar"
+          (click)="enviarMensaje()"
+          [disabled]="procesando() || !mensajeInput.trim()"
+        >
+          {{ procesando() ? '...' : 'Enviar 🚀' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Columna Derecha: Tarjeta de Datos Estructurados -->
+    <div class="resumen-columna">
+      <div class="card panel-resumen">
+        <div class="panel-header">
+          <h3>📋 Datos Detectados</h3>
+          <span
+            class="badge"
+            [class.badge-success]="interpretacionActual()?.listo_para_crear"
+            [class.badge-warning]="!interpretacionActual()?.listo_para_crear"
+          >
+            {{ interpretacionActual()?.listo_para_crear ? 'Completos' : 'Pendientes' }}
+          </span>
+        </div>
+
+        <div *ngIf="!interpretacionActual()" class="panel-vacio">
+          <p>Escribe tu mensaje en el chat para que el asistente identifique tu presupuesto, comensales y preferencias.</p>
+        </div>
+
+        <div *ngIf="interpretacionActual() as interp" class="panel-contenido">
+          <!-- Datos Faltantes (si los hay) -->
+          <div *ngIf="interp.datos_faltantes.length > 0" class="alerta-faltantes">
+            <strong>Faltan los siguientes datos:</strong>
+            <ul>
+              <li *ngFor="let f of interp.datos_faltantes">
+                {{ f === 'presupuesto' ? 'Presupuesto total (Bs)' : '' }}
+                {{ f === 'cantidad_personas' ? 'Cantidad de personas' : '' }}
+                {{ f === 'tipo_comida' ? 'Tipo de comida (Almuerzo, Cena, etc.)' : '' }}
+                {{ f === 'ubicacion_referencia' ? 'Zona o barrio de referencia' : '' }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Campos Editables -->
+          <div class="formulario-revision">
+            <div class="form-group">
+              <label>Presupuesto (Bs):</label>
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="editPresupuesto"
+                placeholder="Ej. 300"
+                min="1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Cantidad de Personas:</label>
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="editPersonas"
+                placeholder="Ej. 10"
+                min="1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Tipo de Comida:</label>
+              <select class="form-control" [(ngModel)]="editTipoComida">
+                <option value="DESAYUNO">DESAYUNO</option>
+                <option value="ALMUERZO">ALMUERZO</option>
+                <option value="CENA">CENA</option>
+                <option value="MERIENDA">MERIENDA</option>
+                <option value="OTRO">OTRO</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Zona / Ubicación:</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="editUbicacion"
+                placeholder="Ej. Equipetrol, Centro"
+              />
+            </div>
+
+            <!-- Preferencias Validadas contra PostgreSQL -->
+            <div class="form-group" *ngIf="interp.preferencias_validadas.length > 0">
+              <label>Preferencias alimentarias:</label>
+              <div class="tags-preferencias">
+                <span
+                  *ngFor="let p of interp.preferencias_validadas"
+                  class="badge"
+                  [class.badge-success]="p.registrada"
+                  [class.badge-secondary]="!p.registrada"
+                  [title]="p.registrada ? 'Registrada en catálogo' : 'No registrada en BD (no se aplicará)'"
+                >
+                  {{ p.nombre_detectado }} {{ p.registrada ? '✓' : '(no en catálogo)' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón de Confirmación para Crear Planificación -->
+          <div class="panel-acciones">
+            <button
+              class="btn btn-success btn-block btn-lg"
+              [disabled]="creandoPlanificacion() || !editPresupuesto || !editPersonas || !editUbicacion"
+              (click)="confirmarYCrearPlanificacion()"
+            >
+              <span *ngIf="creandoPlanificacion()">Creando planificación...</span>
+              <span *ngIf="!creandoPlanificacion()">✨ Crear Planificación</span>
+            </button>
+            <small class="nota-seguridad">
+              🔒 La IA no toma decisiones por ti. Al pulsar este botón, se creará tu planificación oficial en PostgreSQL.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

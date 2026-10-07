@@ -1,0 +1,304 @@
+<div class="card">
+  <!-- Encabezado de Reserva -->
+  <div class="reserva-header">
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <a [routerLink]="['/restaurantes']" class="btn btn-sm btn-outline" style="padding: 0.2rem 0.5rem;">&larr; Volver</a>
+      <h2 style="margin: 0; font-size: 1.4rem;">
+        📅 Reservar Mesa &mdash; {{ restaurante()?.nombre || 'Restaurante #' + restauranteId() }}
+      </h2>
+    </div>
+    <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem;">
+      Seleccione fecha, horario, área y comensales para consultar la disponibilidad en tiempo real sobre el plano 2D.
+    </p>
+  </div>
+
+  <!-- Alertas globales -->
+  <div *ngIf="mensajeExito()" class="alert alert-success" style="margin-bottom: 1rem;">
+    {{ mensajeExito() }}
+    <div style="margin-top: 0.5rem;">
+      <a routerLink="/mis-reservas" class="btn btn-sm btn-primary">Ver Mis Reservas</a>
+    </div>
+  </div>
+
+  <div *ngIf="error()" class="alert alert-danger" style="margin-bottom: 1rem;">
+    {{ error() }}
+  </div>
+
+  <!-- Formulario de Filtros de Consulta (CU20) -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Selector de Área -->
+      <div>
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Área del Restaurante *</label>
+        <select
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          [(ngModel)]="filtroArea"
+          (ngModelChange)="onFiltroCambiado()"
+        >
+          <option [ngValue]="null">Seleccione un área</option>
+          <option *ngFor="let a of areas()" [ngValue]="a.id_area">
+            🏢 {{ a.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Fecha -->
+      <div>
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Fecha *</label>
+        <input
+          type="date"
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          [(ngModel)]="filtroFecha"
+          [min]="fechaMinima"
+          (ngModelChange)="onFiltroCambiado()"
+        />
+      </div>
+
+      <!-- Hora Inicio -->
+      <div>
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Hora de Inicio *</label>
+        <input
+          type="time"
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          [(ngModel)]="filtroHoraInicio"
+          (ngModelChange)="onFiltroCambiado()"
+        />
+      </div>
+
+      <!-- Hora Fin -->
+      <div>
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Hora de Fin *</label>
+        <input
+          type="time"
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          [(ngModel)]="filtroHoraFin"
+          (ngModelChange)="onFiltroCambiado()"
+        />
+      </div>
+
+      <!-- Cantidad de Personas -->
+      <div>
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Personas *</label>
+        <input
+          type="number"
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          [(ngModel)]="filtroPersonas"
+          min="1"
+          max="50"
+          (ngModelChange)="onFiltroCambiado()"
+        />
+      </div>
+
+      <!-- Botón de Consulta -->
+      <div>
+        <button
+          class="btn btn-primary"
+          style="width: 100%;"
+          [disabled]="!filtroArea || !filtroFecha || !filtroHoraInicio || !filtroHoraFin || filtroPersonas < 1 || consultando()"
+          (click)="consultarDisponibilidad()"
+        >
+          <span *ngIf="!consultando()">🔍 Ver Mesas Disponibles</span>
+          <span *ngIf="consultando()">⏳ Consultando...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicador si los filtros cambiaron tras una consulta previa -->
+  <div *ngIf="filtrosModificados() && disponibilidad()" class="alert alert-warning" style="margin-bottom: 1rem; font-size: 0.85rem;">
+    ⚠️ Ha modificado los filtros de búsqueda. Pulse "Ver Mesas Disponibles" para actualizar el mapa.
+  </div>
+
+  <!-- Sección de Mapa 2D de Disponibilidad -->
+  <div *ngIf="disponibilidad() as disp">
+    <!-- Leyenda de Estados Visuales (CU20) -->
+    <div class="legend-bar">
+      <div class="legend-item">
+        <span class="legend-badge badge-disp"></span>
+        <span><strong>Disponible</strong> (Apta para reservar)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-badge badge-nodisp"></span>
+        <span><strong>No disponible</strong> (Reservada en este horario)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-badge badge-nocomp"></span>
+        <span><strong>No compatible</strong> (Capacidad inadecuada)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-badge badge-sel"></span>
+        <span><strong>Seleccionada</strong></span>
+      </div>
+    </div>
+
+    <!-- Lienzo 2D Reutilizado en Modo Consulta (Read-Only) -->
+    <div class="canvas-wrapper">
+      <div #canvasContainer class="canvas-viewport">
+        <!-- Mesas Renderizadas en Posiciones Normalizadas -->
+        <div
+          *ngFor="let mesa of disp.mesas"
+          class="mesa-item"
+          [class.mesa-forma-redonda]="mesa.forma === 'REDONDA'"
+          [class.mesa-forma-cuadrada]="mesa.forma === 'CUADRADA'"
+          [class.mesa-forma-rectangular]="mesa.forma === 'RECTANGULAR'"
+          [class.mesa-disp-disponible]="mesa.estado_disponibilidad === 'DISPONIBLE' && !estaMesaSeleccionada(mesa.id_mesa)"
+          [class.mesa-disp-no-disponible]="mesa.estado_disponibilidad === 'NO_DISPONIBLE'"
+          [class.mesa-disp-no-compatible]="mesa.estado_disponibilidad === 'NO_COMPATIBLE'"
+          [class.mesa-disp-seleccionada]="estaMesaSeleccionada(mesa.id_mesa)"
+          [style.left]="(mesa.posicion_x * 100) + '%'"
+          [style.top]="(mesa.posicion_y * 100) + '%'"
+          [style.transform]="'translate(-50%, -50%) rotate(' + mesa.rotacion + 'deg)'"
+          (click)="seleccionarMesaIndividual(mesa)"
+          [title]="getTooltipMesa(mesa)"
+        >
+          <div class="mesa-content" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
+            <span class="mesa-numero">{{ mesa.numero }}</span>
+            <span class="mesa-capacidad">👥 {{ mesa.capacidad }}p</span>
+
+            <span
+              *ngIf="estaMesaSeleccionada(mesa.id_mesa)"
+              class="mesa-estado-tag tag-seleccionada"
+            >
+              ✓ Elegida
+            </span>
+            <span
+              *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && mesa.estado_disponibilidad === 'DISPONIBLE'"
+              class="mesa-estado-tag tag-disponible"
+            >
+              Libre
+            </span>
+            <span
+              *ngIf="mesa.estado_disponibilidad === 'NO_DISPONIBLE'"
+              class="mesa-estado-tag tag-no-disponible"
+            >
+              Ocupada
+            </span>
+            <span
+              *ngIf="mesa.estado_disponibilidad === 'NO_COMPATIBLE'"
+              class="mesa-estado-tag tag-no-compatible"
+            >
+              {{ mesa.capacidad < filtroPersonas ? 'Chica' : 'Excesiva' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opciones de Combinaciones de Mesas (CU20, CU21) -->
+    <div *ngIf="disp.combinaciones.length > 0" class="combinaciones-panel">
+      <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">
+        🔗 Combinaciones de Mesas Disponibles (Grupos Mayores)
+      </h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Si su grupo supera la capacidad de una mesa individual, puede optar por una de las combinaciones autorizadas por el establecimiento:
+      </p>
+
+      <div
+        *ngFor="let comb of disp.combinaciones"
+        class="comb-card"
+        [class.selected]="esCombinacionSeleccionada(comb)"
+        [style.opacity]="!comb.seleccionable ? '0.6' : '1'"
+      >
+        <div>
+          <strong>Mesas {{ comb.numeros_mesas.join(' + ') }}</strong>
+          <span style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+            (Capacidad conjunta: 👥 {{ comb.capacidad_total }} personas)
+          </span>
+          <span *ngIf="comb.descripcion" style="display: block; font-size: 0.75rem; color: var(--text-muted);">
+            {{ comb.descripcion }}
+          </span>
+        </div>
+
+        <div>
+          <button
+            *ngIf="comb.seleccionable"
+            class="btn btn-sm"
+            [class.btn-primary]="esCombinacionSeleccionada(comb)"
+            [class.btn-outline]="!esCombinacionSeleccionada(comb)"
+            (click)="seleccionarCombinacion(comb)"
+          >
+            {{ esCombinacionSeleccionada(comb) ? '✓ Seleccionada' : 'Seleccionar Combinación' }}
+          </button>
+          <span *ngIf="!comb.disponible" class="badge badge-danger" style="font-size: 0.75rem;">
+            No disponible (mesa reservada)
+          </span>
+          <span *ngIf="comb.disponible && !comb.seleccionable" class="badge badge-warning" style="font-size: 0.75rem;">
+            Capacidad no adecuada
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Resumen y Confirmación de Reserva (CU21) -->
+    <div *ngIf="mesasSeleccionadasIds.length > 0" class="resumen-card">
+      <h3 style="margin: 0; font-size: 1.2rem; color: var(--primary);">
+        📝 Resumen de la Reserva
+      </h3>
+
+      <div class="resumen-grid">
+        <div>
+          <strong>Restaurante:</strong><br />
+          {{ restaurante()?.nombre }}
+        </div>
+        <div>
+          <strong>Área:</strong><br />
+          {{ disp.nombre_area }}
+        </div>
+        <div>
+          <strong>Mesa(s) seleccionada(s):</strong><br />
+          <span style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">
+            {{ getTextoMesasSeleccionadas() }}
+          </span>
+          <small style="display: block; color: var(--text-muted);">Capacidad total: {{ getCapacidadTotalSeleccionada() }} personas</small>
+        </div>
+        <div>
+          <strong>Fecha y Horario:</strong><br />
+          {{ disp.fecha }} | {{ disp.hora_inicio }} &ndash; {{ disp.hora_fin }}
+        </div>
+        <div>
+          <strong>Comensales:</strong><br />
+          👥 {{ disp.cantidad_personas }} personas
+        </div>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Observaciones o peticiones especiales (opcional)</label>
+        <input
+          type="text"
+          class="form-control"
+          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
+          placeholder="Ej: Cumpleaños, comensal en silla de ruedas, etc."
+          [(ngModel)]="observaciones"
+        />
+      </div>
+
+      <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-outline" (click)="deseleccionarTodo()">
+          Limpiar Selección
+        </button>
+        <button
+          class="btn btn-primary"
+          [disabled]="confirmandoReserva()"
+          (click)="confirmarReserva()"
+        >
+          <span *ngIf="!confirmandoReserva()">✓ Confirmar Reserva</span>
+          <span *ngIf="confirmandoReserva()">⏳ Procesando reserva...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado Inicial: Aún no se ha consultado -->
+  <div *ngIf="!disponibilidad() && !consultando()" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🗺️</div>
+    <h4>Complete los datos superiores y pulse "Ver Mesas Disponibles"</h4>
+    <p style="font-size: 0.85rem; max-width: 500px; margin: 0 auto;">
+      El mapa se cargará de forma interactiva indicando qué mesas están libres en el horario elegido, cuáles están ocupadas y cuáles admiten la cantidad de personas solicitada.
+    </p>
+  </div>
+</div>

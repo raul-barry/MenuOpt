@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: menuopt_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-menuopt_db}
+      POSTGRES_USER: ${POSTGRES_USER:-menuopt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-menuopt_dev_password_2026}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-menuopt} -d ${POSTGRES_DB:-menuopt_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - menuopt_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: menuopt_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-menuopt_db}
+      POSTGRES_USER: ${POSTGRES_USER:-menuopt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-menuopt_dev_password_2026}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-menuopt}:${POSTGRES_PASSWORD:-menuopt_dev_password_2026}@postgres:5432/${POSTGRES_DB:-menuopt_db}}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-menuopt_jwt_secret_key_development_only_2026_super_secure_random}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - menuopt_network
+
+  frontend:
+    build:
+      context: ./frontend-web
+      dockerfile: Dockerfile
+    container_name: menuopt_frontend
+    restart: always
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+    networks:
+      - menuopt_network
+
+volumes:
+  postgres_data:
+    name: menuopt_postgres_data
+
+networks:
+  menuopt_network:
+    name: menuopt_network
+    driver: bridge

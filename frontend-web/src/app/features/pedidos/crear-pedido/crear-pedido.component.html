@@ -1,0 +1,153 @@
+<div class="pedido-container">
+  <!-- Encabezado con información del Restaurante y Reserva -->
+  <div class="header-card">
+    <div class="header-main">
+      <a [routerLink]="['/restaurantes']" class="btn-back">&larr; Volver a Restaurantes</a>
+      <h1 class="titulo">Ordenar en {{ restaurante()?.nombre || 'Restaurante' }}</h1>
+      <p class="subtitulo" *ngIf="restaurante() as r">
+        📍 {{ r.ubicacion?.direccion }}, {{ r.ubicacion?.ciudad }}
+        <span *ngIf="r.telefono">| 📞 {{ r.telefono }}</span>
+      </p>
+
+      <!-- Badge si hay reserva vinculada -->
+      <div *ngIf="idReservaParam" class="reserva-badge">
+        <span>🔗 Vinculado a tu <strong>Reserva #{{ idReservaParam }}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas de error -->
+  <div *ngIf="error()" class="alert alert-danger">
+    <span>⚠️ {{ error() }}</span>
+    <button class="btn-close" (click)="error.set(null)">×</button>
+  </div>
+
+  <div *ngIf="cargando()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando el menú del restaurante...</p>
+  </div>
+
+  <!-- Layout de dos columnas: Menú vs Carrito -->
+  <div *ngIf="!cargando()" class="pedido-grid">
+    <!-- Columna 1: Menú y Catálogo de Platos -->
+    <div class="menu-columna">
+      <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="busquedaPlato"
+          placeholder="🔍 Buscar plato por nombre o descripción..."
+          class="form-control"
+        />
+      </div>
+
+      <div class="platos-grid" *ngIf="platosFiltrados().length > 0; else noPlatos">
+        <div class="plato-card" *ngFor="let p of platosFiltrados()">
+          <div class="plato-info">
+            <div class="plato-header">
+              <h3 class="plato-nombre">{{ p.nombre }}</h3>
+              <span class="plato-precio">{{ p.precio | currency:'Bs. ':'symbol':'1.2-2' }}</span>
+            </div>
+            <p class="plato-desc" *ngIf="p.descripcion">{{ p.descripcion }}</p>
+            <div class="plato-meta">
+              <span class="badge badge-info" *ngIf="p.tipo_comida">{{ p.tipo_comida }}</span>
+              <span class="badge badge-secondary">👥 Cubre {{ p.personas_cubiertas }}p</span>
+            </div>
+          </div>
+          <div class="plato-action">
+            <button
+              class="btn btn-primary btn-sm btn-block"
+              (click)="agregarAlCarrito(p)"
+            >
+              + Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noPlatos>
+        <div class="empty-state">
+          <p>No se encontraron platos disponibles con ese término de búsqueda.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Columna 2: Carrito de Compras en Memoria -->
+    <div class="carrito-columna">
+      <div class="carrito-card">
+        <div class="carrito-header">
+          <h2>🛒 Tu Pedido</h2>
+          <span class="badge badge-primary">{{ totalItems() }} items</span>
+        </div>
+
+        <div class="carrito-body">
+          <div *ngIf="carrito().length === 0" class="carrito-vacio">
+            <span class="icon-vacio">🍽️</span>
+            <p>Tu carrito está vacío.</p>
+            <small>Selecciona platos del menú para armar tu pedido.</small>
+          </div>
+
+          <div *ngIf="carrito().length > 0" class="carrito-items-list">
+            <div class="carrito-item" *ngFor="let item of carrito()">
+              <div class="item-detalles">
+                <span class="item-nombre">{{ item.nombre }}</span>
+                <span class="item-unitario">{{ item.precio | currency:'Bs. ':'symbol':'1.2-2' }} c/u</span>
+              </div>
+
+              <div class="item-controles">
+                <button class="btn-qty" (click)="decrementar(item.id_plato)">-</button>
+                <span class="qty-num">{{ item.cantidad }}</span>
+                <button class="btn-qty" (click)="incrementar(item.id_plato)">+</button>
+                <span class="item-subtotal">{{ item.subtotal | currency:'Bs. ':'symbol':'1.2-2' }}</span>
+                <button class="btn-del" (click)="eliminarDelCarrito(item.id_plato)" title="Eliminar">🗑️</button>
+              </div>
+            </div>
+
+            <!-- Observaciones del Cliente -->
+            <div class="observaciones-section">
+              <label for="obs" class="form-label">Notas para la cocina (opcional):</label>
+              <textarea
+                id="obs"
+                rows="2"
+                [(ngModel)]="observaciones"
+                placeholder="Ej. Sin cebolla, salsas aparte, cubiertos descartables..."
+                class="form-control"
+                maxlength="500"
+              ></textarea>
+            </div>
+
+            <!-- Resumen de Costo -->
+            <div class="carrito-total-panel">
+              <div class="total-fila">
+                <span>Subtotal platos:</span>
+                <span>{{ totalPrecio() | currency:'Bs. ':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="total-fila gran-total">
+                <strong>Total Estimado:</strong>
+                <strong class="precio-destacado">{{ totalPrecio() | currency:'Bs. ':'symbol':'1.2-2' }}</strong>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="carrito-acciones">
+              <button
+                class="btn btn-success btn-lg btn-block"
+                [disabled]="enviando() || carrito().length === 0"
+                (click)="enviarPedido()"
+              >
+                <span *ngIf="enviando()" class="spinner-sm"></span>
+                {{ enviando() ? 'Confirmando pedido...' : 'Enviar Pedido' }}
+              </button>
+              <button
+                class="btn btn-outline-danger btn-sm btn-block"
+                (click)="limpiarCarrito()"
+                [disabled]="enviando()"
+              >
+                Vaciar carrito
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
