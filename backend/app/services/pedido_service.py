@@ -15,6 +15,7 @@ from app.repositories.restaurante_repository import RestauranteRepository
 from app.repositories.plato_repository import PlatoRepository
 from app.repositories.reserva_repository import ReservaRepository
 from app.repositories.pedido_repository import PedidoRepository
+from app.repositories.reserva_invitado_repository import ReservaInvitadoRepository
 from app.schemas.pedido import (
     PedidoCrear,
     PedidoRespuesta,
@@ -43,7 +44,9 @@ class PedidoService:
                 nombre_plato=det.plato.nombre if det.plato else f"Plato #{det.id_plato}",
                 cantidad=det.cantidad,
                 precio_unitario=det.precio_unitario,
-                subtotal=det.subtotal
+                subtotal=det.subtotal,
+                id_invitado=det.id_invitado,
+                nombre_invitado=det.invitado.nombre if det.invitado else None,
             )
             for det in pedido.detalles
         ]
@@ -106,14 +109,15 @@ class PedidoService:
             )
 
         # 2. Consolidar items si el cliente incluyó el mismo plato varias veces
-        cantidades_por_plato: Dict[int, int] = {}
+        cantidades_por_plato: Dict[tuple[int, Optional[int]], int] = {}
         for item in datos.detalles:
             if item.cantidad <= 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"La cantidad del plato #{item.id_plato} debe ser mayor a 0."
                 )
-            cantidades_por_plato[item.id_plato] = cantidades_por_plato.get(item.id_plato, 0) + item.cantidad
+            clave = (item.id_plato, item.id_invitado)
+            cantidades_por_plato[clave] = cantidades_por_plato.get(clave, 0) + item.cantidad
 
         if not cantidades_por_plato:
             raise HTTPException(
@@ -122,6 +126,7 @@ class PedidoService:
             )
 
         # 3. Validar reserva opcional asociada
+        invitados_reserva = {}
         if datos.id_reserva is not None:
             reserva = ReservaRepository.obtener_por_id(db, datos.id_reserva)
             if not reserva:
@@ -129,12 +134,19 @@ class PedidoService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Reserva #{datos.id_reserva} no encontrada."
                 )
-            # Titularidad
+            # Titular, administrador o invitado registrado de esta reserva.
             es_admin = bool(usuario_actual.rol and usuario_actual.rol.nombre == "ADMINISTRADOR")
-            if reserva.id_usuario != usuario_actual.id_usuario and not es_admin:
+            es_invitado_vinculado = ReservaInvitadoRepository.usuario_vinculado(
+                db, reserva.id_reserva, usuario_actual.id_usuario
+            )
+            if (
+                reserva.id_usuario != usuario_actual.id_usuario
+                and not es_invitado_vinculado
+                and not es_admin
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="La reserva asociada no pertenece al usuario autenticado."
+                    detail="El usuario autenticado no está asociado a la reserva."
                 )
             # Restaurante coincide
             if reserva.id_restaurante != datos.id_restaurante:
@@ -148,12 +160,56 @@ class PedidoService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="No se puede asociar un pedido a una reserva cancelada."
                 )
+            invitados_reserva = {
+                invitado.id_invitado: invitado
+                for invitado in ReservaInvitadoRepository.listar(db, reserva.id_reserva)
+            }
+        elif any(item.id_invitado is not None for item in datos.detalles):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Solo se pueden asignar platos a invitados cuando el pedido está asociado a una reserva.",
+            )
+
+        rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+        es_admin = rol == "ADMINISTRADOR"
+        es_titular = datos.id_reserva is not None and reserva.id_usuario == usuario_actual.id_usuario
+        invitado_actual = next(
+            (invitado for invitado in invitados_reserva.values()
+             if invitado.id_usuario == usuario_actual.id_usuario),
+            None,
+        )
+        invitados_por_detalle: Dict[tuple[int, Optional[int]], Optional[int]] = {}
+        for item in datos.detalles:
+            asignado = item.id_invitado
+            if datos.id_reserva is not None and asignado is None and invitado_actual:
+                asignado = invitado_actual.id_invitado
+            if asignado is not None:
+                if asignado not in invitados_reserva:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"El invitado #{asignado} no pertenece a la reserva #{datos.id_reserva}.",
+                    )
+                if not (es_admin or es_titular or (invitado_actual and asignado == invitado_actual.id_invitado)):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="El invitado solo puede gestionar sus propios platos.",
+                    )
+            invitados_por_detalle[(item.id_plato, item.id_invitado)] = asignado
+
+        # Una misma combinación plato/invitado constituye una sola línea, incluso
+        # si algunas entradas omitieron el invitado y se resolvieron al usuario actual.
+        cantidades_asignadas: Dict[tuple[int, Optional[int]], int] = {}
+        for (id_plato, id_invitado_entrada), cantidad in cantidades_por_plato.items():
+            id_invitado = invitados_por_detalle[(id_plato, id_invitado_entrada)]
+            clave = (id_plato, id_invitado)
+            cantidades_asignadas[clave] = cantidades_asignadas.get(clave, 0) + cantidad
+        cantidades_por_plato = cantidades_asignadas
 
         # 4. Validar platos y calcular precios históricos
         detalles_modelo: List[DetallePedido] = []
         total_acumulado = Decimal("0.00")
 
-        for id_plato, cant in cantidades_por_plato.items():
+        for (id_plato, id_invitado), cant in cantidades_por_plato.items():
             plato = PlatoRepository.buscar_por_id(db, id_plato)
             if not plato:
                 raise HTTPException(
@@ -185,7 +241,8 @@ class PedidoService:
                 id_plato=id_plato,
                 cantidad=cant,
                 precio_unitario=precio_unitario,
-                subtotal=subtotal
+                subtotal=subtotal,
+                id_invitado=id_invitado,
             )
             detalles_modelo.append(det)
 

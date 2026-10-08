@@ -1,6 +1,6 @@
 # CASO DE USO: CU23 - Enviar pedido & CU24 - Gestionar pedidos
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (
     Integer, Numeric, ForeignKey, CheckConstraint, UniqueConstraint
 )
@@ -10,6 +10,7 @@ from app.database.base import Base
 if TYPE_CHECKING:
     from app.models.pedido import Pedido
     from app.models.plato import Plato
+    from app.models.reserva_invitado import ReservaInvitado
 
 
 class DetallePedido(Base):
@@ -32,17 +33,24 @@ class DetallePedido(Base):
         nullable=False,
         index=True
     )
+    id_invitado: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("reserva_invitado.id_invitado", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
 
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="chk_detalle_cantidad_positiva"),
         CheckConstraint("precio_unitario >= 0", name="chk_detalle_precio_unitario_no_negativo"),
         CheckConstraint("subtotal >= 0", name="chk_detalle_subtotal_no_negativo"),
-        UniqueConstraint("id_pedido", "id_plato", name="uq_detalle_pedido_plato"),
+        UniqueConstraint("id_pedido", "id_plato", "id_invitado", name="uq_detalle_pedido_plato_invitado"),
     )
 
     # Relaciones
     pedido: Mapped["Pedido"] = relationship("Pedido", back_populates="detalles")
     plato: Mapped["Plato"] = relationship("Plato", back_populates="detalles_pedido")
+    invitado: Mapped[Optional["ReservaInvitado"]] = relationship("ReservaInvitado")
 
     def __repr__(self) -> str:
         return f"<DetallePedido(id_detalle_pedido={self.id_detalle_pedido}, id_pedido={self.id_pedido}, id_plato={self.id_plato}, cantidad={self.cantidad}, subtotal={self.subtotal})>"

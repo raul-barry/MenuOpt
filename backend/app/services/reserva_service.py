@@ -32,6 +32,19 @@ class ReservaService:
         "CANCELADA": set()
     }
 
+    @staticmethod
+    def validar_capacidad_maxima(capacidad: int, cantidad_personas: int) -> None:
+        capacidad_maxima = cantidad_personas + settings.MAX_EXCESO_CAPACIDAD_MESA
+        if capacidad > capacidad_maxima:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"La capacidad seleccionada ({capacidad}p) supera "
+                    f"el maximo permitido de {capacidad_maxima}p para "
+                    f"{cantidad_personas} personas."
+                )
+            )
+
     @classmethod
     def _mapear_respuesta(cls, reserva: Reserva) -> ReservaRespuesta:
         area_obj = None
@@ -198,6 +211,8 @@ class ReservaService:
                 detail="En esta versión solo se admiten reservas individuales o combinaciones de 2 mesas autorizadas."
             )
 
+        # Mantener la misma regla de capacidad que CU20 al crear la reserva.
+        cls.validar_capacidad_maxima(capacidad_acumulada, datos.cantidad_personas)
         # 6. VERIFICACIÓN DE CONFLICTOS DENTRO DE LA TRANSACCIÓN BLOQUEADA
         conflictos = ReservaRepository.buscar_conflictos_mesas(
             db=db,

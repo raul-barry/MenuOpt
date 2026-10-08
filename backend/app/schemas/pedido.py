@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class DetallePedidoItemCrear(BaseModel):
     id_plato: int = Field(..., gt=0, description="Identificador del plato")
     cantidad: int = Field(..., gt=0, description="Cantidad entera mayor a cero")
+    id_invitado: Optional[int] = Field(None, gt=0, description="Invitado de la reserva al que se asigna el plato")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -18,7 +19,9 @@ class PedidoCrear(BaseModel):
     id_reserva: Optional[int] = Field(None, gt=0, description="ID opcional de reserva asociada")
     observaciones: Optional[str] = Field(None, max_length=500, description="Instrucciones u observaciones opcionales")
 
-    model_config = ConfigDict(from_attributes=True)
+    # La identidad siempre se deriva del token autenticado; rechazar campos
+    # adicionales evita aceptar silenciosamente intentos de suplantación.
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class DetallePedidoRespuesta(BaseModel):
@@ -28,6 +31,8 @@ class DetallePedidoRespuesta(BaseModel):
     cantidad: int
     precio_unitario: Decimal
     subtotal: Decimal
+    id_invitado: Optional[int] = None
+    nombre_invitado: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

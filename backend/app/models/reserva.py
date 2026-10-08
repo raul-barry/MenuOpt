@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.mesa import Mesa
     from app.models.mesa_reserva import MesaReserva
     from app.models.pedido import Pedido
+    from app.models.reserva_invitado import ReservaInvitado
 
 
 class Reserva(Base):
@@ -85,6 +86,12 @@ class Reserva(Base):
     pedidos: Mapped[List["Pedido"]] = relationship(
         "Pedido",
         back_populates="reserva"
+    )
+    invitados: Mapped[List["ReservaInvitado"]] = relationship(
+        "ReservaInvitado",
+        back_populates="reserva",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

@@ -39,6 +39,7 @@ class PedidoRepository:
                 joinedload(Pedido.usuario),
                 joinedload(Pedido.restaurante),
                 joinedload(Pedido.detalles).joinedload(DetallePedido.plato),
+                joinedload(Pedido.detalles).joinedload(DetallePedido.invitado),
                 joinedload(Pedido.reserva)
             )
             .filter(Pedido.id_pedido == id_pedido)
@@ -51,7 +52,8 @@ class PedidoRepository:
             db.query(Pedido)
             .options(
                 joinedload(Pedido.restaurante),
-                joinedload(Pedido.detalles).joinedload(DetallePedido.plato)
+                joinedload(Pedido.detalles).joinedload(DetallePedido.plato),
+                joinedload(Pedido.detalles).joinedload(DetallePedido.invitado)
             )
             .filter(Pedido.id_usuario == id_usuario)
             .order_by(Pedido.fecha_pedido.desc())
@@ -71,6 +73,7 @@ class PedidoRepository:
             .options(
                 joinedload(Pedido.usuario),
                 joinedload(Pedido.detalles).joinedload(DetallePedido.plato),
+                joinedload(Pedido.detalles).joinedload(DetallePedido.invitado),
                 joinedload(Pedido.reserva)
             )
             .filter(Pedido.id_restaurante == id_restaurante)

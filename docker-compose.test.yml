@@ -1,0 +1,43 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: menuopt_codex_test_postgres
+    environment:
+      POSTGRES_DB: menuopt_test_db
+      POSTGRES_USER: menuopt_test
+      POSTGRES_PASSWORD: menuopt_test_local_only
+    ports:
+      - "55432:5432"
+    volumes:
+      - menuopt_codex_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U menuopt_test -d menuopt_test_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    environment:
+      DATABASE_URL: postgresql+psycopg://menuopt_test:menuopt_test_local_only@postgres-test:5432/menuopt_test_db
+      POSTGRES_DB: menuopt_test_db
+      POSTGRES_USER: menuopt_test
+      POSTGRES_PASSWORD: menuopt_test_local_only
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: 5432
+      JWT_SECRET_KEY: menuopt_isolated_test_secret_key_2026
+      AI_ENABLED: "false"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    ports:
+      - "18000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+volumes:
+  menuopt_codex_test_data:
+    name: menuopt_codex_test_postgres_data

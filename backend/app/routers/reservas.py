@@ -3,7 +3,7 @@
 # CASO DE USO: CU22 - Gestionar reservas
 from datetime import date, time
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database.conexion import get_db
@@ -12,11 +12,14 @@ from app.schemas.mesa_disponibilidad import DisponibilidadRespuesta
 from app.schemas.reserva import (
     ReservaCrear,
     ReservaRespuesta,
-    ReservaEstadoActualizar
+    ReservaEstadoActualizar,
+    ReservaInvitadoCrear,
+    ReservaInvitadoRespuesta,
 )
 from app.security.dependencias import obtener_usuario_actual, requiere_roles
 from app.services.disponibilidad_mesas_service import DisponibilidadMesasService
 from app.services.reserva_service import ReservaService
+from app.services.reserva_invitado_service import ReservaInvitadoService
 
 router = APIRouter(
     tags=["Reservas y Disponibilidad"]
@@ -72,6 +75,50 @@ def crear_reserva(
         datos=datos,
         usuario_actual=usuario_actual
     )
+
+
+@router.get(
+    "/reservas/{id_reserva}/invitados",
+    response_model=List[ReservaInvitadoRespuesta],
+    status_code=status.HTTP_200_OK,
+    summary="Consultar invitados de una reserva",
+)
+def listar_invitados_reserva(
+    id_reserva: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    return ReservaInvitadoService.listar(db, id_reserva, usuario_actual)
+
+
+@router.post(
+    "/reservas/{id_reserva}/invitados",
+    response_model=ReservaInvitadoRespuesta,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar un invitado en una reserva",
+)
+def agregar_invitado_reserva(
+    datos: ReservaInvitadoCrear,
+    id_reserva: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    return ReservaInvitadoService.crear(db, id_reserva, datos, usuario_actual)
+
+
+@router.delete(
+    "/reservas/{id_reserva}/invitados/{id_invitado}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar un invitado de una reserva",
+)
+def eliminar_invitado_reserva(
+    id_reserva: int = Path(..., gt=0),
+    id_invitado: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    ReservaInvitadoService.eliminar(db, id_reserva, id_invitado, usuario_actual)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(

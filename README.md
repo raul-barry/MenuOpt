@@ -61,12 +61,18 @@ Esta versión integra **PARTE 1, PARTE 2, PARTE 3, PARTE 4, PARTE 5, PARTE 6, PA
 | **CU18** | Gestionar mesas | RESTAURANTE / ADMIN | `GET /areas/{id}/mesas`, `POST /areas/{id}/mesas`, `GET /mesas/{id}`, `PUT /mesas/{id}`, `DELETE /mesas/{id}`, `PATCH /mesas/{id}/estado` |
 | **CU19** | Definir combinación de mesas | RESTAURANTE / ADMIN | `GET /areas/{id}/combinaciones`, `POST /combinaciones`, `DELETE /combinaciones/{id}` |
 | **CU20** | Consultar disponibilidad mesas | Autenticado / ADMIN | `GET /restaurantes/{id}/mesas-disponibles` |
-| **CU21** | Realizar y cancelar reserva | CLIENTE / ADMIN | `POST /reservas`, `GET /reservas/mis-reservas`, `GET /reservas/{id}`, `PATCH /reservas/{id}/cancelar` |
+| **CU21** | Realizar y cancelar reserva; gestionar invitados | CLIENTE / RESTAURANTE propietario / ADMIN | `POST /reservas`, `GET /reservas/mis-reservas`, `GET /reservas/{id}`, `PATCH /reservas/{id}/cancelar`, `GET /reservas/{id}/invitados`, `POST /reservas/{id}/invitados`, `DELETE /reservas/{id}/invitados/{id_invitado}` |
 | **CU22** | Gestionar reservas | RESTAURANTE / ADMIN | `GET /restaurantes/{id}/reservas`, `PATCH /reservas/{id}/estado` |
 | **CU23** | Enviar pedido | CLIENTE / ADMIN | `POST /pedidos` |
 | **CU24** | Gestionar pedidos | CLIENTE / RESTAURANTE / ADMIN | `GET /pedidos/mis-pedidos`, `GET /pedidos/{id}`, `PATCH /pedidos/{id}/cancelar`, `GET /restaurantes/{id}/pedidos`, `PATCH /pedidos/{id}/estado` |
 | **CU25** | Consultar bitácora del sistema | ADMINISTRADOR | `GET /bitacora` |
 | **CU26** | Usar asistencia con IA | CLIENTE / ADMIN | `POST /asistente/interpretar`, `POST /asistente/explicar-recomendacion`, `POST /asistente/explicar-comparacion` |
+
+### Gestión de invitados de una reserva
+
+El titular, el restaurante responsable y un administrador pueden consultar, agregar y eliminar invitados. Para un invitado sin cuenta, `POST /reservas/{id}/invitados` recibe `{"nombre":"Ana Pérez","correo":"ana@example.com"}`; el correo es opcional. Para vincular una cuenta existente recibe `{"id_usuario":42}` y la cuenta debe estar activa y tener rol `CLIENTE`. El invitado vinculado conserva una copia de su nombre y correo al momento de registrarlo.
+
+La cantidad de invitados no puede superar la cantidad de personas de la reserva. Se rechazan duplicados por cuenta, correo (sin distinguir mayúsculas) y nombre cuando no hay correo para identificar a la persona. El borrado responde `409 Conflict` si el invitado vinculado tiene un pedido asociado a esa reserva. Los endpoints devuelven `404` para una reserva inexistente y `403` cuando el usuario autenticado no tiene acceso.
 
 ---
 

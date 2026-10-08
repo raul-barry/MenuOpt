@@ -1,7 +1,7 @@
 # CASO DE USO: CU21 - Realizar reserva & CU22 - Gestionar reservas
 from datetime import datetime, date, time
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class MesaResumenReserva(BaseModel):
@@ -9,6 +9,36 @@ class MesaResumenReserva(BaseModel):
     numero: str
     nombre: Optional[str] = None
     capacidad: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReservaInvitadoCrear(BaseModel):
+    id_usuario: Optional[int] = Field(None, gt=0, description="Cuenta CLIENTE existente a vincular")
+    nombre: Optional[str] = Field(None, min_length=2, max_length=201)
+    correo: Optional[EmailStr] = Field(None, max_length=150)
+
+    @field_validator("nombre", mode="before")
+    @classmethod
+    def limpiar_nombre(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def validar_identidad(self):
+        if self.id_usuario is None and not self.nombre:
+            raise ValueError("Debe proporcionar id_usuario o el nombre del invitado.")
+        return self
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class ReservaInvitadoRespuesta(BaseModel):
+    id_invitado: int
+    id_reserva: int
+    id_usuario: Optional[int] = None
+    nombre: str
+    correo: Optional[EmailStr] = None
+    fecha_creacion: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

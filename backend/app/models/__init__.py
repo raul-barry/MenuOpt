@@ -21,6 +21,7 @@ from app.models.area_restaurante import AreaRestaurante
 from app.models.mesa import Mesa
 from app.models.mesa_combinacion import MesaCombinacion
 from app.models.reserva import Reserva
+from app.models.reserva_invitado import ReservaInvitado
 from app.models.mesa_reserva import MesaReserva
 from app.models.pedido import Pedido
 from app.models.detalle_pedido import DetallePedido
@@ -49,6 +50,7 @@ __all__ = [
     "Mesa",
     "MesaCombinacion",
     "Reserva",
+    "ReservaInvitado",
     "MesaReserva",
     "Pedido",
     "DetallePedido",
