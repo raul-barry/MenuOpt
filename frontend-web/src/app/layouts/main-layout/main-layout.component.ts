@@ -1,19 +1,20 @@
+import { AppIconComponent } from '../../shared/app-icon/app-icon.component';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [AppIconComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, BrandLogoComponent],
   template: `
     <div class="layout-container">
       <!-- Barra Superior -->
       <header class="topbar">
         <div class="brand">
-          <span class="logo-icon">🍽️</span>
-          <span class="logo-text">MenuOpt</span>
+          <app-brand-logo size="header" />
         </div>
         <div class="user-menu" *ngIf="authService.currentUser() as user">
           <div class="user-info">
@@ -32,29 +33,29 @@ import { AuthService } from '../../core/services/auth.service';
             <ng-container *ngIf="authService.userRole() === 'ADMINISTRADOR'">
               <div class="nav-section-title">ADMINISTRACIÓN</div>
               <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-link">
-                <span>👥</span> Usuarios
+                <span><app-icon name="users" class="app-icon-inline"></app-icon></span> Usuarios
               </a>
               <a routerLink="/restaurantes" routerLinkActive="active" class="nav-link">
-                <span>🏪</span> Restaurantes
+                <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Restaurantes
               </a>
               <a routerLink="/admin/categorias" routerLinkActive="active" class="nav-link">
-                <span>📂</span> Categorías
+                <span><app-icon name="layers" class="app-icon-inline"></app-icon></span> Categorías
               </a>
               <a routerLink="/ingredientes" routerLinkActive="active" class="nav-link">
-                <span>🥗</span> Ingredientes
+                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Ingredientes
               </a>
               <div class="nav-section-title">PLANIFICACIÓN & IA</div>
               <a routerLink="/asistente" routerLinkActive="active" class="nav-link">
-                <span>🤖</span> Asistente IA
+                <span><app-icon name="bot" class="app-icon-inline"></app-icon></span> Asistente IA
               </a>
               <a routerLink="/inicio" routerLinkActive="active" class="nav-link">
-                <span>🏠</span> Panel Cliente
+                <span><app-icon name="house" class="app-icon-inline"></app-icon></span> Panel Cliente
               </a>
               <a routerLink="/planificaciones" routerLinkActive="active" class="nav-link">
-                <span>📋</span> Planificaciones
+                <span><app-icon name="clipboard-list" class="app-icon-inline"></app-icon></span> Planificaciones
               </a>
               <a routerLink="/preferencias" routerLinkActive="active" class="nav-link">
-                <span>🥗</span> Preferencias
+                <span><app-icon name="sliders-horizontal" class="app-icon-inline"></app-icon></span> Preferencias
               </a>
             </ng-container>
 
@@ -62,27 +63,27 @@ import { AuthService } from '../../core/services/auth.service';
             <ng-container *ngIf="authService.userRole() === 'CLIENTE'">
               <div class="nav-section-title">ASISTENTE VIRTUAL</div>
               <a routerLink="/asistente" routerLinkActive="active" class="nav-link">
-                <span>🤖</span> Asistente IA
+                <span><app-icon name="bot" class="app-icon-inline"></app-icon></span> Asistente IA
               </a>
               <div class="nav-section-title">PLANIFICACIÓN</div>
               <a routerLink="/inicio" routerLinkActive="active" class="nav-link">
-                <span>🏠</span> Inicio
+                <span><app-icon name="house" class="app-icon-inline"></app-icon></span> Inicio
               </a>
               <a routerLink="/planificaciones/nueva" routerLinkActive="active" class="nav-link">
-                <span>🍲</span> Planificar comida
+                <span><app-icon name="utensils" class="app-icon-inline"></app-icon></span> Planificar comida
               </a>
               <a routerLink="/planificaciones" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-                <span>📋</span> Mis planificaciones
+                <span><app-icon name="clipboard-list" class="app-icon-inline"></app-icon></span> Mis planificaciones
               </a>
               <a routerLink="/preferencias" routerLinkActive="active" class="nav-link">
-                <span>🥗</span> Mis preferencias
+                <span><app-icon name="sliders-horizontal" class="app-icon-inline"></app-icon></span> Mis preferencias
               </a>
               <div class="nav-section-title">PEDIDOS & RESERVAS</div>
               <a routerLink="/mis-reservas" routerLinkActive="active" class="nav-link">
-                <span>📅</span> Mis Reservas
+                <span><app-icon name="calendar-days" class="app-icon-inline"></app-icon></span> Mis Reservas
               </a>
               <a routerLink="/mis-pedidos" routerLinkActive="active" class="nav-link">
-                <span>📦</span> Mis Pedidos
+                <span><app-icon name="receipt" class="app-icon-inline"></app-icon></span> Mis Pedidos
               </a>
             </ng-container>
 
@@ -90,17 +91,17 @@ import { AuthService } from '../../core/services/auth.service';
             <ng-container *ngIf="authService.userRole() === 'RESTAURANTE'">
               <div class="nav-section-title">MI NEGOCIO</div>
               <a routerLink="/restaurantes" routerLinkActive="active" class="nav-link">
-                <span>🏪</span> Mis Restaurantes
+                <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Mis Restaurantes
               </a>
               <a routerLink="/ingredientes" routerLinkActive="active" class="nav-link">
-                <span>🥗</span> Catálogo Ingredientes
+                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Catálogo Ingredientes
               </a>
             </ng-container>
 
             <!-- Menú Común: Perfil -->
             <div class="nav-section-title">CUENTA</div>
             <a routerLink="/perfil" routerLinkActive="active" class="nav-link">
-              <span>👤</span> Mi Perfil
+              <span><app-icon name="user-round" class="app-icon-inline"></app-icon></span> Mi Perfil
             </a>
           </nav>
         </aside>
@@ -122,21 +123,21 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.75rem 1.5rem;
+      height: 64px;
+      min-height: 64px;
+      flex: 0 0 64px;
+      padding: 0 1.5rem;
       background-color: var(--surface);
       border-bottom: 1px solid var(--border);
-      height: 64px;
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 2px 10px rgb(35 27 18 / 0.035);
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--secondary);
+      min-width: 0;
     }
     .user-menu {
       display: flex;
@@ -155,12 +156,17 @@ import { AuthService } from '../../core/services/auth.service';
     .body-wrapper {
       display: flex;
       flex: 1;
+      width: 100%;
+      min-width: 0;
+      max-width: 1600px;
+      margin: 0 auto;
     }
     .sidebar {
-      width: 240px;
+      width: 258px;
+      flex: 0 0 258px;
       background-color: var(--surface);
       border-right: 1px solid var(--border);
-      padding: 1.5rem 1rem;
+      padding: 1.65rem 1rem;
     }
     .nav-section-title {
       font-size: 0.7rem;
@@ -182,20 +188,22 @@ import { AuthService } from '../../core/services/auth.service';
       transition: background 0.15s;
     }
     .nav-link:hover {
-      background-color: #f1f5f9;
+      background-color: #f7f7f6;
       text-decoration: none;
     }
     .nav-link.active {
       background-color: var(--primary-light);
       color: var(--primary);
       font-weight: 600;
+      box-shadow: inset 3px 0 0 var(--primary);
     }
     .main-content {
       flex: 1;
-      padding: 2rem;
+      min-width: 0;
+      padding: clamp(1.25rem, 3vw, 2.5rem);
       overflow-y: auto;
-      max-width: 1200px;
-      margin: 0 auto;
+      max-width: 1320px;
+      margin: 0;
       width: 100%;
     }
     @media (max-width: 768px) {
@@ -204,18 +212,36 @@ import { AuthService } from '../../core/services/auth.service';
       }
       .sidebar {
         width: 100%;
+        flex: 0 0 auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
-        padding: 0.5rem;
+        padding: 0.55rem 0.75rem;
       }
       .nav-menu {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
       }
+      .nav-link { margin-bottom: 0; }
+      .main-content { padding: 1.25rem 1rem; }
       .nav-section-title {
         display: none;
       }
+    }
+    @media (max-width: 520px) {
+      .topbar {
+        height: 64px;
+        min-height: 64px;
+        flex-basis: 64px;
+        padding: 0 0.75rem;
+        gap: 0.5rem;
+      }
+      .brand { flex: 0 1 auto; }
+      .user-menu { margin-left: auto; gap: 0.2rem; flex: 0 0 auto; flex-direction: column; align-items: flex-end; }
+      .user-info { flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+      .user-name { display: none; }
+      .user-info .badge { font-size: 0.65rem; line-height: 1.2; }
+      .user-menu .btn { min-height: 32px; padding: 0.35rem 0.55rem; font-size: 0.75rem; }
     }
   `]
 })

@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU14 - Comparar alternativas (RESTAURANTE vs PREPARACION_PROPIA)
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -10,7 +11,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
 @Component({
   selector: 'app-comparacion',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="comparacion-container">
       <div style="margin-bottom: 1rem;">
@@ -42,7 +43,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                 (click)="explicarComparacion()"
                 title="Explicar comparativa objetiva mediante asistente IA (CU26)"
               >
-                🤖 Explicar Comparación
+                <app-icon name="bot" class="app-icon-inline"></app-icon> Explicar Comparación
               </button>
               <div class="header-summary-box">
                 <span class="sum-count">{{ comp.total_alternativas }}</span>
@@ -54,7 +55,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           <!-- Resumen de Destacados: Menor Costo & Mejor Puntuación -->
           <div class="grid-2" style="margin-top: 1.5rem;" *ngIf="comp.mejor_opcion_costo || comp.mejor_opcion_puntuacion">
             <div class="highlight-card cost-card" *ngIf="comp.mejor_opcion_costo">
-              <div class="hl-badge">💰 MENOR COSTO</div>
+              <div class="hl-badge"><app-icon name="money" class="app-icon-inline"></app-icon> MENOR COSTO</div>
               <h4>{{ comp.mejor_opcion_costo.nombre }}</h4>
               <p class="hl-sub">{{ comp.mejor_opcion_costo.tipo_recomendacion }}</p>
               <div class="hl-row">
@@ -64,7 +65,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
             </div>
 
             <div class="highlight-card score-card" *ngIf="comp.mejor_opcion_puntuacion">
-              <div class="hl-badge score">⭐ MEJOR PUNTUADA</div>
+              <div class="hl-badge score"><app-icon name="star" class="app-icon-inline"></app-icon> MEJOR PUNTUADA</div>
               <h4>{{ comp.mejor_opcion_puntuacion.nombre }}</h4>
               <p class="hl-sub">{{ comp.mejor_opcion_puntuacion.tipo_recomendacion }}</p>
               <div class="hl-row">
@@ -189,13 +190,13 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                   [routerLink]="['/recomendaciones', alt.id_recomendacion, 'preparacion']" 
                   class="btn btn-primary btn-sm"
                 >
-                  🥗 Ingredientes (CU15)
+                  <app-icon name="salad" class="app-icon-inline"></app-icon> Ingredientes (CU15)
                 </a>
                 <a 
                   [routerLink]="['/recomendaciones', alt.id_recomendacion, 'lugares-compra']" 
                   class="btn btn-outline btn-sm"
                 >
-                  🏪 Lugares de Compra (CU16)
+                  <app-icon name="store" class="app-icon-inline"></app-icon> Lugares de Compra (CU16)
                 </a>
               </ng-container>
             </div>
@@ -207,8 +208,8 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
       <div *ngIf="modalExplicacion()" class="modal-overlay" (click)="cerrarModalExplicacion()">
         <div class="modal-card card" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>🤖 Explicación Comparativa (CU14 con Asistencia IA)</h3>
-            <button class="btn-close" (click)="cerrarModalExplicacion()">✕</button>
+            <h3><app-icon name="bot" class="app-icon-inline"></app-icon> Explicación Comparativa (CU14 con Asistencia IA)</h3>
+            <button class="btn-close" (click)="cerrarModalExplicacion()"><app-icon name="close" class="app-icon-inline"></app-icon></button>
           </div>
           <div class="modal-body">
             <div *ngIf="cargandoExplicacion()" style="text-align: center; padding: 2rem;">

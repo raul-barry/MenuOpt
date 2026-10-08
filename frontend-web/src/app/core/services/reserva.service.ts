@@ -8,7 +8,9 @@ import {
   DisponibilidadRespuesta,
   ReservaCrear,
   ReservaRespuesta,
-  ReservaEstadoActualizar
+  ReservaEstadoActualizar,
+  ReservaInvitadoCrear,
+  ReservaInvitadoRespuesta
 } from '../models/reserva.model';
 
 @Injectable({
@@ -83,4 +85,23 @@ export class ReservaService {
     const payload: ReservaEstadoActualizar = { estado: nuevoEstado as any };
     return this.http.patch<ReservaRespuesta>(`${this.baseUrl}/reservas/${idReserva}/estado`, payload);
   }
+
+  // =========================================================================
+  // GESTIÓN DE INVITADOS (Extensión CU21 / Endpoints Codex)
+  // =========================================================================
+  // GET /reservas/{id}/invitados
+  listarInvitados(idReserva: number): Observable<ReservaInvitadoRespuesta[]> {
+    return this.http.get<ReservaInvitadoRespuesta[]>(`${this.baseUrl}/reservas/${idReserva}/invitados`);
+  }
+
+  // POST /reservas/{id}/invitados
+  agregarInvitado(idReserva: number, datos: ReservaInvitadoCrear): Observable<ReservaInvitadoRespuesta> {
+    return this.http.post<ReservaInvitadoRespuesta>(`${this.baseUrl}/reservas/${idReserva}/invitados`, datos);
+  }
+
+  // DELETE /reservas/{id}/invitados/{id_invitado}
+  eliminarInvitado(idReserva: number, idInvitado: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/reservas/${idReserva}/invitados/${idInvitado}`);
+  }
 }
+

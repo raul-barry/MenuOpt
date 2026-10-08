@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU16 - Consultar lugares de compra agrupados
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { LugaresCompraRecomendacion } from '../../../core/models/lugar-compra.mo
 @Component({
   selector: 'app-lugares-compra',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="lugares-container">
       <div style="margin-bottom: 1rem;">
@@ -28,7 +29,7 @@ import { LugaresCompraRecomendacion } from '../../../core/models/lugar-compra.mo
         <div class="card header-card">
           <div class="header-main">
             <div>
-              <span class="badge badge-success">🛒 LISTA DE COMPRAS AGRUPADA (CU16)</span>
+              <span class="badge badge-success"><app-icon name="cart" class="app-icon-inline"></app-icon> LISTA DE COMPRAS AGRUPADA (CU16)</span>
               <h2 style="margin-top: 0.5rem;">{{ res.nombre_preparacion }}</h2>
               <p style="color: var(--text-muted); margin-top: 0.25rem;">
                 Adquiere tus insumos optimizando costos según los comercios con mejores precios disponibles.
@@ -50,7 +51,7 @@ import { LugaresCompraRecomendacion } from '../../../core/models/lugar-compra.mo
         <div *ngFor="let lugar of res.lugares" class="card lugar-card">
           <div class="lugar-header">
             <div class="lugar-title-group">
-              <span class="lugar-icono">🏪</span>
+              <span class="lugar-icono"><app-icon name="store" class="app-icon-inline"></app-icon></span>
               <div>
                 <h3 class="lugar-nombre">{{ lugar.nombre_lugar }}</h3>
                 <div class="lugar-tipo badge badge-secondary" *ngIf="lugar.tipo_lugar">
@@ -68,10 +69,10 @@ import { LugaresCompraRecomendacion } from '../../../core/models/lugar-compra.mo
 
           <!-- Ubicación física del comercio -->
           <div class="lugar-info" *ngIf="lugar.direccion || lugar.zona || lugar.telefono">
-            <span *ngIf="lugar.direccion">📍 {{ lugar.direccion }}</span>
+            <span *ngIf="lugar.direccion"><app-icon name="pin" class="app-icon-inline"></app-icon> {{ lugar.direccion }}</span>
             <span *ngIf="lugar.zona">| Zona: {{ lugar.zona }}</span>
             <span *ngIf="lugar.ciudad">({{ lugar.ciudad }})</span>
-            <span *ngIf="lugar.telefono">| 📞 {{ lugar.telefono }}</span>
+            <span *ngIf="lugar.telefono">| <app-icon name="phone" class="app-icon-inline"></app-icon> {{ lugar.telefono }}</span>
           </div>
 
           <!-- Tabla de productos a adquirir en este comercio -->

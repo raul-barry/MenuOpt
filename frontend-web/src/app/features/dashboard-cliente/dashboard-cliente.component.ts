@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../shared/app-icon/app-icon.component';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -6,19 +7,19 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-dashboard-cliente',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="dashboard-container">
       <div class="welcome-banner card" *ngIf="authService.currentUser() as user">
         <div class="welcome-text">
-          <h1>¡Hola, {{ user.nombres }}! 👋</h1>
+          <h1>¡Hola, {{ user.nombres }}! <app-icon name="user-round" class="app-icon-inline"></app-icon></h1>
           <p class="subtitle">
             Bienvenido a tu panel de planificación gastronómica inteligente. Optimiza tu presupuesto y encuentra las mejores alternativas.
           </p>
         </div>
         <div class="quick-action">
           <a routerLink="/planificaciones/nueva" class="btn btn-primary btn-lg">
-            <span>✨</span> Planificar una Comida
+            <span><app-icon name="sparkles" class="app-icon-inline"></app-icon></span> Planificar una Comida
           </a>
         </div>
       </div>
@@ -27,7 +28,7 @@ import { AuthService } from '../../core/services/auth.service';
       <h2 style="margin-top: 1.5rem; margin-bottom: 1rem;">Acciones Rápidas</h2>
       <div class="grid-3">
         <div class="card action-card">
-          <div class="card-icon">🍲</div>
+          <div class="card-icon"><app-icon name="calendar-plus" [size]="28"></app-icon></div>
           <h3>Nueva Planificación</h3>
           <p>Define comensales, presupuesto y zona para obtener recomendaciones optimizadas.</p>
           <a routerLink="/planificaciones/nueva" class="btn btn-primary btn-sm" style="margin-top: auto;">
@@ -36,7 +37,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
 
         <div class="card action-card">
-          <div class="card-icon">📋</div>
+          <div class="card-icon"><app-icon name="clipboard-list" [size]="28"></app-icon></div>
           <h3>Mis Planificaciones</h3>
           <p>Revisa el historial de tus eventos, alternativas calculadas y comparaciones de ahorro.</p>
           <a routerLink="/planificaciones" class="btn btn-outline btn-sm" style="margin-top: auto;">
@@ -45,7 +46,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
 
         <div class="card action-card">
-          <div class="card-icon">🥗</div>
+          <div class="card-icon"><app-icon name="sliders-horizontal" [size]="28"></app-icon></div>
           <h3>Mis Preferencias</h3>
           <p>Configura restricciones y gustos (vegetariano, sin gluten, picante, etc.).</p>
           <a routerLink="/preferencias" class="btn btn-outline btn-sm" style="margin-top: auto;">
@@ -91,17 +92,20 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(135deg, #1d3557 0%, #457b9d 100%);
-      color: white;
-      border: none;
+      background: linear-gradient(115deg, #fffaf4 0%, #fff1e3 100%);
+      color: var(--text-main);
+      border: 1px solid #ffe3c8;
+      border-left: 4px solid var(--primary);
+      border-radius: 18px;
+      box-shadow: var(--shadow-md);
       padding: 2rem;
     }
     .welcome-banner h1 {
-      color: white;
+      color: var(--text-main);
       margin-bottom: 0.5rem;
     }
     .subtitle {
-      color: #e2e8f0;
+      color: #666;
       font-size: 1rem;
       max-width: 600px;
     }
@@ -115,6 +119,7 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       flex-direction: column;
       height: 100%;
+      border-radius: 16px;
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .action-card:hover {
@@ -123,6 +128,12 @@ import { AuthService } from '../../core/services/auth.service';
     }
     .card-icon {
       font-size: 2.25rem;
+      display: grid;
+      place-items: center;
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 14px;
+      background: var(--primary-light);
       margin-bottom: 0.75rem;
     }
     .action-card p {
@@ -149,8 +160,8 @@ import { AuthService } from '../../core/services/auth.service';
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background-color: var(--primary-light);
-      color: var(--primary);
+      background-color: var(--primary);
+      color: #fff;
       font-weight: 700;
       display: flex;
       align-items: center;

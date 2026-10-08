@@ -4,14 +4,14 @@
     <div class="header-main">
       <div>
         <span class="badge badge-primary">INTELIGENCIA ARTIFICIAL (CU26)</span>
-        <h1 class="titulo">🤖 Asistente Gastronómico MenuOpt</h1>
+        <h1 class="titulo"><app-icon name="bot" class="app-icon-inline"></app-icon> Asistente Gastronómico MenuOpt</h1>
         <p class="subtitulo">
           Escribe tu solicitud en lenguaje natural. El asistente estructurará tus datos para que puedas crear tu planificación con un solo clic.
         </p>
       </div>
       <div>
         <button class="btn btn-outline btn-sm" (click)="limpiarConversacion()">
-          🔄 Nueva Consulta
+          <app-icon name="refresh" class="app-icon-inline"></app-icon> Nueva Consulta
         </button>
       </div>
     </div>
@@ -19,10 +19,10 @@
 
   <!-- Alertas de éxito o error -->
   <div *ngIf="mensajeExito()" class="alert alert-success">
-    🎉 {{ mensajeExito() }}
+    <app-icon name="check" class="app-icon-inline"></app-icon> {{ mensajeExito() }}
   </div>
   <div *ngIf="error()" class="alert alert-danger">
-    ⚠️ {{ error() }}
+    <app-icon name="alert" class="app-icon-inline"></app-icon> {{ error() }}
   </div>
 
   <!-- Layout de Chat y Resumen Estructurado -->
@@ -37,7 +37,7 @@
           [class.mensaje-asistente]="msg.emisor === 'asistente'"
         >
           <div class="avatar">
-            {{ msg.emisor === 'usuario' ? '👤' : '🤖' }}
+            <app-icon [name]="msg.emisor === 'usuario' ? 'user' : 'bot'" class="app-icon-inline"></app-icon>
           </div>
           <div class="contenido">
             <div class="texto">{{ msg.texto }}</div>
@@ -46,7 +46,7 @@
         </div>
 
         <div *ngIf="procesando()" class="mensaje-burbuja mensaje-asistente">
-          <div class="avatar">🤖</div>
+          <div class="avatar"><app-icon name="bot" class="app-icon-inline"></app-icon></div>
           <div class="contenido">
             <div class="texto typing">
               <span class="dot"></span>
@@ -60,7 +60,7 @@
 
       <!-- Sugerencias rápidas -->
       <div class="sugerencias-panel" *ngIf="mensajes().length <= 2">
-        <span class="sugerencias-label">💡 Ejemplos de consulta:</span>
+        <span class="sugerencias-label"><app-icon name="idea" class="app-icon-inline"></app-icon> Ejemplos de consulta:</span>
         <div class="sugerencias-tags">
           <button
             *ngFor="let ej of ejemplosSugeridos"
@@ -88,7 +88,7 @@
           (click)="enviarMensaje()"
           [disabled]="procesando() || !mensajeInput.trim()"
         >
-          {{ procesando() ? '...' : 'Enviar 🚀' }}
+          {{ procesando() ? '...' : 'Enviar ' }}
         </button>
       </div>
     </div>
@@ -97,7 +97,7 @@
     <div class="resumen-columna">
       <div class="card panel-resumen">
         <div class="panel-header">
-          <h3>📋 Datos Detectados</h3>
+          <h3><app-icon name="list" class="app-icon-inline"></app-icon> Datos Detectados</h3>
           <span
             class="badge"
             [class.badge-success]="interpretacionActual()?.listo_para_crear"
@@ -181,7 +181,7 @@
                   [class.badge-secondary]="!p.registrada"
                   [title]="p.registrada ? 'Registrada en catálogo' : 'No registrada en BD (no se aplicará)'"
                 >
-                  {{ p.nombre_detectado }} {{ p.registrada ? '✓' : '(no en catálogo)' }}
+                  {{ p.nombre_detectado }} {{ p.registrada ? '' : '(no en catálogo)' }}
                 </span>
               </div>
             </div>
@@ -195,10 +195,10 @@
               (click)="confirmarYCrearPlanificacion()"
             >
               <span *ngIf="creandoPlanificacion()">Creando planificación...</span>
-              <span *ngIf="!creandoPlanificacion()">✨ Crear Planificación</span>
+              <span *ngIf="!creandoPlanificacion()"><app-icon name="sparkles" class="app-icon-inline"></app-icon> Crear Planificación</span>
             </button>
             <small class="nota-seguridad">
-              🔒 La IA no toma decisiones por ti. Al pulsar este botón, se creará tu planificación oficial en PostgreSQL.
+              <app-icon name="lock" class="app-icon-inline"></app-icon> La IA no toma decisiones por ti. Al pulsar este botón, se creará tu planificación oficial en PostgreSQL.
             </small>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU24 - Gestionar pedidos del restaurante
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,22 +13,22 @@ import { Restaurante } from '../../../core/models/restaurante.model';
 @Component({
   selector: 'app-gestion-pedidos',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   template: `
     <div class="card" style="max-width: 1100px; margin: 0 auto;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div>
-          <h2 style="margin: 0; font-size: 1.35rem;">🍳 Gestión de Pedidos - {{ restaurante()?.nombre || 'Restaurante' }}</h2>
+          <h2 style="margin: 0; font-size: 1.35rem;"><app-icon name="chef" class="app-icon-inline"></app-icon> Gestión de Pedidos - {{ restaurante()?.nombre || 'Restaurante' }}</h2>
           <p style="margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
             Control de comanda, avance de preparación y despacho de órdenes.
           </p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
           <a [routerLink]="['/restaurantes', restauranteId(), 'reservas']" class="btn btn-outline btn-sm">
-            📅 Ver Reservas
+            <app-icon name="calendar" class="app-icon-inline"></app-icon> Ver Reservas
           </a>
           <button class="btn btn-outline btn-sm" (click)="cargarPedidos()">
-            🔄 Actualizar
+            <app-icon name="refresh" class="app-icon-inline"></app-icon> Actualizar
           </button>
         </div>
       </div>
@@ -73,7 +74,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
         </div>
 
         <div *ngIf="!cargando() && pedidos().length === 0" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-          <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">📋</span>
+          <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;"><app-icon name="list" class="app-icon-inline"></app-icon></span>
           <h3 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; color: inherit;">No hay pedidos registrados</h3>
           <p style="margin: 0; font-size: 0.9rem;">No se encontraron pedidos con los filtros seleccionados.</p>
         </div>
@@ -102,12 +103,12 @@ import { Restaurante } from '../../../core/models/restaurante.model';
                   </span>
                 </div>
                 <p style="margin: 0.25rem 0 0; font-size: 0.9rem;">
-                  👤 <strong>{{ p.nombre_cliente || 'Cliente #' + p.id_usuario }}</strong>
-                  <span *ngIf="p.telefono_cliente"> &bull; 📞 {{ p.telefono_cliente }}</span>
+                  <app-icon name="user" class="app-icon-inline"></app-icon> <strong>{{ p.nombre_cliente || 'Cliente #' + p.id_usuario }}</strong>
+                  <span *ngIf="p.telefono_cliente"> &bull; <app-icon name="phone" class="app-icon-inline"></app-icon> {{ p.telefono_cliente }}</span>
                 </p>
                 <p style="margin: 0.15rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
-                  🕒 Solicitado: {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
-                  <span *ngIf="p.id_reserva" style="color: #0284c7; font-weight: 500;"> &bull; 🔗 Vinculado a Reserva #{{ p.id_reserva }}</span>
+                  <app-icon name="clock" class="app-icon-inline"></app-icon> Solicitado: {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
+                  <span *ngIf="p.id_reserva" style="color: #0284c7; font-weight: 500;"> &bull; <app-icon name="link" class="app-icon-inline"></app-icon> Vinculado a Reserva #{{ p.id_reserva }}</span>
                 </p>
               </div>
 
@@ -131,7 +132,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
                 </li>
               </ul>
               <p *ngIf="p.observaciones" style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #b45309;">
-                ⚠️ <strong>Nota:</strong> {{ p.observaciones }}
+                <app-icon name="alert" class="app-icon-inline"></app-icon> <strong>Nota:</strong> {{ p.observaciones }}
               </p>
             </div>
 
@@ -145,34 +146,34 @@ import { Restaurante } from '../../../core/models/restaurante.model';
                 <!-- PENDIENTE -> ACEPTADO o CANCELADO -->
                 <ng-container *ngIf="p.estado === 'PENDIENTE'">
                   <button class="btn btn-success btn-sm" (click)="actualizarEstado(p, 'ACEPTADO')">
-                    ✓ Aceptar Pedido
+                    <app-icon name="check" class="app-icon-inline"></app-icon> Aceptar Pedido
                   </button>
                   <button class="btn btn-danger btn-sm" (click)="actualizarEstado(p, 'CANCELADO')">
-                    ✕ Rechazar / Cancelar
+                    <app-icon name="close" class="app-icon-inline"></app-icon> Rechazar / Cancelar
                   </button>
                 </ng-container>
 
                 <!-- ACEPTADO -> EN_PREPARACION o CANCELADO -->
                 <ng-container *ngIf="p.estado === 'ACEPTADO'">
                   <button class="btn btn-primary btn-sm" (click)="actualizarEstado(p, 'EN_PREPARACION')">
-                    👨‍🍳 Iniciar Preparación
+                    <app-icon name="chef" class="app-icon-inline"></app-icon> Iniciar Preparación
                   </button>
                   <button class="btn btn-outline-danger btn-sm" (click)="actualizarEstado(p, 'CANCELADO')">
-                    ✕ Cancelar
+                    <app-icon name="close" class="app-icon-inline"></app-icon> Cancelar
                   </button>
                 </ng-container>
 
                 <!-- EN_PREPARACION -> LISTO -->
                 <ng-container *ngIf="p.estado === 'EN_PREPARACION'">
                   <button class="btn btn-success btn-sm" (click)="actualizarEstado(p, 'LISTO')">
-                    🔔 Marcar como Listo
+                    <app-icon name="info" class="app-icon-inline"></app-icon> Marcar como Listo
                   </button>
                 </ng-container>
 
                 <!-- LISTO -> ENTREGADO -->
                 <ng-container *ngIf="p.estado === 'LISTO'">
                   <button class="btn btn-success btn-sm" (click)="actualizarEstado(p, 'ENTREGADO')">
-                    📦 Marcar como Entregado
+                    <app-icon name="package" class="app-icon-inline"></app-icon> Marcar como Entregado
                   </button>
                 </ng-container>
               </div>

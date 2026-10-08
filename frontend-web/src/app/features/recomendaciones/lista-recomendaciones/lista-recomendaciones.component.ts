@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU13 - Generar recomendación & Visualización de alternativas
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,7 +13,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
 @Component({
   selector: 'app-lista-recomendaciones',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="recomendaciones-container">
       <!-- Breadcrumb -->
@@ -32,7 +33,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           </div>
           <div class="header-actions">
             <a [routerLink]="['/planificaciones', plan.id_planificacion, 'comparacion']" class="btn btn-primary">
-              ⚖️ Comparar Alternativas (CU14)
+              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Alternativas (CU14)
             </a>
             <button 
               *ngIf="plan.estado === 'ACTIVA'" 
@@ -41,7 +42,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
               (click)="regenerarRecomendaciones()"
             >
               <span *ngIf="regenerando()">Regenerando...</span>
-              <span *ngIf="!regenerando()">🔄 Regenerar</span>
+              <span *ngIf="!regenerando()"><app-icon name="refresh" class="app-icon-inline"></app-icon> Regenerar</span>
             </button>
           </div>
         </div>
@@ -58,7 +59,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
 
       <!-- Sin resultados -->
       <div *ngIf="!cargando() && recomendaciones().length === 0" class="card empty-card">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <div style="font-size: 3rem; margin-bottom: 1rem;"><app-icon name="search" class="app-icon-inline"></app-icon></div>
         <h3>No encontramos alternativas dentro del presupuesto</h3>
         <p style="color: var(--text-muted); max-width: 500px; margin-bottom: 1.5rem;">
           No se hallaron opciones comerciales o recetas caseras que cumplan estrictamente con tu presupuesto disponible de Bs {{ planificacion()?.presupuesto }} y tus preferencias.
@@ -88,7 +89,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                 class="badge" 
                 [ngClass]="rec.tipo_recomendacion === 'RESTAURANTE' ? 'badge-restaurante' : 'badge-preparacion'"
               >
-                {{ rec.tipo_recomendacion === 'RESTAURANTE' ? '🏪 RESTAURANTE' : '🍳 PREPARACIÓN PROPIA' }}
+                {{ rec.tipo_recomendacion === 'RESTAURANTE' ? ' RESTAURANTE' : ' PREPARACIÓN PROPIA' }}
               </span>
               <h3 class="rec-title">{{ rec.nombre }}</h3>
             </div>
@@ -143,7 +144,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
               (click)="explicarRecomendacion(rec)"
               title="Solicitar al asistente una explicación objetiva basada en datos reales"
             >
-              🤖 ¿Por qué esta opción?
+              <app-icon name="bot" class="app-icon-inline"></app-icon> ¿Por qué esta opción?
             </button>
 
             <!-- Acciones específicas para PREPARACION_PROPIA (CU15 y CU16) -->
@@ -152,13 +153,13 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                 [routerLink]="['/recomendaciones', rec.id_recomendacion, 'preparacion']" 
                 class="btn btn-primary btn-sm"
               >
-                🥗 Ver Ingredientes (CU15)
+                <app-icon name="salad" class="app-icon-inline"></app-icon> Ver Ingredientes (CU15)
               </a>
               <a 
                 [routerLink]="['/recomendaciones', rec.id_recomendacion, 'lugares-compra']" 
                 class="btn btn-outline btn-sm"
               >
-                🏪 Lugares de Compra (CU16)
+                <app-icon name="store" class="app-icon-inline"></app-icon> Lugares de Compra (CU16)
               </a>
             </ng-container>
           </div>
@@ -169,8 +170,8 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
       <div *ngIf="modalExplicacion()" class="modal-overlay" (click)="cerrarModalExplicacion()">
         <div class="modal-card card" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>🤖 Explicación del Asistente MenuOpt</h3>
-            <button class="btn-close" (click)="cerrarModalExplicacion()">✕</button>
+            <h3><app-icon name="bot" class="app-icon-inline"></app-icon> Explicación del Asistente MenuOpt</h3>
+            <button class="btn-close" (click)="cerrarModalExplicacion()"><app-icon name="close" class="app-icon-inline"></app-icon></button>
           </div>
           <div class="modal-body">
             <div *ngIf="cargandoExplicacion()" style="text-align: center; padding: 2rem;">

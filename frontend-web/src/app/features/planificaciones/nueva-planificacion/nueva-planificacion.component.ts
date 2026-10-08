@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU11 - Registrar planificación gastronómica
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -11,7 +12,7 @@ import { TIPOS_COMIDA, PlanificacionCrear } from '../../../core/models/planifica
 @Component({
   selector: 'app-nueva-planificacion',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, ReactiveFormsModule, RouterLink],
   template: `
     <div class="form-container">
       <div class="header-section">
@@ -122,7 +123,7 @@ import { TIPOS_COMIDA, PlanificacionCrear } from '../../../core/models/planifica
                 [class.active]="preferenciasSeleccionadas().has(pref.id_preferencia)"
                 (click)="togglePreferencia(pref.id_preferencia)"
               >
-                <span *ngIf="preferenciasSeleccionadas().has(pref.id_preferencia)">✓ </span>
+                <span *ngIf="preferenciasSeleccionadas().has(pref.id_preferencia)"><app-icon name="check" class="app-icon-inline"></app-icon> </span>
                 {{ pref.nombre }}
               </div>
             </div>

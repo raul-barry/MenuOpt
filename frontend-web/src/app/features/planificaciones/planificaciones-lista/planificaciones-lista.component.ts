@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU11 - Registrar planificación gastronómica (Mis planificaciones)
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
 @Component({
   selector: 'app-planificaciones-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="lista-container">
       <div class="header-section">
@@ -34,7 +35,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
 
       <!-- Estado Vacío -->
       <div *ngIf="!cargando() && planificaciones().length === 0" class="card empty-card">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">🍽️</div>
+        <div style="font-size: 3rem; margin-bottom: 1rem;"><app-icon name="utensils" class="app-icon-inline"></app-icon></div>
         <h3>Aún no tienes planificaciones registradas</h3>
         <p style="color: var(--text-muted); margin-bottom: 1.5rem; max-width: 450px;">
           Comienza ingresando tu presupuesto y cantidad de personas para recibir sugerencias optimizadas de restaurantes y cocina casera.

@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU17 - Crear plano 2D del restaurante
 // CASO DE USO: CU18 - Gestionar mesas
 // CASO DE USO: CU19 - Definir combinación de mesas
@@ -21,7 +22,7 @@ import { GenerarDistribucionRequest } from '../../../core/models/distribucion.mo
 @Component({
   selector: 'app-distribucion-editor',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './distribucion-editor.component.html',
   styleUrls: ['./distribucion-editor.component.css']
 })

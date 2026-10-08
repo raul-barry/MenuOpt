@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU11 - Detalle de planificación & CU13 - Generar recomendación
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,7 +10,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
 @Component({
   selector: 'app-detalle-planificacion',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="detalle-container">
       <!-- Breadcrumb / Volver -->
@@ -53,16 +54,16 @@ import { Planificacion } from '../../../core/models/planificacion.model';
               [disabled]="generando()" 
               (click)="onGenerarRecomendaciones()"
             >
-              <span *ngIf="generando()">⚡ Calculando recomendaciones...</span>
-              <span *ngIf="!generando()">⚡ Generar Recomendaciones</span>
+              <span *ngIf="generando()"><app-icon name="zap" class="app-icon-inline"></app-icon> Calculando recomendaciones...</span>
+              <span *ngIf="!generando()"><app-icon name="zap" class="app-icon-inline"></app-icon> Generar Recomendaciones</span>
             </button>
 
             <a [routerLink]="['/planificaciones', plan.id_planificacion, 'recomendaciones']" class="btn btn-outline">
-              📋 Ver Recomendaciones
+              <app-icon name="list" class="app-icon-inline"></app-icon> Ver Recomendaciones
             </a>
 
             <a [routerLink]="['/planificaciones', plan.id_planificacion, 'comparacion']" class="btn btn-outline">
-              ⚖️ Comparar Alternativas (CU14)
+              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Alternativas (CU14)
             </a>
 
             <a 
@@ -70,7 +71,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
               [routerLink]="['/planificaciones', plan.id_planificacion, 'editar']" 
               class="btn btn-outline"
             >
-              ✏️ Editar
+              <app-icon name="edit" class="app-icon-inline"></app-icon> Editar
             </a>
 
             <button 
@@ -113,7 +114,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
               <h3>Ubicación de Referencia</h3>
             </div>
             <p style="font-size: 1.1rem; font-weight: 500;">
-              📍 {{ plan.ubicacion_referencia }}
+              <app-icon name="pin" class="app-icon-inline"></app-icon> {{ plan.ubicacion_referencia }}
             </p>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
               Zona aproximada utilizada para estimar cercanía de restaurantes y mercados.

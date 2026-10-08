@@ -93,3 +93,22 @@ export interface ReservaRespuesta {
 export interface ReservaEstadoActualizar {
   estado: EstadoReserva;
 }
+
+// =========================================================================
+// GESTIÓN DE INVITADOS DE LA RESERVA (Codex / Sprint Extensión CU21)
+// =========================================================================
+export interface ReservaInvitadoCrear {
+  id_usuario?: number | null;
+  nombre?: string | null;
+  correo?: string | null;
+}
+
+export interface ReservaInvitadoRespuesta {
+  id_invitado: number;
+  id_reserva: number;
+  id_usuario?: number | null;
+  nombre: string;
+  correo?: string | null;
+  fecha_creacion: string;
+}
+

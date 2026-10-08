@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { Usuario, UsuariosPaginados } from '../../../core/models/usuario.model';
 @Component({
   selector: 'app-usuarios-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, FormsModule],
   template: `
     <div>
       <div class="card-header" style="border: none; padding: 0;">
@@ -119,7 +120,7 @@ import { Usuario, UsuariosPaginados } from '../../../core/models/usuario.model';
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="card-header">
             <h3>Detalle de Usuario</h3>
-            <button class="btn btn-outline btn-sm" (click)="cerrarModal()">✕</button>
+            <button class="btn btn-outline btn-sm" (click)="cerrarModal()"><app-icon name="close" class="app-icon-inline"></app-icon></button>
           </div>
           <div *ngIf="usuarioSeleccionado() as u" class="grid-2" style="gap: 1rem;">
             <div>

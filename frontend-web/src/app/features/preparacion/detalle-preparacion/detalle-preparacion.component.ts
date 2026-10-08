@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU15 - Consultar ingredientes para preparación propia
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { PreparacionPropia } from '../../../core/models/preparacion.model';
 @Component({
   selector: 'app-detalle-preparacion',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="preparacion-container">
       <div style="margin-bottom: 1rem;">
@@ -28,14 +29,14 @@ import { PreparacionPropia } from '../../../core/models/preparacion.model';
         <div class="card header-card">
           <div class="header-main">
             <div>
-              <span class="badge badge-success">🍳 PREPARACIÓN CASERA</span>
+              <span class="badge badge-success"><app-icon name="chef" class="app-icon-inline"></app-icon> PREPARACIÓN CASERA</span>
               <h2 style="margin-top: 0.5rem;">{{ prep.nombre }}</h2>
               <p *ngIf="prep.descripcion" style="color: var(--text-muted); margin-top: 0.25rem;">
                 {{ prep.descripcion }}
               </p>
             </div>
             <a [routerLink]="['/recomendaciones', idRecomendacion, 'lugares-compra']" class="btn btn-outline">
-              🏪 Ver Dónde Comprar (CU16) &rarr;
+              <app-icon name="store" class="app-icon-inline"></app-icon> Ver Dónde Comprar (CU16) &rarr;
             </a>
           </div>
 
@@ -99,7 +100,7 @@ import { PreparacionPropia } from '../../../core/models/preparacion.model';
                   </td>
                   <td>
                     <span *ngIf="ing.nombre_lugar_compra">
-                      📍 {{ ing.nombre_lugar_compra }}
+                      <app-icon name="pin" class="app-icon-inline"></app-icon> {{ ing.nombre_lugar_compra }}
                     </span>
                     <span *ngIf="!ing.nombre_lugar_compra" style="color: var(--text-muted);">
                       Lugar genérico

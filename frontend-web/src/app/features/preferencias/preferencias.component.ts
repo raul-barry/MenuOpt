@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU12 - Definir preferencias
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,7 +8,7 @@ import { Preferencia } from '../../core/models/preferencia.model';
 @Component({
   selector: 'app-preferencias',
   standalone: true,
-  imports: [CommonModule],
+  imports: [AppIconComponent, CommonModule],
   template: `
     <div class="preferencias-container">
       <div class="header-section">
@@ -41,7 +42,7 @@ import { Preferencia } from '../../core/models/preferencia.model';
             (click)="guardarPreferencias()"
           >
             <span *ngIf="guardando()">Guardando...</span>
-            <span *ngIf="!guardando()">💾 Guardar Preferencias</span>
+            <span *ngIf="!guardando()"><app-icon name="save" class="app-icon-inline"></app-icon> Guardar Preferencias</span>
           </button>
         </div>
 
@@ -58,7 +59,7 @@ import { Preferencia } from '../../core/models/preferencia.model';
             (click)="togglePreferencia(pref.id_preferencia)"
           >
             <div class="pref-checkbox">
-              <span *ngIf="seleccionadas().has(pref.id_preferencia)">✓</span>
+              <span *ngIf="seleccionadas().has(pref.id_preferencia)"><app-icon name="check" class="app-icon-inline"></app-icon></span>
             </div>
             <div class="pref-info">
               <div class="pref-nombre">{{ pref.nombre }}</div>
@@ -75,7 +76,7 @@ import { Preferencia } from '../../core/models/preferencia.model';
             (click)="guardarPreferencias()"
           >
             <span *ngIf="guardando()">Guardando...</span>
-            <span *ngIf="!guardando()">💾 Guardar Preferencias</span>
+            <span *ngIf="!guardando()"><app-icon name="save" class="app-icon-inline"></app-icon> Guardar Preferencias</span>
           </button>
         </div>
       </div>

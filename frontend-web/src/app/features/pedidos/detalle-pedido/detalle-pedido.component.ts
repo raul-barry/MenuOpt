@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU24 - Detalle de Pedido
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -10,7 +11,7 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
 @Component({
   selector: 'app-detalle-pedido',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [AppIconComponent, CommonModule, RouterModule],
   template: `
     <div class="card" style="max-width: 800px; margin: 0 auto;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -44,10 +45,10 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
             <div>
               <h3 style="margin: 0; color: var(--primary);">{{ p.nombre_restaurante }}</h3>
               <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                📅 Solicitado: {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
+                <app-icon name="calendar" class="app-icon-inline"></app-icon> Solicitado: {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
               </p>
               <p *ngIf="p.id_reserva" style="margin: 0.25rem 0 0; font-size: 0.85rem; color: #0284c7;">
-                🔗 Asociado a la Reserva #{{ p.id_reserva }}
+                <app-icon name="link" class="app-icon-inline"></app-icon> Asociado a la Reserva #{{ p.id_reserva }}
               </p>
             </div>
             <div style="text-align: right;">
@@ -67,15 +68,15 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
           <!-- Información del Cliente (si es restaurante/admin) -->
           <div *ngIf="p.nombre_cliente" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem;">
             <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">CLIENTE COMENSAL</h4>
-            <p style="margin: 0 0 0.25rem 0; font-weight: 600;">👤 {{ p.nombre_cliente }}</p>
+            <p style="margin: 0 0 0.25rem 0; font-weight: 600;"><app-icon name="user" class="app-icon-inline"></app-icon> {{ p.nombre_cliente }}</p>
             <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-              ✉️ {{ p.correo_cliente }} <span *ngIf="p.telefono_cliente">| 📞 {{ p.telefono_cliente }}</span>
+              <app-icon name="mail" class="app-icon-inline"></app-icon> {{ p.correo_cliente }} <span *ngIf="p.telefono_cliente">| <app-icon name="phone" class="app-icon-inline"></app-icon> {{ p.telefono_cliente }}</span>
             </p>
           </div>
 
           <!-- Tabla de Desglose de Platos -->
           <div style="margin-bottom: 1.5rem;">
-            <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem;">🍽️ Platos Ordenados</h4>
+            <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem;"><app-icon name="utensils" class="app-icon-inline"></app-icon> Platos Ordenados</h4>
             <div style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                 <thead>
@@ -115,7 +116,7 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
           <!-- Observaciones -->
           <div *ngIf="p.observaciones" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem;">
             <h4 style="margin: 0 0 0.25rem 0; font-size: 0.85rem; color: #b45309; text-transform: uppercase;">
-              📝 Observaciones del comensal
+              <app-icon name="receipt" class="app-icon-inline"></app-icon> Observaciones del comensal
             </h4>
             <p style="margin: 0; color: #78350f; font-size: 0.95rem;">{{ p.observaciones }}</p>
           </div>

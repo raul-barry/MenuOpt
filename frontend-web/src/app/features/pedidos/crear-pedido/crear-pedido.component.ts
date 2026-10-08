@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU23 - Enviar pedido
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -16,7 +17,7 @@ import { CartItem, PedidoCrear } from '../../../core/models/pedido.model';
 @Component({
   selector: 'app-crear-pedido',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './crear-pedido.component.html',
   styleUrls: ['./crear-pedido.component.css']
 })

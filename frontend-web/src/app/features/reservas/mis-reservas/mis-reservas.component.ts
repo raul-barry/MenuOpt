@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU21 - Consultar y cancelar mis reservas (Cliente)
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,18 +10,18 @@ import { ReservaRespuesta } from '../../../core/models/reserva.model';
 @Component({
   selector: 'app-mis-reservas',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   template: `
     <div class="card">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h2 style="margin: 0; font-size: 1.4rem;">📅 Mis Reservas</h2>
+          <h2 style="margin: 0; font-size: 1.4rem;"><app-icon name="calendar" class="app-icon-inline"></app-icon> Mis Reservas</h2>
           <p style="margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.875rem;">
             Supervise sus reservas gastronómicas activas, pasadas y canceladas.
           </p>
         </div>
         <a routerLink="/restaurantes" class="btn btn-primary btn-sm">
-          ➕ Nueva Reserva
+          <app-icon name="plus" class="app-icon-inline"></app-icon> Nueva Reserva
         </a>
       </div>
 
@@ -70,7 +71,7 @@ import { ReservaRespuesta } from '../../../core/models/reserva.model';
 
         <!-- Indicador de Carga -->
         <div *ngIf="cargando()" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          ⏳ Cargando sus reservas...
+          <app-icon name="loader" class="app-icon-inline"></app-icon> Cargando sus reservas...
         </div>
 
         <!-- Listado de Reservas -->
@@ -104,10 +105,10 @@ import { ReservaRespuesta } from '../../../core/models/reserva.model';
                   </span>
                 </td>
                 <td style="padding: 0.75rem;">
-                  📅 {{ r.fecha_reserva }}<br />
-                  <small style="color: var(--text-muted);">⏰ {{ r.hora_inicio.substring(0, 5) }} - {{ r.hora_fin.substring(0, 5) }}</small>
+                  <app-icon name="calendar" class="app-icon-inline"></app-icon> {{ r.fecha_reserva }}<br />
+                  <small style="color: var(--text-muted);"><app-icon name="clock" class="app-icon-inline"></app-icon> {{ r.hora_inicio.substring(0, 5) }} - {{ r.hora_fin.substring(0, 5) }}</small>
                 </td>
-                <td style="padding: 0.75rem;">👥 {{ r.cantidad_personas }}</td>
+                <td style="padding: 0.75rem;"><app-icon name="users" class="app-icon-inline"></app-icon> {{ r.cantidad_personas }}</td>
                 <td style="padding: 0.75rem;">
                   <span
                     class="badge"
@@ -139,7 +140,7 @@ import { ReservaRespuesta } from '../../../core/models/reserva.model';
 
         <!-- Estado vacío -->
         <div *ngIf="!cargando() && getReservasFiltradas().length === 0" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-          <div style="font-size: 3rem; margin-bottom: 0.5rem;">📅</div>
+          <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="calendar" class="app-icon-inline"></app-icon></div>
           <h4>No tiene reservas {{ filtroEstado() !== 'TODAS' ? 'con estado ' + filtroEstado() : 'registradas' }}</h4>
           <p style="font-size: 0.85rem; margin-bottom: 1rem;">
             Explore los restaurantes disponibles y reserve una mesa con anticipación.

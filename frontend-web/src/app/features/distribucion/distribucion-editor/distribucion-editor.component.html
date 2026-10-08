@@ -5,7 +5,7 @@
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
         <a [routerLink]="['/restaurantes']" class="btn btn-sm btn-outline" style="padding: 0.2rem 0.5rem;">&larr; Restaurantes</a>
         <h2 style="margin: 0; font-size: 1.4rem;">
-          🗺️ Plano 2D y Mesas &mdash; {{ restaurante()?.nombre || 'Restaurante #' + restauranteId() }}
+          <app-icon name="map" class="app-icon-inline"></app-icon> Plano 2D y Mesas &mdash; {{ restaurante()?.nombre || 'Restaurante #' + restauranteId() }}
         </h2>
       </div>
       <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem;">
@@ -15,7 +15,7 @@
 
     <div style="display: flex; gap: 0.5rem; align-items: center;">
       <button class="btn btn-primary btn-sm" (click)="abrirModalNuevaArea()">
-        <span>➕</span> Nueva Área
+        <span><app-icon name="plus" class="app-icon-inline"></app-icon></span> Nueva Área
       </button>
     </div>
   </div>
@@ -36,7 +36,7 @@
       [class.active]="areaSeleccionada()?.id_area === area.id_area"
       (click)="seleccionarArea(area)"
     >
-      <span>🏢 {{ area.nombre }}</span>
+      <span><app-icon name="store" class="app-icon-inline"></app-icon> {{ area.nombre }}</span>
       <span class="tab-badge">{{ contarMesasArea(area.id_area) }} mesas</span>
       <button
         *ngIf="areaSeleccionada()?.id_area === area.id_area"
@@ -45,7 +45,7 @@
         title="Editar propiedades del área"
         (click)="abrirModalEditarArea(area); $event.stopPropagation();"
       >
-        ✏️
+        <app-icon name="edit" class="app-icon-inline"></app-icon>
       </button>
     </div>
 
@@ -54,7 +54,7 @@
       class="btn btn-outline btn-sm"
       (click)="abrirModalNuevaArea()"
     >
-      ➕ Crear primer área
+      <app-icon name="plus" class="app-icon-inline"></app-icon> Crear primer área
     </button>
   </div>
 
@@ -67,21 +67,21 @@
         [class.active]="subtabActiva() === 'canvas'"
         (click)="cambiarSubtab('canvas')"
       >
-        <span>📐</span> Plano 2D Interactivo
+        <span><app-icon name="ruler" class="app-icon-inline"></app-icon></span> Plano 2D Interactivo
       </button>
       <button
         class="view-subtab-btn"
         [class.active]="subtabActiva() === 'mesas'"
         (click)="cambiarSubtab('mesas')"
       >
-        <span>📋</span> Gestión de Mesas ({{ mesas().length }})
+        <span><app-icon name="list" class="app-icon-inline"></app-icon></span> Gestión de Mesas ({{ mesas().length }})
       </button>
       <button
         class="view-subtab-btn"
         [class.active]="subtabActiva() === 'combinaciones'"
         (click)="cambiarSubtab('combinaciones')"
       >
-        <span>🔗</span> Combinaciones de Mesas ({{ combinaciones().length }})
+        <span><app-icon name="link" class="app-icon-inline"></app-icon></span> Combinaciones de Mesas ({{ combinaciones().length }})
       </button>
     </div>
 
@@ -95,28 +95,28 @@
             [disabled]="!hayCambios() || guardandoDistribucion()"
             (click)="guardarDistribucion()"
           >
-            <span *ngIf="!guardandoDistribucion()">💾 Guardar Distribución</span>
-            <span *ngIf="guardandoDistribucion()">⏳ Guardando...</span>
+            <span *ngIf="!guardandoDistribucion()"><app-icon name="save" class="app-icon-inline"></app-icon> Guardar Distribución</span>
+            <span *ngIf="guardandoDistribucion()"><app-icon name="loader" class="app-icon-inline"></app-icon> Guardando...</span>
           </button>
 
           <span *ngIf="hayCambios()" class="dirty-indicator">
-            ⚠️ Cambios pendientes de guardar
+            <app-icon name="alert" class="app-icon-inline"></app-icon> Cambios pendientes de guardar
           </span>
 
           <span *ngIf="!hayCambios() && mesas().length > 0" style="font-size: 0.8rem; color: var(--success); font-weight: 500;">
-            ✓ Distribución sincronizada
+            <app-icon name="check" class="app-icon-inline"></app-icon> Distribución sincronizada
           </span>
         </div>
 
         <div class="canvas-toolbar-group">
           <button class="btn btn-outline btn-sm" (click)="abrirModalNuevaMesa()">
-            <span>➕</span> Agregar Mesa
+            <span><app-icon name="plus" class="app-icon-inline"></app-icon></span> Agregar Mesa
           </button>
           <button class="btn btn-secondary btn-sm" (click)="abrirModalGenerar()">
-            <span>⚡</span> Generar Automática
+            <span><app-icon name="zap" class="app-icon-inline"></app-icon></span> Generar Automática
           </button>
           <button class="btn btn-outline btn-sm" (click)="restablecerDistribucion()" [disabled]="mesas().length === 0">
-            <span>🔄</span> Restablecer Cuadrícula
+            <span><app-icon name="refresh" class="app-icon-inline"></app-icon></span> Restablecer Cuadrícula
           </button>
         </div>
       </div>
@@ -135,17 +135,17 @@
             *ngIf="mesas().length === 0"
             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted);"
           >
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;">📐</div>
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="ruler" class="app-icon-inline"></app-icon></div>
             <h4 style="margin-bottom: 0.25rem;">Esta área aún no tiene mesas configuradas</h4>
             <p style="font-size: 0.85rem; margin-bottom: 1rem;">
               Puede generar una distribución inicial automática o agregar mesas manualmente.
             </p>
             <div style="display: flex; gap: 0.5rem; justify-content: center;">
               <button class="btn btn-primary btn-sm" (click)="abrirModalGenerar()">
-                ⚡ Generar Cuadrícula Automática
+                <app-icon name="zap" class="app-icon-inline"></app-icon> Generar Cuadrícula Automática
               </button>
               <button class="btn btn-outline btn-sm" (click)="abrirModalNuevaMesa()">
-                ➕ Agregar Mesa Manual
+                <app-icon name="plus" class="app-icon-inline"></app-icon> Agregar Mesa Manual
               </button>
             </div>
           </div>
@@ -170,10 +170,10 @@
           >
             <div class="mesa-content" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
               <span class="mesa-numero">{{ mesa.numero }}</span>
-              <span class="mesa-capacidad">👥 {{ mesa.capacidad }}p</span>
+              <span class="mesa-capacidad"><app-icon name="users" class="app-icon-inline"></app-icon> {{ mesa.capacidad }}p</span>
               <div class="mesa-badges">
-                <span *ngIf="mesa.es_fija" class="badge-mini" title="Mesa fija">🔒</span>
-                <span *ngIf="mesa.combinable" class="badge-mini" title="Combinable">🔗</span>
+                <span *ngIf="mesa.es_fija" class="badge-mini" title="Mesa fija"><app-icon name="lock" class="app-icon-inline"></app-icon></span>
+                <span *ngIf="mesa.combinable" class="badge-mini" title="Combinable"><app-icon name="link" class="app-icon-inline"></app-icon></span>
               </div>
             </div>
           </div>
@@ -189,7 +189,7 @@
           </div>
           <div>
             <span class="badge" style="background: var(--surface); border: 1px solid var(--border);">
-              👥 {{ selMesa.capacidad }} personas
+              <app-icon name="users" class="app-icon-inline"></app-icon> {{ selMesa.capacidad }} personas
             </span>
           </div>
           <div>
@@ -204,19 +204,19 @@
           </div>
           <div>
             <span class="badge" [class.badge-warning]="selMesa.es_fija" [class.badge-success]="!selMesa.es_fija">
-              {{ selMesa.es_fija ? '🔒 Fija' : 'Movible' }}
+              {{ selMesa.es_fija ? ' Fija' : 'Movible' }}
             </span>
           </div>
           <div>
             <span class="badge" [class.badge-info]="selMesa.combinable" [class.badge-secondary]="!selMesa.combinable">
-              {{ selMesa.combinable ? '🔗 Combinable' : 'Individual' }}
+              {{ selMesa.combinable ? ' Combinable' : 'Individual' }}
             </span>
           </div>
         </div>
 
         <div class="inspector-actions">
           <button class="btn btn-outline btn-sm" (click)="rotarMesa90(selMesa)" title="Rotar 90 grados">
-            🔄 Rotar 90°
+            <app-icon name="refresh" class="app-icon-inline"></app-icon> Rotar 90°
           </button>
           <button class="btn btn-outline btn-sm" (click)="toggleFija(selMesa)">
             {{ selMesa.es_fija ? 'Hacer Movible' : 'Fijar Posición' }}
@@ -225,10 +225,10 @@
             {{ selMesa.combinable ? 'Desmarcar Combinable' : 'Hacer Combinable' }}
           </button>
           <button class="btn btn-outline btn-sm" (click)="abrirModalEditarMesa(selMesa)">
-            ✏️ Editar
+            <app-icon name="edit" class="app-icon-inline"></app-icon> Editar
           </button>
           <button class="btn btn-danger btn-sm" (click)="desactivarMesa(selMesa)">
-            🗑️ Eliminar
+            <app-icon name="trash" class="app-icon-inline"></app-icon> Eliminar
           </button>
         </div>
       </div>
@@ -248,10 +248,10 @@
           <span>Rectangular</span>
         </div>
         <div class="legend-item">
-          <span>🔒 Mesa fija (no arrastrable)</span>
+          <span><app-icon name="lock" class="app-icon-inline"></app-icon> Mesa fija (no arrastrable)</span>
         </div>
         <div class="legend-item">
-          <span>🔗 Apta para combinar (CU19)</span>
+          <span><app-icon name="link" class="app-icon-inline"></app-icon> Apta para combinar (CU19)</span>
         </div>
         <div class="legend-item">
           <span>Coordenadas normalizadas $[0.0, 1.0]$ adaptables a cualquier pantalla</span>
@@ -264,7 +264,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3>Mesas en {{ areaActual.nombre }}</h3>
         <button class="btn btn-primary btn-sm" (click)="abrirModalNuevaMesa()">
-          ➕ Nueva Mesa
+          <app-icon name="plus" class="app-icon-inline"></app-icon> Nueva Mesa
         </button>
       </div>
 
@@ -288,7 +288,7 @@
             <tr *ngFor="let m of mesas()" style="border-bottom: 1px solid var(--border);">
               <td style="padding: 0.5rem; font-weight: 600;">{{ m.numero }}</td>
               <td style="padding: 0.5rem; color: var(--text-muted);">{{ m.nombre || '-' }}</td>
-              <td style="padding: 0.5rem;">👥 {{ m.capacidad }} personas</td>
+              <td style="padding: 0.5rem;"><app-icon name="users" class="app-icon-inline"></app-icon> {{ m.capacidad }} personas</td>
               <td style="padding: 0.5rem;">{{ m.forma }}</td>
               <td style="padding: 0.5rem;">{{ m.rotacion }}°</td>
               <td style="padding: 0.5rem;">
@@ -311,10 +311,10 @@
               </td>
               <td style="padding: 0.5rem; text-align: right;">
                 <button class="btn btn-outline btn-xs" style="margin-right: 0.25rem;" (click)="abrirModalEditarMesa(m)">
-                  ✏️
+                  <app-icon name="edit" class="app-icon-inline"></app-icon>
                 </button>
                 <button class="btn btn-danger btn-xs" (click)="desactivarMesa(m)">
-                  🗑️
+                  <app-icon name="trash" class="app-icon-inline"></app-icon>
                 </button>
               </td>
             </tr>
@@ -338,7 +338,7 @@
           </p>
         </div>
         <button class="btn btn-primary btn-sm" (click)="abrirModalNuevaCombinacion()">
-          ➕ Nueva Combinación
+          <app-icon name="plus" class="app-icon-inline"></app-icon> Nueva Combinación
         </button>
       </div>
 
@@ -362,13 +362,13 @@
               <td style="padding: 0.5rem; font-weight: 600;">{{ c.numero_mesa_destino || 'Mesa #' + c.id_mesa_destino }}</td>
               <td style="padding: 0.5rem;">
                 <span class="badge badge-success" style="font-size: 0.85rem;">
-                  👥 {{ c.capacidad_total || 'N/A' }} personas
+                  <app-icon name="users" class="app-icon-inline"></app-icon> {{ c.capacidad_total || 'N/A' }} personas
                 </span>
               </td>
               <td style="padding: 0.5rem; color: var(--text-muted);">{{ c.descripcion || '-' }}</td>
               <td style="padding: 0.5rem;">
                 <span class="badge" style="background: #e0f2fe; color: #0369a1;">
-                  ↔️ Bidireccional
+                  <app-icon name="move" class="app-icon-inline"></app-icon> Bidireccional
                 </span>
               </td>
               <td style="padding: 0.5rem;">
@@ -382,7 +382,7 @@
                   (click)="desactivarCombinacion(c)"
                   title="Desactivar combinación"
                 >
-                  🗑️ Eliminar
+                  <app-icon name="trash" class="app-icon-inline"></app-icon> Eliminar
                 </button>
               </td>
             </tr>
@@ -400,13 +400,13 @@
   <!-- Template cuando no hay área seleccionada -->
   <ng-template #sinAreaTemplate>
     <div style="text-align: center; padding: 4rem 2rem; background: #f8fafc; border-radius: var(--radius); border: 2px dashed var(--border);">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">🏢</div>
+      <div style="font-size: 3rem; margin-bottom: 1rem;"><app-icon name="store" class="app-icon-inline"></app-icon></div>
       <h3>No hay áreas registradas para este restaurante</h3>
       <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem;">
         Para configurar el plano 2D, comience creando las áreas de su restaurante (por ejemplo: Salón Principal, Terraza, Planta Alta).
       </p>
       <button class="btn btn-primary" (click)="abrirModalNuevaArea()">
-        ➕ Crear Primera Área
+        <app-icon name="plus" class="app-icon-inline"></app-icon> Crear Primera Área
       </button>
     </div>
   </ng-template>
@@ -567,11 +567,11 @@
         <div style="display: flex; gap: 1.5rem; margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: var(--radius);">
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" [(ngModel)]="formMesa.es_fija" name="esFijaMesa" />
-            <span>🔒 Mesa fija (no reubicable)</span>
+            <span><app-icon name="lock" class="app-icon-inline"></app-icon> Mesa fija (no reubicable)</span>
           </label>
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" [(ngModel)]="formMesa.combinable" name="combinableMesa" />
-            <span>🔗 Apta para combinación (CU19)</span>
+            <span><app-icon name="link" class="app-icon-inline"></app-icon> Apta para combinación (CU19)</span>
           </label>
         </div>
       </div>
@@ -589,7 +589,7 @@
 <div *ngIf="modalGenerarVisible()" class="modal-backdrop" (click)="cerrarModalGenerar()">
   <div class="modal-dialog" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3 style="margin: 0;">⚡ Generar Distribución Automática</h3>
+      <h3 style="margin: 0;"><app-icon name="zap" class="app-icon-inline"></app-icon> Generar Distribución Automática</h3>
       <button class="close-btn" (click)="cerrarModalGenerar()">&times;</button>
     </div>
     <form (ngSubmit)="ejecutarGeneracion()">
@@ -671,7 +671,7 @@
 <div *ngIf="modalCombinacionVisible()" class="modal-backdrop" (click)="cerrarModalCombinacion()">
   <div class="modal-dialog" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3 style="margin: 0;">🔗 Nueva Combinación de Mesas</h3>
+      <h3 style="margin: 0;"><app-icon name="link" class="app-icon-inline"></app-icon> Nueva Combinación de Mesas</h3>
       <button class="close-btn" (click)="cerrarModalCombinacion()">&times;</button>
     </div>
     <form (ngSubmit)="guardarCombinacion()">
@@ -716,7 +716,7 @@
         </div>
 
         <div *ngIf="capacidadCombinadaPreview > 0" class="alert alert-info" style="margin-bottom: 1rem; padding: 0.5rem 0.75rem; font-size: 0.85rem;">
-          👥 Capacidad total combinada resultante: <strong>{{ capacidadCombinadaPreview }} comensales</strong>
+          <app-icon name="users" class="app-icon-inline"></app-icon> Capacidad total combinada resultante: <strong>{{ capacidadCombinadaPreview }} comensales</strong>
         </div>
 
         <div style="margin-bottom: 1rem;">
@@ -749,7 +749,7 @@
 <div *ngIf="modalConfirmarCambioAreaVisible()" class="modal-backdrop">
   <div class="modal-dialog">
     <div class="modal-header">
-      <h3 style="margin: 0; color: var(--warning);">⚠️ Cambios sin guardar</h3>
+      <h3 style="margin: 0; color: var(--warning);"><app-icon name="alert" class="app-icon-inline"></app-icon> Cambios sin guardar</h3>
     </div>
     <div class="modal-body">
       <p>Ha realizado modificaciones en las posiciones del plano 2D que aún no han sido guardadas.</p>

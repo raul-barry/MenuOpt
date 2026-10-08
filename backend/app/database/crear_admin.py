@@ -1,12 +1,50 @@
-"""
-Script auxiliar para sembrar de forma idempotente usuarios de prueba iniciales
-(ADMINISTRADOR y usuarios con rol RESTAURANTE) y catálogo base de preferencias.
-"""
+﻿"""Siembra las cuentas de prueba del README y el catálogo base de preferencias."""
 from app.database.conexion import SessionLocal
 from app.models.usuario import Usuario
 from app.models.rol import Rol
 from app.models.preferencia import Preferencia
-from app.security.contrasenas import generar_hash_contrasena
+from app.security.contrasenas import generar_hash_contrasena, verificar_contrasena
+
+USUARIOS_DE_PRUEBA = [
+    ("Administrador", "Principal", "admin@menuopt.com", "Admin1234*", "ADMINISTRADOR", "70000000"),
+    ("Carlos", "Chef", "restaurante@menuopt.com", "Resto1234*", "RESTAURANTE", "71112233"),
+    ("Laura", "Gerente", "restaurante2@menuopt.com", "Resto1234*", "RESTAURANTE", "72223344"),
+    ("Cliente", "Uno", "cliente1@menuopt.com", "Cliente1234*", "CLIENTE", "73334455"),
+    ("Cliente", "Dos", "cliente2@menuopt.com", "Cliente1234*", "CLIENTE", "74445566"),
+]
+
+
+def sembrar_usuarios_de_prueba(db):
+    """Crea las cuentas documentadas y repara sus credenciales al repetir el seed."""
+    for nombres, apellidos, correo, contrasena, nombre_rol, telefono in USUARIOS_DE_PRUEBA:
+        rol = db.query(Rol).filter(Rol.nombre == nombre_rol).first()
+        if not rol:
+            print(f"[ERROR] No existe el rol {nombre_rol}; no se pudo sembrar {correo}.")
+            continue
+
+        usuario = db.query(Usuario).filter(Usuario.correo == correo).first()
+        if not usuario:
+            usuario = Usuario(
+                nombres=nombres,
+                apellidos=apellidos,
+                correo=correo,
+                contrasena_hash=generar_hash_contrasena(contrasena),
+                telefono=telefono,
+                estado="ACTIVO",
+                id_rol=rol.id_rol,
+            )
+            db.add(usuario)
+        else:
+            # El seed restaura expresamente las cuentas de demostración al estado documentado.
+            usuario.nombres = nombres
+            usuario.apellidos = apellidos
+            usuario.telefono = telefono
+            usuario.estado = "ACTIVO"
+            usuario.id_rol = rol.id_rol
+            if not verificar_contrasena(contrasena, usuario.contrasena_hash):
+                usuario.contrasena_hash = generar_hash_contrasena(contrasena)
+        print(f"[OK] Cuenta de prueba lista: {correo}")
+    db.commit()
 
 
 def sembrar_preferencias_iniciales(db):
@@ -21,13 +59,12 @@ def sembrar_preferencias_iniciales(db):
     for pref_data in preferencias_base:
         existente = db.query(Preferencia).filter(Preferencia.nombre == pref_data["nombre"]).first()
         if not existente:
-            nueva = Preferencia(
+            db.add(Preferencia(
                 nombre=pref_data["nombre"],
                 tipo=pref_data["tipo"],
                 descripcion=pref_data["descripcion"],
-                activo=True
-            )
-            db.add(nueva)
+                activo=True,
+            ))
             print(f"[OK] Preferencia creada: {pref_data['nombre']}")
         else:
             print(f"[INFO] Preferencia '{pref_data['nombre']}' ya existe.")
@@ -37,69 +74,8 @@ def sembrar_preferencias_iniciales(db):
 def sembrar_usuarios_iniciales():
     db = SessionLocal()
     try:
-        # 1. Sembrar Administrador
-        correo_admin = "admin@menuopt.com"
-        admin_existente = db.query(Usuario).filter(Usuario.correo == correo_admin).first()
-        if not admin_existente:
-            rol_admin = db.query(Rol).filter(Rol.nombre == "ADMINISTRADOR").first()
-            if rol_admin:
-                nuevo_admin = Usuario(
-                    nombres="Administrador",
-                    apellidos="Principal",
-                    correo=correo_admin,
-                    contrasena_hash=generar_hash_contrasena("Admin1234*"),
-                    telefono="70000000",
-                    estado="ACTIVO",
-                    id_rol=rol_admin.id_rol
-                )
-                db.add(nuevo_admin)
-                db.commit()
-                print(f"[OK] Usuario administrador creado: {correo_admin} (contraseña: Admin1234*)")
-        else:
-            print(f"[INFO] Administrador '{correo_admin}' ya existe.")
-
-        # 2. Sembrar Usuario Restaurante 1 (para pruebas CU05-CU10)
-        correo_resto = "restaurante@menuopt.com"
-        resto_existente = db.query(Usuario).filter(Usuario.correo == correo_resto).first()
-        rol_resto = db.query(Rol).filter(Rol.nombre == "RESTAURANTE").first()
-        if not resto_existente and rol_resto:
-            nuevo_resto = Usuario(
-                nombres="Carlos",
-                apellidos="Chef",
-                correo=correo_resto,
-                contrasena_hash=generar_hash_contrasena("Resto1234*"),
-                telefono="71112233",
-                estado="ACTIVO",
-                id_rol=rol_resto.id_rol
-            )
-            db.add(nuevo_resto)
-            db.commit()
-            print(f"[OK] Usuario restaurante 1 creado: {correo_resto} (contraseña: Resto1234*)")
-        else:
-            print(f"[INFO] Usuario restaurante 1 '{correo_resto}' ya existe.")
-
-        # 3. Sembrar Usuario Restaurante 2 (para probar restricción de propiedad ajena 403)
-        correo_resto2 = "restaurante2@menuopt.com"
-        resto2_existente = db.query(Usuario).filter(Usuario.correo == correo_resto2).first()
-        if not resto2_existente and rol_resto:
-            nuevo_resto2 = Usuario(
-                nombres="Laura",
-                apellidos="Gerente",
-                correo=correo_resto2,
-                contrasena_hash=generar_hash_contrasena("Resto1234*"),
-                telefono="72223344",
-                estado="ACTIVO",
-                id_rol=rol_resto.id_rol
-            )
-            db.add(nuevo_resto2)
-            db.commit()
-            print(f"[OK] Usuario restaurante 2 creado: {correo_resto2} (contraseña: Resto1234*)")
-        else:
-            print(f"[INFO] Usuario restaurante 2 '{correo_resto2}' ya existe.")
-
-        # 4. Sembrar Preferencias Base (CU12)
+        sembrar_usuarios_de_prueba(db)
         sembrar_preferencias_iniciales(db)
-
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Error al sembrar datos iniciales: {str(e)}")

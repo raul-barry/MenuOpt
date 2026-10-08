@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU20 - Consultar disponibilidad & CU21 - Realizar reserva
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-nueva-reserva',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './nueva-reserva.component.html',
   styleUrls: ['./nueva-reserva.component.css']
 })

@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU13 - Detalle de Recomendación
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { Recomendacion } from '../../../core/models/recomendacion.model';
 @Component({
   selector: 'app-detalle-recomendacion',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div class="detalle-rec-container">
       <div *ngIf="recomendacion() as rec" style="margin-bottom: 1rem;">
@@ -75,7 +76,7 @@ import { Recomendacion } from '../../../core/models/recomendacion.model';
               class="btn btn-primary btn-sm"
               title="Reservar mesa para esta recomendación gastronómica (CU20, CU21)"
             >
-              <span>📅</span> Reservar Mesa
+              <span><app-icon name="calendar" class="app-icon-inline"></app-icon></span> Reservar Mesa
             </a>
           </div>
 
@@ -114,10 +115,10 @@ import { Recomendacion } from '../../../core/models/recomendacion.model';
 
           <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <a [routerLink]="['/recomendaciones', rec.id_recomendacion, 'preparacion']" class="btn btn-primary">
-              🥗 Consultar Ingredientes Escalados (CU15)
+              <app-icon name="salad" class="app-icon-inline"></app-icon> Consultar Ingredientes Escalados (CU15)
             </a>
             <a [routerLink]="['/recomendaciones', rec.id_recomendacion, 'lugares-compra']" class="btn btn-outline">
-              🏪 Consultar Lugares de Compra (CU16)
+              <app-icon name="store" class="app-icon-inline"></app-icon> Consultar Lugares de Compra (CU16)
             </a>
           </div>
         </div>

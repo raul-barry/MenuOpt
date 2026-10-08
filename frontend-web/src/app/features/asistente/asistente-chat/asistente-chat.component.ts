@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU26 - Asistente MenuOpt con IA
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -16,7 +17,7 @@ import { PlanificacionCrear } from '../../../core/models/planificacion.model';
 @Component({
   selector: 'app-asistente-chat',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './asistente-chat.component.html',
   styleUrls: ['./asistente-chat.component.css']
 })
@@ -133,7 +134,7 @@ export class AsistenteChatComponent implements OnInit {
         this.error.set(errMsg);
         this.mensajes.set([...this.mensajes(), {
           emisor: 'asistente',
-          texto: '⚠️ ' + errMsg,
+          texto: ' ' + errMsg,
           fecha: new Date(),
           interpretacion: null
         }]);

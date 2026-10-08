@@ -4,7 +4,7 @@
     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
       <a [routerLink]="['/restaurantes']" class="btn btn-sm btn-outline" style="padding: 0.2rem 0.5rem;">&larr; Volver</a>
       <h2 style="margin: 0; font-size: 1.4rem;">
-        📅 Reservar Mesa &mdash; {{ restaurante()?.nombre || 'Restaurante #' + restauranteId() }}
+        <app-icon name="calendar" class="app-icon-inline"></app-icon> Reservar Mesa &mdash; {{ restaurante()?.nombre || 'Restaurante #' + restauranteId() }}
       </h2>
     </div>
     <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem;">
@@ -38,7 +38,7 @@
         >
           <option [ngValue]="null">Seleccione un área</option>
           <option *ngFor="let a of areas()" [ngValue]="a.id_area">
-            🏢 {{ a.nombre }}
+            <app-icon name="store" class="app-icon-inline"></app-icon> {{ a.nombre }}
           </option>
         </select>
       </div>
@@ -102,8 +102,8 @@
           [disabled]="!filtroArea || !filtroFecha || !filtroHoraInicio || !filtroHoraFin || filtroPersonas < 1 || consultando()"
           (click)="consultarDisponibilidad()"
         >
-          <span *ngIf="!consultando()">🔍 Ver Mesas Disponibles</span>
-          <span *ngIf="consultando()">⏳ Consultando...</span>
+          <span *ngIf="!consultando()"><app-icon name="search" class="app-icon-inline"></app-icon> Ver Mesas Disponibles</span>
+          <span *ngIf="consultando()"><app-icon name="loader" class="app-icon-inline"></app-icon> Consultando...</span>
         </button>
       </div>
     </div>
@@ -111,7 +111,7 @@
 
   <!-- Indicador si los filtros cambiaron tras una consulta previa -->
   <div *ngIf="filtrosModificados() && disponibilidad()" class="alert alert-warning" style="margin-bottom: 1rem; font-size: 0.85rem;">
-    ⚠️ Ha modificado los filtros de búsqueda. Pulse "Ver Mesas Disponibles" para actualizar el mapa.
+    <app-icon name="alert" class="app-icon-inline"></app-icon> Ha modificado los filtros de búsqueda. Pulse "Ver Mesas Disponibles" para actualizar el mapa.
   </div>
 
   <!-- Sección de Mapa 2D de Disponibilidad -->
@@ -158,13 +158,13 @@
         >
           <div class="mesa-content" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
             <span class="mesa-numero">{{ mesa.numero }}</span>
-            <span class="mesa-capacidad">👥 {{ mesa.capacidad }}p</span>
+            <span class="mesa-capacidad"><app-icon name="users" class="app-icon-inline"></app-icon> {{ mesa.capacidad }}p</span>
 
             <span
               *ngIf="estaMesaSeleccionada(mesa.id_mesa)"
               class="mesa-estado-tag tag-seleccionada"
             >
-              ✓ Elegida
+              <app-icon name="check" class="app-icon-inline"></app-icon> Elegida
             </span>
             <span
               *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && mesa.estado_disponibilidad === 'DISPONIBLE'"
@@ -192,7 +192,7 @@
     <!-- Opciones de Combinaciones de Mesas (CU20, CU21) -->
     <div *ngIf="disp.combinaciones.length > 0" class="combinaciones-panel">
       <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">
-        🔗 Combinaciones de Mesas Disponibles (Grupos Mayores)
+        <app-icon name="link" class="app-icon-inline"></app-icon> Combinaciones de Mesas Disponibles (Grupos Mayores)
       </h4>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
         Si su grupo supera la capacidad de una mesa individual, puede optar por una de las combinaciones autorizadas por el establecimiento:
@@ -207,7 +207,7 @@
         <div>
           <strong>Mesas {{ comb.numeros_mesas.join(' + ') }}</strong>
           <span style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
-            (Capacidad conjunta: 👥 {{ comb.capacidad_total }} personas)
+            (Capacidad conjunta: <app-icon name="users" class="app-icon-inline"></app-icon> {{ comb.capacidad_total }} personas)
           </span>
           <span *ngIf="comb.descripcion" style="display: block; font-size: 0.75rem; color: var(--text-muted);">
             {{ comb.descripcion }}
@@ -222,7 +222,7 @@
             [class.btn-outline]="!esCombinacionSeleccionada(comb)"
             (click)="seleccionarCombinacion(comb)"
           >
-            {{ esCombinacionSeleccionada(comb) ? '✓ Seleccionada' : 'Seleccionar Combinación' }}
+            {{ esCombinacionSeleccionada(comb) ? ' Seleccionada' : 'Seleccionar Combinación' }}
           </button>
           <span *ngIf="!comb.disponible" class="badge badge-danger" style="font-size: 0.75rem;">
             No disponible (mesa reservada)
@@ -237,7 +237,7 @@
     <!-- Panel de Resumen y Confirmación de Reserva (CU21) -->
     <div *ngIf="mesasSeleccionadasIds.length > 0" class="resumen-card">
       <h3 style="margin: 0; font-size: 1.2rem; color: var(--primary);">
-        📝 Resumen de la Reserva
+        <app-icon name="receipt" class="app-icon-inline"></app-icon> Resumen de la Reserva
       </h3>
 
       <div class="resumen-grid">
@@ -262,7 +262,7 @@
         </div>
         <div>
           <strong>Comensales:</strong><br />
-          👥 {{ disp.cantidad_personas }} personas
+          <app-icon name="users" class="app-icon-inline"></app-icon> {{ disp.cantidad_personas }} personas
         </div>
       </div>
 
@@ -286,8 +286,8 @@
           [disabled]="confirmandoReserva()"
           (click)="confirmarReserva()"
         >
-          <span *ngIf="!confirmandoReserva()">✓ Confirmar Reserva</span>
-          <span *ngIf="confirmandoReserva()">⏳ Procesando reserva...</span>
+          <span *ngIf="!confirmandoReserva()"><app-icon name="check" class="app-icon-inline"></app-icon> Confirmar Reserva</span>
+          <span *ngIf="confirmandoReserva()"><app-icon name="loader" class="app-icon-inline"></app-icon> Procesando reserva...</span>
         </button>
       </div>
     </div>
@@ -295,7 +295,7 @@
 
   <!-- Estado Inicial: Aún no se ha consultado -->
   <div *ngIf="!disponibilidad() && !consultando()" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🗺️</div>
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="map" class="app-icon-inline"></app-icon></div>
     <h4>Complete los datos superiores y pulse "Ver Mesas Disponibles"</h4>
     <p style="font-size: 0.85rem; max-width: 500px; margin: 0 auto;">
       El mapa se cargará de forma interactiva indicando qué mesas están libres en el horario elegido, cuáles están ocupadas y cuáles admiten la cantidad de personas solicitada.

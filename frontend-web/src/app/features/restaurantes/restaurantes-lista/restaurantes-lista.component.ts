@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -12,7 +13,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
 @Component({
   selector: 'app-restaurantes-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [AppIconComponent, CommonModule, RouterLink],
   template: `
     <div>
       <div class="card-header" style="border: none; padding: 0; margin-bottom: 1.5rem;">
@@ -23,7 +24,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
           </p>
         </div>
         <a routerLink="/restaurantes/nuevo" class="btn btn-primary">
-          <span>➕</span> Registrar Restaurante
+          <span><app-icon name="plus" class="app-icon-inline"></app-icon></span> Registrar Restaurante
         </a>
       </div>
 
@@ -46,30 +47,30 @@ import { Restaurante } from '../../../core/models/restaurante.model';
           </p>
 
           <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-            <p>📍 <strong>Ubicación:</strong> {{ r.ubicacion?.direccion }}, {{ r.ubicacion?.ciudad }} (Zona {{ r.ubicacion?.zona || 'Central' }})</p>
-            <p>📞 <strong>Contacto:</strong> {{ r.telefono || 'No registrado' }} | ✉️ {{ r.correo || 'No registrado' }}</p>
-            <p>⏰ <strong>Horario:</strong> {{ r.horario_apertura || '08:00' }} - {{ r.horario_cierre || '22:00' }}</p>
+            <p><app-icon name="pin" class="app-icon-inline"></app-icon> <strong>Ubicación:</strong> {{ r.ubicacion?.direccion }}, {{ r.ubicacion?.ciudad }} (Zona {{ r.ubicacion?.zona || 'Central' }})</p>
+            <p><app-icon name="phone" class="app-icon-inline"></app-icon> <strong>Contacto:</strong> {{ r.telefono || 'No registrado' }} | <app-icon name="mail" class="app-icon-inline"></app-icon> {{ r.correo || 'No registrado' }}</p>
+            <p><app-icon name="clock" class="app-icon-inline"></app-icon> <strong>Horario:</strong> {{ r.horario_apertura || '08:00' }} - {{ r.horario_cierre || '22:00' }}</p>
           </div>
 
           <div class="d-flex justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <div class="d-flex gap-2" style="flex-wrap: wrap;">
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'reservar']" class="btn btn-primary btn-sm" title="Reservar mesa en este restaurante (CU20, CU21)">
-                <span>📅</span> Reservar
+                <span><app-icon name="calendar" class="app-icon-inline"></app-icon></span> Reservar
               </a>
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'pedido']" class="btn btn-success btn-sm" title="Enviar pedido gastronómico (CU23)">
-                <span>🛒</span> Pedir
+                <span><app-icon name="cart" class="app-icon-inline"></app-icon></span> Pedir
               </a>
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'platos']" class="btn btn-outline btn-sm">
-                <span>📋</span> Carta
+                <span><app-icon name="list" class="app-icon-inline"></app-icon></span> Carta
               </a>
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'distribucion']" class="btn btn-secondary btn-sm" title="Plano 2D y distribución de mesas (CU17, CU18, CU19)">
-                <span>🗺️</span> Plano 2D
+                <span><app-icon name="map" class="app-icon-inline"></app-icon></span> Plano 2D
               </a>
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'reservas']" class="btn btn-outline btn-sm" title="Gestionar reservas recibidas (CU22)">
-                <span>📋</span> Reservas
+                <span><app-icon name="list" class="app-icon-inline"></app-icon></span> Reservas
               </a>
               <a [routerLink]="['/restaurantes', r.id_restaurante, 'pedidos']" class="btn btn-outline btn-sm" title="Gestionar pedidos y comandas (CU24)">
-                <span>🍳</span> Comandas
+                <span><app-icon name="chef" class="app-icon-inline"></app-icon></span> Comandas
               </a>
             </div>
             <div class="d-flex gap-2">
@@ -88,7 +89,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
 
       <!-- Estado vacío -->
       <div class="card" *ngIf="restaurantes()?.length === 0" style="text-align: center; padding: 3rem;">
-        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🏪</span>
+        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;"><app-icon name="store" class="app-icon-inline"></app-icon></span>
         <h3>No tienes restaurantes registrados</h3>
         <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Comienza registrando tu primer establecimiento gastronómico.</p>
         <a routerLink="/restaurantes/nuevo" class="btn btn-primary">Registrar Ahora</a>

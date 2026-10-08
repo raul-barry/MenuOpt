@@ -5,20 +5,20 @@
       <a [routerLink]="['/restaurantes']" class="btn-back">&larr; Volver a Restaurantes</a>
       <h1 class="titulo">Ordenar en {{ restaurante()?.nombre || 'Restaurante' }}</h1>
       <p class="subtitulo" *ngIf="restaurante() as r">
-        📍 {{ r.ubicacion?.direccion }}, {{ r.ubicacion?.ciudad }}
-        <span *ngIf="r.telefono">| 📞 {{ r.telefono }}</span>
+        <app-icon name="pin" class="app-icon-inline"></app-icon> {{ r.ubicacion?.direccion }}, {{ r.ubicacion?.ciudad }}
+        <span *ngIf="r.telefono">| <app-icon name="phone" class="app-icon-inline"></app-icon> {{ r.telefono }}</span>
       </p>
 
       <!-- Badge si hay reserva vinculada -->
       <div *ngIf="idReservaParam" class="reserva-badge">
-        <span>🔗 Vinculado a tu <strong>Reserva #{{ idReservaParam }}</strong></span>
+        <span><app-icon name="link" class="app-icon-inline"></app-icon> Vinculado a tu <strong>Reserva #{{ idReservaParam }}</strong></span>
       </div>
     </div>
   </div>
 
   <!-- Alertas de error -->
   <div *ngIf="error()" class="alert alert-danger">
-    <span>⚠️ {{ error() }}</span>
+    <span><app-icon name="alert" class="app-icon-inline"></app-icon> {{ error() }}</span>
     <button class="btn-close" (click)="error.set(null)">×</button>
   </div>
 
@@ -35,7 +35,7 @@
         <input
           type="text"
           [(ngModel)]="busquedaPlato"
-          placeholder="🔍 Buscar plato por nombre o descripción..."
+          placeholder=" Buscar plato por nombre o descripción..."
           class="form-control"
         />
       </div>
@@ -50,7 +50,7 @@
             <p class="plato-desc" *ngIf="p.descripcion">{{ p.descripcion }}</p>
             <div class="plato-meta">
               <span class="badge badge-info" *ngIf="p.tipo_comida">{{ p.tipo_comida }}</span>
-              <span class="badge badge-secondary">👥 Cubre {{ p.personas_cubiertas }}p</span>
+              <span class="badge badge-secondary"><app-icon name="users" class="app-icon-inline"></app-icon> Cubre {{ p.personas_cubiertas }}p</span>
             </div>
           </div>
           <div class="plato-action">
@@ -75,13 +75,13 @@
     <div class="carrito-columna">
       <div class="carrito-card">
         <div class="carrito-header">
-          <h2>🛒 Tu Pedido</h2>
+          <h2><app-icon name="cart" class="app-icon-inline"></app-icon> Tu Pedido</h2>
           <span class="badge badge-primary">{{ totalItems() }} items</span>
         </div>
 
         <div class="carrito-body">
           <div *ngIf="carrito().length === 0" class="carrito-vacio">
-            <span class="icon-vacio">🍽️</span>
+            <span class="icon-vacio"><app-icon name="utensils" class="app-icon-inline"></app-icon></span>
             <p>Tu carrito está vacío.</p>
             <small>Selecciona platos del menú para armar tu pedido.</small>
           </div>
@@ -98,7 +98,7 @@
                 <span class="qty-num">{{ item.cantidad }}</span>
                 <button class="btn-qty" (click)="incrementar(item.id_plato)">+</button>
                 <span class="item-subtotal">{{ item.subtotal | currency:'Bs. ':'symbol':'1.2-2' }}</span>
-                <button class="btn-del" (click)="eliminarDelCarrito(item.id_plato)" title="Eliminar">🗑️</button>
+                <button class="btn-del" (click)="eliminarDelCarrito(item.id_plato)" title="Eliminar"><app-icon name="trash" class="app-icon-inline"></app-icon></button>
               </div>
             </div>
 

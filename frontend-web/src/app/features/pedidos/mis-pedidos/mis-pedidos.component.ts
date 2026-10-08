@@ -1,3 +1,4 @@
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 // CASO DE USO: CU24 - Mis Pedidos (Historial del Cliente)
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,12 +10,12 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
 @Component({
   selector: 'app-mis-pedidos',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [AppIconComponent, CommonModule, RouterModule],
   template: `
     <div class="card" style="max-width: 960px; margin: 0 auto;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h2 style="margin: 0; font-size: 1.35rem;">📦 Mis Pedidos Gastronómicos</h2>
+          <h2 style="margin: 0; font-size: 1.35rem;"><app-icon name="package" class="app-icon-inline"></app-icon> Mis Pedidos Gastronómicos</h2>
           <p style="margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
             Historial de órdenes enviadas y seguimiento de su estado de preparación.
           </p>
@@ -38,7 +39,7 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
         </div>
 
         <div *ngIf="!cargando() && pedidos().length === 0" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-          <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">🍽️</span>
+          <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;"><app-icon name="utensils" class="app-icon-inline"></app-icon></span>
           <h3 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; color: inherit;">Aún no has realizado pedidos</h3>
           <p style="margin: 0 0 1.25rem 0; font-size: 0.9rem;">Explora los restaurantes y realiza tu primera orden gastronómica.</p>
           <a [routerLink]="['/restaurantes']" class="btn btn-primary">Ver Restaurantes</a>
@@ -67,11 +68,11 @@ import { PedidoRespuesta } from '../../../core/models/pedido.model';
                   </span>
                 </div>
                 <p style="margin: 0.25rem 0 0; font-weight: 500;">
-                  🍴 {{ p.nombre_restaurante }}
+                  <app-icon name="utensils" class="app-icon-inline"></app-icon> {{ p.nombre_restaurante }}
                 </p>
                 <p style="margin: 0.15rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
-                  📅 {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
-                  <span *ngIf="p.id_reserva"> &bull; 🔗 Reserva #{{ p.id_reserva }}</span>
+                  <app-icon name="calendar" class="app-icon-inline"></app-icon> {{ p.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}
+                  <span *ngIf="p.id_reserva"> &bull; <app-icon name="link" class="app-icon-inline"></app-icon> Reserva #{{ p.id_reserva }}</span>
                 </p>
               </div>
 

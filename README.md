@@ -88,10 +88,11 @@ Deberá observar 3 contenedores activos:
 - `menuopt_backend`: Puerto `8000` (running)
 - `menuopt_frontend`: Puerto `4200` (running)
 
-### 3. Cargar Usuarios y Catálogo Inicial de Preferencias (Seed de prueba)
+### 3. Cargar o restaurar las cuentas de prueba y el catálogo de preferencias
 ```bash
 docker compose exec backend python -m app.database.crear_admin
 ```
+Este comando crea las cinco cuentas de la tabla siguiente. También restaura sus contraseñas y estado activo si fueron modificados durante pruebas; ejecútalo nuevamente si alguna credencial no funciona.
 
 ---
 
@@ -102,8 +103,8 @@ docker compose exec backend python -m app.database.crear_admin
 | **ADMINISTRADOR** | `admin@menuopt.com` | `Admin1234*` | `/admin/usuarios` |
 | **RESTAURANTE** | `restaurante@menuopt.com` | `Resto1234*` | `/restaurantes` |
 | **RESTAURANTE 2** | `restaurante2@menuopt.com` | `Resto1234*` | `/restaurantes` |
-| **CLIENTE 1** | `cliente1@menuopt.com` | `Cliente1234*` | `/perfil` |
-| **CLIENTE 2** | `cliente2@menuopt.com` | `Cliente1234*` | `/perfil` |
+| **CLIENTE 1** | `cliente1@menuopt.com` | `Cliente1234*` | `/inicio` |
+| **CLIENTE 2** | `cliente2@menuopt.com` | `Cliente1234*` | `/inicio` |
 
 ---
 
