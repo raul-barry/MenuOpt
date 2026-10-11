@@ -12,11 +12,11 @@ Este plan establece una metodología de desarrollo **incremental y validada por 
 | Fase | Caso de Uso | Enfoque Principal | Actor Responsable | Estado |
 | :---: | :---: | :--- | :--- | :---: |
 | **Fase 1** | **CU17** | Gestión de Áreas Físicas y Lienzo 2D con pestañas estilo Excel | `RESTAURANTE` | 🟢 **Completado** |
-| **Fase 2** | **CU18** | Gestión de Mesas (13 modelos SVG arquitectónicos, drag & drop) | `RESTAURANTE` | 🟢 **Completado** |
-| **Fase 3** | **CU19** | Combinaciones de Mesas contiguas con conectores visuales en plano | `RESTAURANTE` | 🟡 **Completado (En Validación)** |
-| **Fase 4** | **CU20** | Consulta dinámica de disponibilidad en tiempo real sobre el plano 2D | `CLIENTE` | ⚪ Siguiente |
-| **Fase 5** | **CU21** | Elección interactiva de mesas y confirmación con blindaje anti-colisión | `CLIENTE` | ⚪ Pendiente |
-| **Fase 6** | **CU22** | Gestión operativa de reservas y asignación de mesas en servicio | `RESTAURANTE` | ⚪ Pendiente |
+| **Fase 2** | **CU18** | Gestión de Mesas (modelos SVG arquitectónicos, drag & drop) | `RESTAURANTE` | 🟢 **Completado** |
+| **Fase 3** | **CU19** | Combinaciones de Mesas contiguas con conectores visuales en plano | `RESTAURANTE` | 🟢 **Completado** |
+| **Fase 4** | **CU20** | Consulta dinámica de disponibilidad en tiempo real sobre el plano 2D | `CLIENTE` | 🟢 **Completado** |
+| **Fase 5** | **CU21** | Elección interactiva de mesas y confirmación con blindaje anti-colisión | `CLIENTE` | 🟢 **Completado** |
+| **Fase 6** | **CU22** | Gestión operativa de reservas y asignación de mesas en servicio | `RESTAURANTE` | ⚪ Siguiente |
 
 ---
 
