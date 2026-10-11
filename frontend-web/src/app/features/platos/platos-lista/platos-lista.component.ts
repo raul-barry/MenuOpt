@@ -131,8 +131,8 @@ import { Categoria } from '../../../core/models/categoria.model';
                 </td>
                 <td style="text-align: right;">
                   <div style="display: flex; justify-content: flex-end; gap: 0.4rem;">
-                    <a [routerLink]="['/platos', plato.id_plato, 'editar']" class="btn btn-sm btn-outline" title="Editar plato y receta">
-                      Editar / Receta
+                    <a [routerLink]="['/platos', plato.id_plato, 'editar']" class="btn btn-sm btn-outline" title="Editar plato">
+                      Editar
                     </a>
                     <!-- CASO DE USO: CU08 - CAMBIAR ESTADO -->
                     <button

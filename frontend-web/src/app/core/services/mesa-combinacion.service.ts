@@ -12,12 +12,15 @@ export class MesaCombinacionService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  listarCombinacionesPorArea(idArea: number, soloPermitidas: boolean = true): Observable<MesaCombinacion[]> {
-    const params = new HttpParams().set('solo_permitidas', soloPermitidas.toString());
+  listarCombinacionesPorArea(idArea: number, soloActivas: boolean = false): Observable<MesaCombinacion[]> {
+    const params = new HttpParams().set('solo_activas', soloActivas.toString());
     return this.http.get<MesaCombinacion[]>(`${this.baseUrl}/areas/${idArea}/combinaciones`, { params });
   }
 
-  crearCombinacion(datos: MesaCombinacionCrear): Observable<MesaCombinacion> {
+  crearCombinacion(datos: MesaCombinacionCrear, idArea?: number): Observable<MesaCombinacion> {
+    if (idArea) {
+      return this.http.post<MesaCombinacion>(`${this.baseUrl}/areas/${idArea}/combinaciones`, datos);
+    }
     return this.http.post<MesaCombinacion>(`${this.baseUrl}/combinaciones`, datos);
   }
 

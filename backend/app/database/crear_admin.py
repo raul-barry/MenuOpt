@@ -1,4 +1,4 @@
-﻿"""Siembra las cuentas de prueba del README y el catálogo base de preferencias."""
+"""Siembra las cuentas de prueba del README y el catálogo base de preferencias."""
 from app.database.conexion import SessionLocal
 from app.models.usuario import Usuario
 from app.models.rol import Rol
@@ -71,11 +71,35 @@ def sembrar_preferencias_iniciales(db):
     db.commit()
 
 
+def sembrar_areas_por_defecto(db):
+    """Garantiza que todo restaurante registrado cuente al menos con el área 'Salón Principal' (CU17)."""
+    from app.models.restaurante import Restaurante
+    from app.models.area_restaurante import AreaRestaurante
+
+    restaurantes = db.query(Restaurante).all()
+    for r in restaurantes:
+        tiene_area = db.query(AreaRestaurante).filter(AreaRestaurante.id_restaurante == r.id_restaurante).first()
+        if not tiene_area:
+            area_default = AreaRestaurante(
+                id_restaurante=r.id_restaurante,
+                nombre="Salón Principal",
+                descripcion="Área física principal del establecimiento",
+                ancho_mapa=1200,
+                alto_mapa=700,
+                orden=1,
+                activo=True
+            )
+            db.add(area_default)
+            print(f"[OK] Área 'Salón Principal' autogenerada para el restaurante: {r.nombre}")
+    db.commit()
+
+
 def sembrar_usuarios_iniciales():
     db = SessionLocal()
     try:
         sembrar_usuarios_de_prueba(db)
         sembrar_preferencias_iniciales(db)
+        sembrar_areas_por_defecto(db)
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Error al sembrar datos iniciales: {str(e)}")

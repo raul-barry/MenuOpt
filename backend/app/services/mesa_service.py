@@ -79,7 +79,9 @@ class MesaService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Área con ID {id_area} no encontrada."
             )
-        verificar_propiedad_area(area, usuario_actual)
+        rol_nombre = usuario_actual.rol.nombre if usuario_actual.rol else None
+        if rol_nombre != "CLIENTE":
+            verificar_propiedad_area(area, usuario_actual)
         return MesaRepository.listar_por_area(db, id_area, solo_activas=solo_activas)
 
     @staticmethod

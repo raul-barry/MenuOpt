@@ -8,7 +8,8 @@ export interface GenerarDistribucionRequest {
 }
 
 export interface GuardarDistribucionRequest {
-  posiciones: MesaPosicionActualizar[];
+  mesas?: MesaPosicionActualizar[];
+  posiciones?: MesaPosicionActualizar[];
 }
 
 export interface DistribucionRespuesta {

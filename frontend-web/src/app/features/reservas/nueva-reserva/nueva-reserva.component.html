@@ -15,8 +15,9 @@
   <!-- Alertas globales -->
   <div *ngIf="mensajeExito()" class="alert alert-success" style="margin-bottom: 1rem;">
     {{ mensajeExito() }}
-    <div style="margin-top: 0.5rem;">
+    <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
       <a routerLink="/mis-reservas" class="btn btn-sm btn-primary">Ver Mis Reservas</a>
+      <button class="btn btn-sm btn-outline" (click)="nuevaReservaNueva()">Hacer otra reserva</button>
     </div>
   </div>
 
@@ -27,22 +28,6 @@
   <!-- Formulario de Filtros de Consulta (CU20) -->
   <div class="filters-card">
     <div class="filters-grid">
-      <!-- Selector de Área -->
-      <div>
-        <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Área del Restaurante *</label>
-        <select
-          class="form-control"
-          style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
-          [(ngModel)]="filtroArea"
-          (ngModelChange)="onFiltroCambiado()"
-        >
-          <option [ngValue]="null">Seleccione un área</option>
-          <option *ngFor="let a of areas()" [ngValue]="a.id_area">
-            <app-icon name="store" class="app-icon-inline"></app-icon> {{ a.nombre }}
-          </option>
-        </select>
-      </div>
-
       <!-- Fecha -->
       <div>
         <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Fecha *</label>
@@ -95,7 +80,7 @@
       </div>
 
       <!-- Botón de Consulta -->
-      <div>
+      <div style="display: flex; align-items: flex-end;">
         <button
           class="btn btn-primary"
           style="width: 100%;"
@@ -105,6 +90,30 @@
           <span *ngIf="!consultando()"><app-icon name="search" class="app-icon-inline"></app-icon> Ver Mesas Disponibles</span>
           <span *ngIf="consultando()"><app-icon name="loader" class="app-icon-inline"></app-icon> Consultando...</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Pestañas de Áreas estilo Hojas de Excel (CU20 / CU21) -->
+    <div class="excel-tabs-bar-wrapper" style="margin-top: 1.25rem;">
+      <div class="excel-tabs-bar-header">
+        <span class="excel-tabs-bar-label">
+          <app-icon name="store" class="app-icon-inline"></app-icon> Ambiente del Restaurante (Pestañas de Áreas):
+        </span>
+      </div>
+      <div class="excel-tabs-container">
+        <div
+          *ngFor="let a of areas()"
+          class="excel-tab"
+          [class.active]="filtroArea === a.id_area"
+          (click)="seleccionarArea(a.id_area)"
+          [title]="'Cambiar al plano de ' + a.nombre"
+        >
+          <span class="excel-tab-icon"><app-icon name="store" class="app-icon-inline"></app-icon></span>
+          <span class="excel-tab-title">{{ a.nombre }}</span>
+          <span *ngIf="filtroArea === a.id_area && disponibilidad()" class="excel-tab-badge">
+            {{ getMesasDisponiblesArea() }} libres
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -139,50 +148,90 @@
     <!-- Lienzo 2D Reutilizado en Modo Consulta (Read-Only) -->
     <div class="canvas-wrapper">
       <div #canvasContainer class="canvas-viewport">
-        <!-- Mesas Renderizadas en Posiciones Normalizadas -->
+        <!-- CAPA SVG DE CONEXIONES DE MESAS COMBINADAS (CU20) -->
+        <svg class="canvas-connections-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6;">
+          <g *ngFor="let line of getLineasCombinaciones()">
+            <line
+              [attr.x1]="line.x1 + '%'"
+              [attr.y1]="line.y1 + '%'"
+              [attr.x2]="line.x2 + '%'"
+              [attr.y2]="line.y2 + '%'"
+              stroke="rgba(2, 132, 199, 0.22)"
+              stroke-width="14"
+              stroke-linecap="round"
+              style="pointer-events: all; cursor: pointer;"
+              (click)="line.seleccionable && seleccionarCombinacion(line.combinacion)"
+            />
+            <line
+              [attr.x1]="line.x1 + '%'"
+              [attr.y1]="line.y1 + '%'"
+              [attr.x2]="line.x2 + '%'"
+              [attr.y2]="line.y2 + '%'"
+              [attr.stroke]="line.seleccionada ? '#2563eb' : (line.seleccionable ? '#0284c7' : '#94a3b8')"
+              stroke-width="4"
+              stroke-dasharray="6,4"
+              stroke-linecap="round"
+              style="pointer-events: all; cursor: pointer;"
+              (click)="line.seleccionable && seleccionarCombinacion(line.combinacion)"
+            />
+          </g>
+        </svg>
+
+        <!-- CHIPS FLOTANTES EN EL CENTRO DEL ENLACE (CU20) -->
+        <div
+          *ngFor="let line of getLineasCombinaciones()"
+          class="comb-client-badge"
+          [class.comb-selected]="line.seleccionada"
+          [class.comb-disabled]="!line.seleccionable"
+          [style.left]="line.midX + '%'"
+          [style.top]="line.midY + '%'"
+          (click)="line.seleccionable && seleccionarCombinacion(line.combinacion)"
+          [title]="'Combinación: ' + line.combinacion.numeros_mesas.join(' + ') + ' (' + line.capacidad + ' comensales). ' + (line.seleccionable ? 'Clic para seleccionar' : 'No seleccionable')"
+        >
+          <span>🔗 {{ line.combinacion.numeros_mesas.join('+') }} ({{ line.capacidad }}p)</span>
+        </div>
+
+        <!-- Mesas Renderizadas en Posiciones Normalizadas con SVG Arquitectónico y Semáforo -->
         <div
           *ngFor="let mesa of disp.mesas"
-          class="mesa-item"
-          [class.mesa-forma-redonda]="mesa.forma === 'REDONDA'"
-          [class.mesa-forma-cuadrada]="mesa.forma === 'CUADRADA'"
-          [class.mesa-forma-rectangular]="mesa.forma === 'RECTANGULAR'"
-          [class.mesa-disp-disponible]="mesa.estado_disponibilidad === 'DISPONIBLE' && !estaMesaSeleccionada(mesa.id_mesa)"
-          [class.mesa-disp-no-disponible]="mesa.estado_disponibilidad === 'NO_DISPONIBLE'"
-          [class.mesa-disp-no-compatible]="mesa.estado_disponibilidad === 'NO_COMPATIBLE'"
-          [class.mesa-disp-seleccionada]="estaMesaSeleccionada(mesa.id_mesa)"
+          class="mesa-item-svg-reserva"
+          [class.mesa-seleccionada]="estaMesaSeleccionada(mesa.id_mesa)"
+          [class.mesa-disponible]="mesa.capacidad >= filtroPersonas && !estaMesaSeleccionada(mesa.id_mesa)"
+          [class.mesa-no-disponible]="mesa.estado_disponibilidad === 'NO_DISPONIBLE'"
+          [class.mesa-no-compatible]="mesa.capacidad < filtroPersonas && !combMesaApta(mesa.id_mesa)"
           [style.left]="(mesa.posicion_x * 100) + '%'"
           [style.top]="(mesa.posicion_y * 100) + '%'"
           [style.transform]="'translate(-50%, -50%) rotate(' + mesa.rotacion + 'deg)'"
           (click)="seleccionarMesaIndividual(mesa)"
           [title]="getTooltipMesa(mesa)"
         >
-          <div class="mesa-content" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
-            <span class="mesa-numero">{{ mesa.numero }}</span>
-            <span class="mesa-capacidad"><app-icon name="users" class="app-icon-inline"></app-icon> {{ mesa.capacidad }}p</span>
+          <app-mesa-svg
+            [forma]="mesa.forma"
+            [capacidad]="mesa.capacidad"
+            [texto]="mesa.numero"
+            [tamanoPx]="mesa.forma === 'REDONDA' ? 76 : (mesa.capacidad >= 8 ? 92 : 82)"
+            [colorFondoMesa]="getColorFondoMesa(mesa)"
+            [colorTrazo]="getColorTrazoMesa(mesa)"
+            [colorSilla]="getColorSillaMesa(mesa)"
+            [colorTexto]="getColorTextoMesa(mesa)"
+          />
 
-            <span
-              *ngIf="estaMesaSeleccionada(mesa.id_mesa)"
-              class="mesa-estado-tag tag-seleccionada"
-            >
+          <!-- Badge de Estado Semáforo Flotante -->
+          <div class="mesa-reserva-status-badge" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
+            <span *ngIf="estaMesaSeleccionada(mesa.id_mesa)" class="status-tag tag-sel">
               <app-icon name="check" class="app-icon-inline"></app-icon> Elegida
             </span>
-            <span
-              *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && mesa.estado_disponibilidad === 'DISPONIBLE'"
-              class="mesa-estado-tag tag-disponible"
-            >
+            <span *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && combMesaApta(mesa.id_mesa) && mesa.capacidad < filtroPersonas" class="status-tag tag-comb-apta">
+              🔗 Comb. {{ combMesaApta(mesa.id_mesa)?.capacidad_total }}p
+            </span>
+            <span *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && (!combMesaApta(mesa.id_mesa) || mesa.capacidad >= filtroPersonas) && mesa.capacidad >= filtroPersonas && mesa.estado_disponibilidad !== 'NO_DISPONIBLE'" class="status-tag tag-libre">
               Libre
             </span>
-            <span
-              *ngIf="mesa.estado_disponibilidad === 'NO_DISPONIBLE'"
-              class="mesa-estado-tag tag-no-disponible"
-            >
+            <span *ngIf="mesa.estado_disponibilidad === 'NO_DISPONIBLE'" class="status-tag tag-ocupada">
               Ocupada
             </span>
-            <span
-              *ngIf="mesa.estado_disponibilidad === 'NO_COMPATIBLE'"
-              class="mesa-estado-tag tag-no-compatible"
-            >
-              {{ mesa.capacidad < filtroPersonas ? 'Chica' : 'Excesiva' }}
+            <span *ngIf="!estaMesaSeleccionada(mesa.id_mesa) && !combMesaApta(mesa.id_mesa) && mesa.capacidad < filtroPersonas && mesa.estado_disponibilidad !== 'NO_DISPONIBLE'" class="status-tag tag-incompatible">
+              {{ mesa.capacidad }}p (Chica)
             </span>
           </div>
         </div>

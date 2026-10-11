@@ -22,7 +22,10 @@ export class DistribucionMesasService {
   }
 
   guardarDistribucion(idArea: number, posiciones: MesaPosicionActualizar[]): Observable<DistribucionRespuesta> {
-    const payload: GuardarDistribucionRequest = { posiciones };
+    const payload: GuardarDistribucionRequest = {
+      mesas: posiciones,
+      posiciones: posiciones
+    };
     return this.http.put<DistribucionRespuesta>(`${this.baseUrl}/areas/${idArea}/distribucion`, payload);
   }
 

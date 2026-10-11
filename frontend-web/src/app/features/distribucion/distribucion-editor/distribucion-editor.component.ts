@@ -19,10 +19,21 @@ import { Mesa, FormaMesa, MesaCrear, MesaActualizar } from '../../../core/models
 import { MesaCombinacion, MesaCombinacionCrear } from '../../../core/models/mesa-combinacion.model';
 import { GenerarDistribucionRequest } from '../../../core/models/distribucion.model';
 
+import { MesaSvgComponent, DisposicionMesa } from '../../../shared/mesa-svg/mesa-svg.component';
+
+export interface ModeloMesaPreset {
+  id: string;
+  nombre: string;
+  forma: FormaMesa;
+  capacidad: number;
+  disposicion: DisposicionMesa;
+  categoria: 'REDONDA' | 'CUADRADA' | 'RECTANGULAR';
+}
+
 @Component({
   selector: 'app-distribucion-editor',
   standalone: true,
-  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, MesaSvgComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './distribucion-editor.component.html',
   styleUrls: ['./distribucion-editor.component.css']
 })
@@ -37,7 +48,129 @@ export class DistribucionEditorComponent implements OnInit {
 
   @ViewChild('canvasContainer') canvasContainer!: ElementRef<HTMLDivElement>;
 
-  // Estado reactivo principal
+  // Catálogo de modelos predeterminados según diseño arquitectónico
+  readonly MODELOS_CATALOGO: ModeloMesaPreset[] = [
+    // 1. Redondas
+    { id: 'r1', nombre: 'Redonda 1 silla', forma: 'REDONDA', capacidad: 1, disposicion: 'redonda', categoria: 'REDONDA' },
+    { id: 'r2', nombre: 'Redonda 2 sillas', forma: 'REDONDA', capacidad: 2, disposicion: 'redonda', categoria: 'REDONDA' },
+    { id: 'r3', nombre: 'Redonda 3 sillas', forma: 'REDONDA', capacidad: 3, disposicion: 'redonda', categoria: 'REDONDA' },
+    { id: 'r4', nombre: 'Redonda 4 sillas', forma: 'REDONDA', capacidad: 4, disposicion: 'redonda', categoria: 'REDONDA' },
+    { id: 'r5', nombre: 'Redonda 5 sillas', forma: 'REDONDA', capacidad: 5, disposicion: 'redonda', categoria: 'REDONDA' },
+
+    // 2. Cuadradas
+    { id: 'c2', nombre: 'Cuadrada 2 sillas', forma: 'CUADRADA', capacidad: 2, disposicion: 'cuadrada-2', categoria: 'CUADRADA' },
+    { id: 'c4', nombre: 'Cuadrada 4 sillas', forma: 'CUADRADA', capacidad: 4, disposicion: 'cuadrada-4', categoria: 'CUADRADA' },
+    { id: 'c8', nombre: 'Cuadrada grande 8 sillas', forma: 'CUADRADA', capacidad: 8, disposicion: 'cuadrada-8', categoria: 'CUADRADA' },
+
+    // 3. Rectangulares
+    { id: 'rec4', nombre: 'Rectangular 4 sillas', forma: 'RECTANGULAR', capacidad: 4, disposicion: 'rect-4', categoria: 'RECTANGULAR' },
+    { id: 'rec6_cab', nombre: 'Rectangular 6 sillas (cabeceras)', forma: 'RECTANGULAR', capacidad: 6, disposicion: 'rect-6-cabecera', categoria: 'RECTANGULAR' },
+    { id: 'rec6_long', nombre: 'Rectangular 6 sillas (alargada)', forma: 'RECTANGULAR', capacidad: 6, disposicion: 'rect-6-largo', categoria: 'RECTANGULAR' },
+    { id: 'rec8_cab', nombre: 'Rectangular 8 sillas (cabeceras)', forma: 'RECTANGULAR', capacidad: 8, disposicion: 'rect-8-cabecera', categoria: 'RECTANGULAR' },
+    { id: 'rec8_long', nombre: 'Rectangular 8 sillas (alargada)', forma: 'RECTANGULAR', capacidad: 8, disposicion: 'rect-8-largo', categoria: 'RECTANGULAR' }
+  ];
+
+  filtroCategoriaCatalogo = signal<'TODAS' | 'REDONDA' | 'CUADRADA' | 'RECTANGULAR'>('TODAS');
+  modeloArrastrando: ModeloMesaPreset | null = null;
+
+  modelosFiltrados(): ModeloMesaPreset[] {
+    const cat = this.filtroCategoriaCatalogo();
+    if (cat === 'TODAS') return this.MODELOS_CATALOGO;
+    return this.MODELOS_CATALOGO.filter(m => m.categoria === cat);
+  }
+
+  // Drag and Drop desde la barra lateral de herramientas hacia el lienzo 2D
+  onDragStartFromCatalog(event: DragEvent, modelo: ModeloMesaPreset): void {
+    this.modeloArrastrando = modelo;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('application/json', JSON.stringify(modelo));
+      event.dataTransfer.effectAllowed = 'copy';
+    }
+  }
+
+  onCanvasDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onCanvasDrop(event: DragEvent): void {
+    event.preventDefault();
+    const area = this.areaSeleccionada();
+    if (!area) {
+      this.mostrarError('Primero debe seleccionar un área física.');
+      return;
+    }
+
+    let modelo = this.modeloArrastrando;
+    if (!modelo && event.dataTransfer) {
+      const dataStr = event.dataTransfer.getData('application/json');
+      if (dataStr) {
+        try {
+          modelo = JSON.parse(dataStr);
+        } catch {}
+      }
+    }
+
+    if (!modelo || !this.canvasContainer) return;
+
+    const rect = this.canvasContainer.nativeElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    let posX = (event.clientX - rect.left) / rect.width;
+    let posY = (event.clientY - rect.top) / rect.height;
+
+    // Acotar posiciones para que la mesa no quede fuera de los márgenes
+    posX = Math.max(0.06, Math.min(0.94, posX));
+    posY = Math.max(0.06, Math.min(0.94, posY));
+    posX = Math.round(posX * 10000) / 10000;
+    posY = Math.round(posY * 10000) / 10000;
+
+    this.crearMesaDirecta(modelo, posX, posY);
+    this.modeloArrastrando = null;
+  }
+
+  crearMesaDirecta(modelo: ModeloMesaPreset, posX?: number, posY?: number): void {
+    const area = this.areaSeleccionada();
+    if (!area) {
+      this.mostrarError('Primero seleccione o cree un área.');
+      return;
+    }
+
+    const count = this.mesas().length;
+    const sugeridoNum = 'M' + (count + 1);
+
+    if (posX === undefined || posY === undefined) {
+      const col = count % 4;
+      const row = Math.floor(count / 4) % 3;
+      posX = Math.round((0.2 + col * 0.2) * 100) / 100;
+      posY = Math.round((0.25 + row * 0.25) * 100) / 100;
+    }
+
+    const datos: MesaCrear = {
+      numero: sugeridoNum,
+      nombre: modelo.nombre,
+      capacidad: modelo.capacidad,
+      forma: modelo.forma,
+      rotacion: 0,
+      posicion_x: posX,
+      posicion_y: posY,
+      es_fija: false,
+      combinable: true
+    };
+
+    this.mesaService.crearMesa(area.id_area, datos).subscribe({
+      next: (nueva) => {
+        this.mostrarMensaje(`Mesa '${nueva.numero}' (${modelo.nombre}) agregada.`);
+        const listaActual = [...this.mesas(), nueva];
+        this.mesas.set(listaActual);
+        this.seleccionarMesa(nueva);
+        this.hayCambios.set(true);
+      },
+      error: (err) => this.mostrarError(err.error?.detail || 'Error al agregar la mesa.')
+    });
+  }
   restauranteId = signal<number>(0);
   restaurante = signal<Restaurante | null>(null);
   areas = signal<AreaRestaurante[]>([]);
@@ -45,6 +178,7 @@ export class DistribucionEditorComponent implements OnInit {
   mesas = signal<Mesa[]>([]);
   combinaciones = signal<MesaCombinacion[]>([]);
   mesaSeleccionada = signal<Mesa | null>(null);
+  mesaParaCombinar = signal<Mesa | null>(null);
 
   // Estados de control
   subtabActiva = signal<'canvas' | 'mesas' | 'combinaciones'>('canvas');
@@ -81,7 +215,9 @@ export class DistribucionEditorComponent implements OnInit {
     forma: 'CUADRADA' as FormaMesa,
     rotacion: 0,
     es_fija: false,
-    combinable: true
+    combinable: true,
+    posicion_x: 0.5,
+    posicion_y: 0.5
   };
 
   modalGenerarVisible = signal<boolean>(false);
@@ -122,8 +258,24 @@ export class DistribucionEditorComponent implements OnInit {
     setTimeout(() => this.mensaje.set(null), 4000);
   }
 
-  mostrarError(err: string): void {
-    this.error.set(err);
+  mostrarError(err: any): void {
+    let mensaje = 'Ha ocurrido un error inesperado.';
+    if (typeof err === 'string') {
+      mensaje = err;
+    } else if (Array.isArray(err)) {
+      mensaje = err.map(e => e.msg || e.detail || JSON.stringify(e)).join(', ');
+    } else if (err && typeof err === 'object') {
+      if (err.detail) {
+        mensaje = Array.isArray(err.detail)
+          ? err.detail.map((e: any) => e.msg || e.detail || JSON.stringify(e)).join(', ')
+          : String(err.detail);
+      } else if (err.message) {
+        mensaje = String(err.message);
+      } else {
+        mensaje = JSON.stringify(err);
+      }
+    }
+    this.error.set(mensaje);
     setTimeout(() => this.error.set(null), 5000);
   }
 
@@ -140,7 +292,9 @@ export class DistribucionEditorComponent implements OnInit {
       next: (lista) => {
         this.areas.set(lista);
         this.cargando.set(false);
-        if (lista.length > 0 && !this.areaSeleccionada()) {
+        if (lista.length === 0) {
+          this.crearAreaPorDefecto();
+        } else if (!this.areaSeleccionada()) {
           this.seleccionarArea(lista[0]);
         }
       },
@@ -148,6 +302,25 @@ export class DistribucionEditorComponent implements OnInit {
         this.cargando.set(false);
         this.mostrarError('Error al listar las áreas del restaurante.');
       }
+    });
+  }
+
+  crearAreaPorDefecto(): void {
+    const datos: AreaRestauranteCrear = {
+      nombre: 'Salón Principal',
+      descripcion: 'Área física principal del establecimiento',
+      ancho_mapa: 1000,
+      alto_mapa: 600,
+      orden: 1
+    };
+    this.areaService.crearArea(this.restauranteId(), datos).subscribe({
+      next: (nueva) => {
+        this.areaService.listarAreasPorRestaurante(this.restauranteId(), false).subscribe(lista => {
+          this.areas.set(lista);
+          this.seleccionarArea(nueva);
+        });
+      },
+      error: () => this.cargando.set(false)
     });
   }
 
@@ -285,9 +458,17 @@ export class DistribucionEditorComponent implements OnInit {
   }
 
   toggleFija(mesa: Mesa): void {
-    this.mesaService.actualizarMesa(mesa.id_mesa, { es_fija: !mesa.es_fija }).subscribe({
+    this.mesaService.actualizarMesa(mesa.id_mesa, {
+      es_fija: !mesa.es_fija,
+      posicion_x: mesa.posicion_x,
+      posicion_y: mesa.posicion_y
+    }).subscribe({
       next: (actualizada) => {
         mesa.es_fija = actualizada.es_fija;
+        if (this.mesaSeleccionada()?.id_mesa === mesa.id_mesa) {
+          this.mesaSeleccionada.set({ ...mesa });
+        }
+        this.mesas.set([...this.mesas()]);
         this.mostrarMensaje(`Mesa ${mesa.numero} ahora es ${mesa.es_fija ? 'fija' : 'movible'}.`);
       },
       error: (err) => this.mostrarError(err.error?.detail || 'Error al actualizar estado fijo de la mesa.')
@@ -295,9 +476,17 @@ export class DistribucionEditorComponent implements OnInit {
   }
 
   toggleCombinable(mesa: Mesa): void {
-    this.mesaService.actualizarMesa(mesa.id_mesa, { combinable: !mesa.combinable }).subscribe({
+    this.mesaService.actualizarMesa(mesa.id_mesa, {
+      combinable: !mesa.combinable,
+      posicion_x: mesa.posicion_x,
+      posicion_y: mesa.posicion_y
+    }).subscribe({
       next: (actualizada) => {
         mesa.combinable = actualizada.combinable;
+        if (this.mesaSeleccionada()?.id_mesa === mesa.id_mesa) {
+          this.mesaSeleccionada.set({ ...mesa });
+        }
+        this.mesas.set([...this.mesas()]);
         this.mostrarMensaje(`Mesa ${mesa.numero} ahora es ${mesa.combinable ? 'combinable' : 'individual'}.`);
       },
       error: (err) => this.mostrarError(err.error?.detail || 'Error al actualizar combinabilidad.')
@@ -322,12 +511,15 @@ export class DistribucionEditorComponent implements OnInit {
       next: (res) => {
         this.guardandoDistribucion.set(false);
         this.hayCambios.set(false);
+        if (res && res.mesas && res.mesas.length > 0) {
+          this.mesas.set(res.mesas);
+        }
         this.mostrarMensaje(res.mensaje || 'Distribución guardada exitosamente.');
         if (onSuccess) onSuccess();
       },
       error: (err) => {
         this.guardandoDistribucion.set(false);
-        this.mostrarError(err.error?.detail || 'Error al guardar la distribución del plano.');
+        this.mostrarError(err.error?.detail || err.error || 'Error al guardar la distribución del plano.');
       }
     });
   }
@@ -427,7 +619,13 @@ export class DistribucionEditorComponent implements OnInit {
 
   abrirModalNuevaMesa(): void {
     this.mesaEditando.set(null);
-    const sugeridoNum = 'M' + (this.mesas().length + 1);
+    const count = this.mesas().length;
+    const sugeridoNum = 'M' + (count + 1);
+    const col = count % 4;
+    const row = Math.floor(count / 4) % 3;
+    const posX = Math.round((0.2 + (col * 0.2)) * 100) / 100;
+    const posY = Math.round((0.25 + (row * 0.25)) * 100) / 100;
+
     this.formMesa = {
       numero: sugeridoNum,
       nombre: '',
@@ -435,7 +633,9 @@ export class DistribucionEditorComponent implements OnInit {
       forma: 'CUADRADA',
       rotacion: 0,
       es_fija: false,
-      combinable: true
+      combinable: true,
+      posicion_x: posX,
+      posicion_y: posY
     };
     this.modalMesaVisible.set(true);
   }
@@ -449,7 +649,9 @@ export class DistribucionEditorComponent implements OnInit {
       forma: mesa.forma,
       rotacion: mesa.rotacion,
       es_fija: mesa.es_fija,
-      combinable: mesa.combinable
+      combinable: mesa.combinable,
+      posicion_x: Number(mesa.posicion_x),
+      posicion_y: Number(mesa.posicion_y)
     };
     this.modalMesaVisible.set(true);
   }
@@ -470,20 +672,49 @@ export class DistribucionEditorComponent implements OnInit {
 
     if (this.mesaEditando()) {
       const m = this.mesaEditando()!;
+      const nuevaCapacidad = Number(this.formMesa.capacidad) || 1;
+
+      // Actualizar reactivamente de inmediato en memoria para que el diagrama cambie al instante
+      m.numero = this.formMesa.numero.trim();
+      m.capacidad = nuevaCapacidad;
+      m.es_fija = this.formMesa.es_fija;
+      m.combinable = this.formMesa.combinable;
+
+      if (this.mesaSeleccionada()?.id_mesa === m.id_mesa) {
+        this.mesaSeleccionada.set({ ...m });
+      }
+      this.mesas.set([...this.mesas()]);
+      this.hayCambios.set(true);
+
       const datos: MesaActualizar = {
-        numero: this.formMesa.numero,
-        nombre: this.formMesa.nombre,
-        capacidad: this.formMesa.capacidad,
-        forma: this.formMesa.forma,
-        rotacion: this.formMesa.rotacion,
-        es_fija: this.formMesa.es_fija,
-        combinable: this.formMesa.combinable
+        numero: m.numero,
+        nombre: m.nombre,
+        capacidad: nuevaCapacidad,
+        forma: m.forma,
+        rotacion: m.rotacion,
+        es_fija: m.es_fija,
+        combinable: m.combinable,
+        posicion_x: m.posicion_x,
+        posicion_y: m.posicion_y
       };
       this.mesaService.actualizarMesa(m.id_mesa, datos).subscribe({
         next: (act) => {
           this.mostrarMensaje(`Mesa '${act.numero}' actualizada correctamente.`);
           this.cerrarModalMesa();
-          this.cargarMesasArea(area.id_area);
+          const idx = this.mesas().findIndex(item => item.id_mesa === act.id_mesa);
+          if (idx !== -1) {
+            const list = [...this.mesas()];
+            list[idx] = {
+              ...list[idx],
+              ...act,
+              posicion_x: m.posicion_x,
+              posicion_y: m.posicion_y
+            };
+            this.mesas.set(list);
+            if (this.mesaSeleccionada()?.id_mesa === act.id_mesa) {
+              this.mesaSeleccionada.set(list[idx]);
+            }
+          }
         },
         error: (err) => this.mostrarError(err.error?.detail || 'Error al actualizar la mesa.')
       });
@@ -495,13 +726,18 @@ export class DistribucionEditorComponent implements OnInit {
         forma: this.formMesa.forma,
         rotacion: this.formMesa.rotacion,
         es_fija: this.formMesa.es_fija,
-        combinable: this.formMesa.combinable
+        combinable: this.formMesa.combinable,
+        posicion_x: this.formMesa.posicion_x,
+        posicion_y: this.formMesa.posicion_y
       };
       this.mesaService.crearMesa(area.id_area, datos).subscribe({
         next: (nueva) => {
           this.mostrarMensaje(`Mesa '${nueva.numero}' agregada correctamente.`);
           this.cerrarModalMesa();
-          this.cargarMesasArea(area.id_area);
+          const list = [...this.mesas(), nueva];
+          this.mesas.set(list);
+          this.seleccionarMesa(nueva);
+          this.hayCambios.set(true);
         },
         error: (err) => this.mostrarError(err.error?.detail || 'Error al crear la mesa.')
       });
@@ -518,9 +754,8 @@ export class DistribucionEditorComponent implements OnInit {
         if (this.mesaSeleccionada()?.id_mesa === mesa.id_mesa) {
           this.mesaSeleccionada.set(null);
         }
-        if (this.areaSeleccionada()) {
-          this.cargarMesasArea(this.areaSeleccionada()!.id_area);
-        }
+        this.mesas.set(this.mesas().filter(m => m.id_mesa !== mesa.id_mesa));
+        this.hayCambios.set(true);
       },
       error: (err) => this.mostrarError(err.error?.detail || 'Error al eliminar mesa.')
     });
@@ -566,6 +801,141 @@ export class DistribucionEditorComponent implements OnInit {
         this.mostrarError(err.error?.detail || 'Error al generar la distribución automática.');
       }
     });
+  }
+
+  // --- CU19: CONECTORES VISUALES Y COMBINACIÓN DE MESAS ---
+
+  getLineasCombinaciones(): {
+    combinacion: MesaCombinacion;
+    m1: Mesa;
+    m2: Mesa;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    midX: number;
+    midY: number;
+    capacidad: number;
+  }[] {
+    const res: any[] = [];
+    const mesasMap = new Map<number, Mesa>();
+    for (const m of this.mesas()) {
+      if (m.activo) mesasMap.set(m.id_mesa, m);
+    }
+
+    for (const c of this.combinaciones()) {
+      if (!c.activo) continue;
+      const m1 = mesasMap.get(c.id_mesa_origen);
+      const m2 = mesasMap.get(c.id_mesa_destino);
+      if (m1 && m2) {
+        const x1 = Number(m1.posicion_x) * 100;
+        const y1 = Number(m1.posicion_y) * 100;
+        const x2 = Number(m2.posicion_x) * 100;
+        const y2 = Number(m2.posicion_y) * 100;
+        const cap = c.capacidad_combinada || (m1.capacidad + m2.capacidad);
+        res.push({
+          combinacion: c,
+          m1,
+          m2,
+          x1,
+          y1,
+          x2,
+          y2,
+          midX: Math.round(((x1 + x2) / 2) * 10) / 10,
+          midY: Math.round(((y1 + y2) / 2) * 10) / 10,
+          capacidad: cap
+        });
+      }
+    }
+    return res;
+  }
+
+  iniciarModoCombinacion(mesa: Mesa): void {
+    if (mesa.es_fija) {
+      this.mostrarError('Las mesas fijas no se pueden combinar con otras.');
+      return;
+    }
+    if (!mesa.combinable) {
+      this.toggleCombinable(mesa);
+    }
+    this.mesaParaCombinar.set(mesa);
+    this.mostrarMensaje(`🔗 Modo Combinar: Seleccione otra mesa para unirla con Mesa ${mesa.numero}.`);
+  }
+
+  cancelarModoCombinar(): void {
+    this.mesaParaCombinar.set(null);
+  }
+
+  onMesaClick(mesa: Mesa, event: MouseEvent): void {
+    event.stopPropagation();
+    const origen = this.mesaParaCombinar();
+    if (origen) {
+      if (origen.id_mesa === mesa.id_mesa) {
+        this.cancelarModoCombinar();
+        return;
+      }
+      this.combinarDirectamente(origen, mesa);
+      return;
+    }
+    this.seleccionarMesa(mesa);
+  }
+
+  combinarDirectamente(m1: Mesa, m2: Mesa): void {
+    if (m2.es_fija) {
+      this.mostrarError(`La mesa ${m2.numero} está fijada y no puede combinarse.`);
+      return;
+    }
+
+    const area = this.areaSeleccionada();
+    if (!area) return;
+
+    // Verificar si ya existe combinación activa entre ambas
+    const yaExiste = this.combinaciones().some(c =>
+      c.activo &&
+      ((c.id_mesa_origen === m1.id_mesa && c.id_mesa_destino === m2.id_mesa) ||
+       (c.id_mesa_origen === m2.id_mesa && c.id_mesa_destino === m1.id_mesa))
+    );
+    if (yaExiste) {
+      this.mostrarError(`Las mesas ${m1.numero} y ${m2.numero} ya están combinadas.`);
+      this.mesaParaCombinar.set(null);
+      return;
+    }
+
+    // Si m2 no era combinable, activarla
+    if (!m2.combinable) {
+      m2.combinable = true;
+      this.mesaService.actualizarMesa(m2.id_mesa, { combinable: true }).subscribe();
+    }
+
+    const payload: MesaCombinacionCrear = {
+      id_mesa_origen: m1.id_mesa,
+      id_mesa_destino: m2.id_mesa,
+      descripcion: `Unión directa: ${m1.numero} + ${m2.numero}`
+    };
+
+    this.combinacionService.crearCombinacion(payload, area.id_area).subscribe({
+      next: (nueva) => {
+        const totalPax = nueva.capacidad_combinada || (m1.capacidad + m2.capacidad);
+        this.mostrarMensaje(`¡Mesas ${m1.numero} y ${m2.numero} unidas con éxito! Capacidad combinada: ${totalPax} comensales.`);
+        this.mesaParaCombinar.set(null);
+        const lista = this.combinaciones().filter(c => c.id_mesa_combinacion !== nueva.id_mesa_combinacion);
+        this.combinaciones.set([...lista, nueva]);
+      },
+      error: (err) => {
+        this.mostrarError(err.error?.detail || 'Error al combinar las mesas.');
+        this.mesaParaCombinar.set(null);
+      }
+    });
+  }
+
+  confirmarDescombinar(c: MesaCombinacion, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    const nom1 = c.numero_mesa_origen || 'Mesa origen';
+    const nom2 = c.numero_mesa_destino || 'Mesa destino';
+    if (!confirm(`¿Desea separar y descombinar la unión entre ${nom1} y ${nom2}?`)) {
+      return;
+    }
+    this.desactivarCombinacion(c);
   }
 
   // --- MODAL COMBINACIÓN (CU19) ---
@@ -615,28 +985,24 @@ export class DistribucionEditorComponent implements OnInit {
       descripcion: descripcion || null
     };
 
-    this.combinacionService.crearCombinacion(payload).subscribe({
+    const area = this.areaSeleccionada();
+    this.combinacionService.crearCombinacion(payload, area?.id_area).subscribe({
       next: (comb) => {
-        this.mostrarMensaje(`Combinación creada exitosamente (Capacidad: ${comb.capacidad_total || this.capacidadCombinadaPreview} comensales).`);
+        const cap = comb.capacidad_combinada || comb.capacidad_total || this.capacidadCombinadaPreview;
+        this.mostrarMensaje(`Combinación creada exitosamente (Capacidad total: ${cap} comensales).`);
         this.cerrarModalCombinacion();
-        if (this.areaSeleccionada()) {
-          this.cargarCombinacionesArea(this.areaSeleccionada()!.id_area);
-        }
+        const lista = this.combinaciones().filter(c => c.id_mesa_combinacion !== comb.id_mesa_combinacion);
+        this.combinaciones.set([...lista, comb]);
       },
       error: (err) => this.mostrarError(err.error?.detail || 'Error al crear la combinación de mesas.')
     });
   }
 
   desactivarCombinacion(c: MesaCombinacion): void {
-    if (!confirm('¿Desea desactivar esta combinación de mesas?')) {
-      return;
-    }
     this.combinacionService.desactivarCombinacion(c.id_mesa_combinacion).subscribe({
       next: () => {
-        this.mostrarMensaje('Combinación desactivada con éxito.');
-        if (this.areaSeleccionada()) {
-          this.cargarCombinacionesArea(this.areaSeleccionada()!.id_area);
-        }
+        this.mostrarMensaje('Combinación de mesas desvinculada con éxito.');
+        this.combinaciones.set(this.combinaciones().filter(item => item.id_mesa_combinacion !== c.id_mesa_combinacion));
       },
       error: (err) => this.mostrarError(err.error?.detail || 'Error al desactivar combinación.')
     });

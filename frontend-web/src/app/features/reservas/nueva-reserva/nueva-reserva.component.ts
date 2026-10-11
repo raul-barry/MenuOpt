@@ -1,4 +1,5 @@
 import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
+import { MesaSvgComponent } from '../../../shared/mesa-svg/mesa-svg.component';
 // CASO DE USO: CU20 - Consultar disponibilidad & CU21 - Realizar reserva
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { RestauranteService } from '../../../core/services/restaurante.service';
 import { AreaRestauranteService } from '../../../core/services/area-restaurante.service';
 import { ReservaService } from '../../../core/services/reserva.service';
+import { PlanificacionService } from '../../../core/services/planificacion.service';
 
 import { Restaurante } from '../../../core/models/restaurante.model';
 import { AreaRestaurante } from '../../../core/models/area-restaurante.model';
@@ -22,7 +24,7 @@ import {
 @Component({
   selector: 'app-nueva-reserva',
   standalone: true,
-  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule, MesaSvgComponent],
   templateUrl: './nueva-reserva.component.html',
   styleUrls: ['./nueva-reserva.component.css']
 })
@@ -32,6 +34,7 @@ export class NuevaReservaComponent implements OnInit {
   private restauranteService = inject(RestauranteService);
   private areaService = inject(AreaRestauranteService);
   private reservaService = inject(ReservaService);
+  private planificacionService = inject(PlanificacionService);
 
   restauranteId = signal<number>(0);
   restaurante = signal<Restaurante | null>(null);
@@ -68,9 +71,24 @@ export class NuevaReservaComponent implements OnInit {
       this.cargarAreas();
     }
 
+    const qPersonas = this.route.snapshot.queryParamMap.get('personas');
+    if (qPersonas) {
+      this.filtroPersonas = Math.max(1, Number(qPersonas));
+    }
+
     const qPlan = this.route.snapshot.queryParamMap.get('id_planificacion');
     if (qPlan) {
       this.idPlanificacion = Number(qPlan);
+      this.planificacionService.obtenerPlanificacion(this.idPlanificacion).subscribe({
+        next: (plan) => {
+          if (plan && plan.cantidad_personas) {
+            this.filtroPersonas = plan.cantidad_personas;
+            if (this.filtroArea) {
+              this.consultarDisponibilidad();
+            }
+          }
+        }
+      });
     }
 
     const hoy = new Date();
@@ -91,6 +109,7 @@ export class NuevaReservaComponent implements OnInit {
         this.areas.set(lista);
         if (lista.length > 0) {
           this.filtroArea = lista[0].id_area;
+          this.consultarDisponibilidad();
         }
       },
       error: () => this.error.set('No se pudieron cargar las áreas del restaurante.')
@@ -98,9 +117,29 @@ export class NuevaReservaComponent implements OnInit {
   }
 
   onFiltroCambiado(): void {
-    if (this.disponibilidad()) {
+    if (this.filtroArea && this.filtroFecha && this.filtroHoraInicio && this.filtroHoraFin && this.filtroPersonas >= 1) {
+      this.consultarDisponibilidad();
+    } else if (this.disponibilidad()) {
       this.filtrosModificados.set(true);
     }
+  }
+
+  // --- NAVEGACIÓN POR PESTAÑAS ESTILO EXCEL (CU20) ---
+  seleccionarArea(idArea: number): void {
+    if (this.filtroArea === idArea) return;
+    this.filtroArea = idArea;
+    this.deseleccionarTodo();
+    if (this.filtroFecha && this.filtroHoraInicio && this.filtroHoraFin && this.filtroPersonas > 0) {
+      this.consultarDisponibilidad();
+    } else {
+      this.onFiltroCambiado();
+    }
+  }
+
+  getMesasDisponiblesArea(): number {
+    const disp = this.disponibilidad();
+    if (!disp) return 0;
+    return disp.mesas.filter(m => m.estado_disponibilidad === 'DISPONIBLE').length;
   }
 
   // --- CU20: CONSULTAR DISPONIBILIDAD ---
@@ -134,23 +173,60 @@ export class NuevaReservaComponent implements OnInit {
     });
   }
 
-  // --- INTERACCIÓN Y SELECCIÓN DE MESAS ---
+  // --- INTERACCIÓN Y SELECCIÓN DE MESAS & COMBINACIONES ---
   estaMesaSeleccionada(idMesa: number): boolean {
     return this.mesasSeleccionadasIds.includes(idMesa);
   }
 
+  encontrarCombinacionParaMesa(idMesa: number): CombinacionDisponible | null {
+    const disp = this.disponibilidad();
+    if (!disp || !disp.combinaciones) return null;
+    return disp.combinaciones.find(c => c.mesas.includes(idMesa)) || null;
+  }
+
+  combMesaApta(idMesa: number): CombinacionDisponible | null {
+    const comb = this.encontrarCombinacionParaMesa(idMesa);
+    if (comb && comb.seleccionable) {
+      return comb;
+    }
+    return null;
+  }
+
   seleccionarMesaIndividual(mesa: MesaDisponibilidad): void {
-    if (!mesa.seleccionable) {
+    // Si ya confirmó la reserva, bloquear selección hasta pulsar 'Hacer otra reserva'
+    if (this.mensajeExito()) {
       return;
     }
 
-    if (this.estaMesaSeleccionada(mesa.id_mesa) && this.mesasSeleccionadasIds.length === 1) {
-      // Deseleccionar si ya estaba elegida
+    if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') {
+      return;
+    }
+
+    // 1. Si la mesa clicada ya forma parte de la selección activa (individual o combinación), se desmarca
+    if (this.estaMesaSeleccionada(mesa.id_mesa)) {
       this.deseleccionarTodo();
       return;
     }
 
-    // Selección individual
+    // 2. Si ya hay OTRA selección activa, no permitir cambiar sin desmarcar primero la selección anterior
+    if (this.mesasSeleccionadasIds.length > 0) {
+      return;
+    }
+
+    const combApta = this.combMesaApta(mesa.id_mesa);
+
+    // Si la mesa individual es chica para el grupo, pero forma parte de una combinación apta:
+    if (mesa.capacidad < this.filtroPersonas && combApta) {
+      this.seleccionarCombinacion(combApta);
+      return;
+    }
+
+    // Si la mesa es chica para el grupo y no tiene combinación apta, no se permite reservar individualmente
+    if (mesa.capacidad < this.filtroPersonas) {
+      return;
+    }
+
+    // Selección de mesa individual que cubre la capacidad
     this.combinacionSeleccionada = null;
     this.mesasSeleccionadasIds = [mesa.id_mesa];
   }
@@ -160,12 +236,23 @@ export class NuevaReservaComponent implements OnInit {
   }
 
   seleccionarCombinacion(comb: CombinacionDisponible): void {
+    // Si ya confirmó la reserva, bloquear selección
+    if (this.mensajeExito()) {
+      return;
+    }
+
     if (!comb.seleccionable) {
       return;
     }
 
+    // Si ya está seleccionada esta combinación, se desmarca
     if (this.esCombinacionSeleccionada(comb)) {
       this.deseleccionarTodo();
+      return;
+    }
+
+    // Si ya hay OTRA selección activa, exigir desmarcar primero
+    if (this.mesasSeleccionadasIds.length > 0) {
       return;
     }
 
@@ -176,6 +263,13 @@ export class NuevaReservaComponent implements OnInit {
   deseleccionarTodo(): void {
     this.mesasSeleccionadasIds = [];
     this.combinacionSeleccionada = null;
+  }
+
+  nuevaReservaNueva(): void {
+    this.mensajeExito.set(null);
+    this.error.set(null);
+    this.deseleccionarTodo();
+    this.consultarDisponibilidad();
   }
 
   getTextoMesasSeleccionadas(): string {
@@ -200,18 +294,127 @@ export class NuevaReservaComponent implements OnInit {
 
   getTooltipMesa(mesa: MesaDisponibilidad): string {
     if (this.estaMesaSeleccionada(mesa.id_mesa)) {
-      return `Mesa ${mesa.numero} (Seleccionada para reservar)`;
-    }
-    if (mesa.estado_disponibilidad === 'DISPONIBLE') {
-      return `Mesa ${mesa.numero} (${mesa.capacidad}p) - Clic para seleccionar`;
+      if (this.combinacionSeleccionada) {
+        return `Mesa ${mesa.numero} (Seleccionada como parte de la combinación de ${this.combinacionSeleccionada.capacidad_total}p). Clic para desmarcar.`;
+      }
+      return `Mesa ${mesa.numero} (Seleccionada para reservar). Clic para desmarcar.`;
     }
     if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') {
       return `Mesa ${mesa.numero} - Ya cuenta con una reserva en este horario`;
     }
-    if (mesa.capacidad < this.filtroPersonas) {
-      return `Mesa ${mesa.numero} - Capacidad insuficiente (${mesa.capacidad}p para ${this.filtroPersonas} personas)`;
+
+    const combApta = this.combMesaApta(mesa.id_mesa);
+    if (combApta && mesa.capacidad < this.filtroPersonas) {
+      return `Mesa ${mesa.numero} (${mesa.capacidad}p) - En combinación apta con ${combApta.numeros_mesas.filter(n => n !== mesa.numero).join(',')} (${combApta.capacidad_total}p para el grupo). Clic para seleccionar grupo`;
     }
-    return `Mesa ${mesa.numero} - Capacidad excesiva (${mesa.capacidad}p)`;
+
+    if (mesa.capacidad >= this.filtroPersonas) {
+      return `Mesa ${mesa.numero} (${mesa.capacidad}p) - Clic para seleccionar`;
+    }
+    return `Mesa ${mesa.numero} - Capacidad insuficiente (${mesa.capacidad}p para ${this.filtroPersonas} personas)`;
+  }
+
+  // --- SEMÁFORO VISUAL ARQUITECTÓNICO (CU20) ---
+  getColorFondoMesa(mesa: MesaDisponibilidad): string {
+    if (this.estaMesaSeleccionada(mesa.id_mesa)) return '#eff6ff'; // 🔵 Azul selección (alineado con leyenda)
+    if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') return '#fef2f2'; // 🔴 Rojo reservado
+
+    // Si forma parte de una combinación activa apta para el grupo:
+    const combApta = this.combMesaApta(mesa.id_mesa);
+    if (combApta && mesa.capacidad < this.filtroPersonas) {
+      return '#ecfdf5'; // 🟢 Verde por combinación apta
+    }
+
+    if (mesa.capacidad >= this.filtroPersonas) return '#ecfdf5'; // 🟢 Verde libre compatible
+    return '#fffbeb'; // 🟡 Amarillo incompatible
+  }
+
+  getColorTrazoMesa(mesa: MesaDisponibilidad): string {
+    if (this.estaMesaSeleccionada(mesa.id_mesa)) return '#2563eb'; // 🔵 Azul trazo
+    if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') return '#dc2626';
+
+    const combApta = this.combMesaApta(mesa.id_mesa);
+    if (combApta && mesa.capacidad < this.filtroPersonas) {
+      return '#059669';
+    }
+
+    if (mesa.capacidad >= this.filtroPersonas) return '#059669';
+    return '#d97706';
+  }
+
+  getColorSillaMesa(mesa: MesaDisponibilidad): string {
+    if (this.estaMesaSeleccionada(mesa.id_mesa)) return '#dbeafe'; // 🔵 Azul silla
+    if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') return '#fee2e2';
+
+    const combApta = this.combMesaApta(mesa.id_mesa);
+    if (combApta && mesa.capacidad < this.filtroPersonas) {
+      return '#d1fae5';
+    }
+
+    if (mesa.capacidad >= this.filtroPersonas) return '#d1fae5';
+    return '#fef3c7';
+  }
+
+  getColorTextoMesa(mesa: MesaDisponibilidad): string {
+    if (this.estaMesaSeleccionada(mesa.id_mesa)) return '#1d4ed8'; // 🔵 Azul texto
+    if (mesa.estado_disponibilidad === 'NO_DISPONIBLE') return '#991b1b';
+
+    const combApta = this.combMesaApta(mesa.id_mesa);
+    if (combApta && mesa.capacidad < this.filtroPersonas) {
+      return '#065f46';
+    }
+
+    if (mesa.capacidad >= this.filtroPersonas) return '#065f46';
+    return '#92400e';
+  }
+
+  getLineasCombinaciones(): {
+    combinacion: CombinacionDisponible;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    midX: number;
+    midY: number;
+    capacidad: number;
+    disponible: boolean;
+    seleccionable: boolean;
+    seleccionada: boolean;
+  }[] {
+    const disp = this.disponibilidad();
+    if (!disp || !disp.combinaciones) return [];
+    const res: any[] = [];
+    const mesasMap = new Map<number, MesaDisponibilidad>();
+    for (const m of disp.mesas) {
+      mesasMap.set(m.id_mesa, m);
+    }
+
+    for (const c of disp.combinaciones) {
+      if (c.mesas.length >= 2) {
+        const m1 = mesasMap.get(c.mesas[0]);
+        const m2 = mesasMap.get(c.mesas[1]);
+        if (m1 && m2) {
+          const x1 = Number(m1.posicion_x) * 100;
+          const y1 = Number(m1.posicion_y) * 100;
+          const x2 = Number(m2.posicion_x) * 100;
+          const y2 = Number(m2.posicion_y) * 100;
+          res.push({
+            combinacion: c,
+            x1,
+            y1,
+            x2,
+            y2,
+            midX: Math.round(((x1 + x2) / 2) * 10) / 10,
+            midY: Math.round(((y1 + y2) / 2) * 10) / 10,
+            capacidad: c.capacidad_total,
+            disponible: c.disponible,
+            seleccionable: c.seleccionable,
+            seleccionada: this.esCombinacionSeleccionada(c)
+          });
+        }
+      }
+    }
+    return res;
   }
 
   // --- CU21: CONFIRMAR RESERVA ---

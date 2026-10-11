@@ -272,18 +272,10 @@ export const routes: Routes = [
         data: { roles: ['RESTAURANTE', 'ADMINISTRADOR'] }
       },
 
-      // CASO DE USO: CU08 - GESTIONAR PLATOS & CU09 - COMPOSICIÓN DE RECETA (Editar Plato)
+      // CASO DE USO: CU08 - GESTIONAR PLATOS (Editar Plato)
       {
         path: 'platos/:id/editar',
         loadComponent: () => import('./features/platos/plato-form/plato-form.component').then(m => m.PlatoFormComponent),
-        canActivate: [roleGuard],
-        data: { roles: ['RESTAURANTE', 'ADMINISTRADOR'] }
-      },
-
-      // CASO DE USO: CU09 - GESTIONAR INGREDIENTES (Catálogo General)
-      {
-        path: 'ingredientes',
-        loadComponent: () => import('./features/ingredientes/ingredientes-lista/ingredientes-lista.component').then(m => m.IngredientesListaComponent),
         canActivate: [roleGuard],
         data: { roles: ['RESTAURANTE', 'ADMINISTRADOR'] }
       }

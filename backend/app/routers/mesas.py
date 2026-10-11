@@ -140,6 +140,26 @@ def cambiar_estado_mesa(
     )
 
 
+@router.delete(
+    "/mesas/{id_mesa}",
+    response_model=MesaRespuestaSchema,
+    status_code=status.HTTP_200_OK,
+    summary="CU18: Eliminar o desactivar mesa (baja lógica)",
+    description="Desactiva lógicamente una mesa del área verificando permisos de propiedad."
+)
+def eliminar_mesa(
+    id_mesa: int = Path(..., ge=1, description="ID de la mesa"),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(requiere_roles("RESTAURANTE", "ADMINISTRADOR"))
+):
+    return MesaService.cambiar_estado(
+        db=db,
+        id_mesa=id_mesa,
+        activo=False,
+        usuario_actual=usuario_actual
+    )
+
+
 # =========================================================================
 # CU17: DISTRIBUCIÓN 2D AUTOMÁTICA Y GUARDADO
 # =========================================================================
@@ -246,6 +266,32 @@ def crear_combinacion(
     return MesaCombinacionService.crear_combinacion(
         db=db,
         id_area=id_area,
+        datos=datos,
+        usuario_actual=usuario_actual
+    )
+
+
+@router.post(
+    "/combinaciones",
+    response_model=MesaCombinacionRespuestaSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="CU19: Registrar combinación permitida entre dos mesas (directa)",
+    description="Registra la combinación infiriendo el área física a partir de la mesa de origen."
+)
+def crear_combinacion_directa(
+    datos: CrearMesaCombinacionSchema,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(requiere_roles("RESTAURANTE", "ADMINISTRADOR"))
+):
+    mesa = MesaRepository.obtener_por_id(db, datos.id_mesa_origen)
+    if not mesa:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mesa de origen con ID {datos.id_mesa_origen} no encontrada."
+        )
+    return MesaCombinacionService.crear_combinacion(
+        db=db,
+        id_area=mesa.id_area,
         datos=datos,
         usuario_actual=usuario_actual
     )

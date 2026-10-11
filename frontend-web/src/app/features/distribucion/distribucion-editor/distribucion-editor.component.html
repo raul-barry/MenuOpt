@@ -28,34 +28,38 @@
     {{ error() }}
   </div>
 
-  <!-- Pestañas de Áreas (CU17) -->
-  <div class="area-tabs-bar">
-    <div
-      *ngFor="let area of areas()"
-      class="area-tab"
-      [class.active]="areaSeleccionada()?.id_area === area.id_area"
-      (click)="seleccionarArea(area)"
-    >
-      <span><app-icon name="store" class="app-icon-inline"></app-icon> {{ area.nombre }}</span>
-      <span class="tab-badge">{{ contarMesasArea(area.id_area) }} mesas</span>
-      <button
-        *ngIf="areaSeleccionada()?.id_area === area.id_area"
-        class="btn btn-xs"
-        style="padding: 0 4px; background: transparent; border: none; color: inherit; font-size: 0.75rem;"
-        title="Editar propiedades del área"
-        (click)="abrirModalEditarArea(area); $event.stopPropagation();"
+  <!-- Pestañas de Áreas estilo Hojas de Excel (CU17) -->
+  <div class="excel-tabs-bar-wrapper">
+    <div class="excel-tabs-container">
+      <div
+        *ngFor="let area of areas()"
+        class="excel-tab"
+        [class.active]="areaSeleccionada()?.id_area === area.id_area"
+        (click)="seleccionarArea(area)"
+        [title]="'Cambiar al plano de ' + area.nombre"
       >
-        <app-icon name="edit" class="app-icon-inline"></app-icon>
+        <span class="excel-tab-icon"><app-icon name="store" class="app-icon-inline"></app-icon></span>
+        <span class="excel-tab-title">{{ area.nombre }}</span>
+        <span class="excel-tab-badge">{{ contarMesasArea(area.id_area) }} mesas</span>
+        <button
+          *ngIf="areaSeleccionada()?.id_area === area.id_area"
+          class="excel-tab-action-btn"
+          title="Editar nombre y dimensiones del área"
+          (click)="abrirModalEditarArea(area); $event.stopPropagation();"
+        >
+          <app-icon name="edit" class="app-icon-inline"></app-icon>
+        </button>
+      </div>
+
+      <!-- Botón + para agregar nueva área estilo Excel -->
+      <button
+        class="excel-tab-add-btn"
+        title="Añadir nueva área física (+)"
+        (click)="abrirModalNuevaArea()"
+      >
+        <app-icon name="plus" class="app-icon-inline"></app-icon>
       </button>
     </div>
-
-    <button
-      *ngIf="areas().length === 0 && !cargando()"
-      class="btn btn-outline btn-sm"
-      (click)="abrirModalNuevaArea()"
-    >
-      <app-icon name="plus" class="app-icon-inline"></app-icon> Crear primer área
-    </button>
   </div>
 
   <!-- Contenido del Área Seleccionada -->
@@ -121,64 +125,190 @@
         </div>
       </div>
 
-      <!-- Lienzo Interactivo 2D con Drag & Drop -->
-      <div class="canvas-wrapper">
-        <div
-          #canvasContainer
-          class="canvas-viewport"
-          (pointermove)="onPointerMove($event)"
-          (pointerup)="onPointerUp($event)"
-          (pointercancel)="onPointerUp($event)"
-        >
-          <!-- Mensaje cuando el área no tiene mesas -->
-          <div
-            *ngIf="mesas().length === 0"
-            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted);"
-          >
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="ruler" class="app-icon-inline"></app-icon></div>
-            <h4 style="margin-bottom: 0.25rem;">Esta área aún no tiene mesas configuradas</h4>
-            <p style="font-size: 0.85rem; margin-bottom: 1rem;">
-              Puede generar una distribución inicial automática o agregar mesas manualmente.
-            </p>
-            <div style="display: flex; gap: 0.5rem; justify-content: center;">
-              <button class="btn btn-primary btn-sm" (click)="abrirModalGenerar()">
-                <app-icon name="zap" class="app-icon-inline"></app-icon> Generar Cuadrícula Automática
-              </button>
-              <button class="btn btn-outline btn-sm" (click)="abrirModalNuevaMesa()">
-                <app-icon name="plus" class="app-icon-inline"></app-icon> Agregar Mesa Manual
-              </button>
-            </div>
+      <!-- WORKSPACE CON BARRA LATERAL DE HERRAMIENTAS Y LIENZO 2D -->
+      <div class="editor-workspace-layout">
+        <!-- BARRA LATERAL: CATÁLOGO DE MODELOS DE MESAS Y SILLAS -->
+        <aside class="mesa-toolbox-sidebar">
+          <div class="toolbox-header">
+            <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem; display: flex; align-items: center; gap: 0.35rem;">
+              <app-icon name="store" class="app-icon-inline"></app-icon> Modelos de Mesas
+            </h4>
+            <p class="toolbox-hint">Arrastre una mesa al plano o haga clic para agregarla directamente.</p>
           </div>
 
-          <!-- Mesas Renderizadas en Coordenadas Normalizadas -->
-          <div
-            *ngFor="let mesa of mesas()"
-            class="mesa-item"
-            [class.mesa-forma-redonda]="mesa.forma === 'REDONDA'"
-            [class.mesa-forma-cuadrada]="mesa.forma === 'CUADRADA'"
-            [class.mesa-forma-rectangular]="mesa.forma === 'RECTANGULAR'"
-            [class.selected]="mesaSeleccionada()?.id_mesa === mesa.id_mesa"
-            [class.fija]="mesa.es_fija"
-            [class.inactiva]="!mesa.activo"
-            [class.dragging]="mesaEnArrastre === mesa"
-            [style.left]="(mesa.posicion_x * 100) + '%'"
-            [style.top]="(mesa.posicion_y * 100) + '%'"
-            [style.transform]="'translate(-50%, -50%) rotate(' + mesa.rotacion + 'deg)'"
-            (pointerdown)="onTablePointerDown($event, mesa)"
-            (click)="seleccionarMesa(mesa); $event.stopPropagation();"
-            [title]="mesa.es_fija ? 'Mesa fija: No movible' : 'Arrastre para reubicar la mesa'"
-          >
-            <div class="mesa-content" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
-              <span class="mesa-numero">{{ mesa.numero }}</span>
-              <span class="mesa-capacidad"><app-icon name="users" class="app-icon-inline"></app-icon> {{ mesa.capacidad }}p</span>
-              <div class="mesa-badges">
-                <span *ngIf="mesa.es_fija" class="badge-mini" title="Mesa fija"><app-icon name="lock" class="app-icon-inline"></app-icon></span>
-                <span *ngIf="mesa.combinable" class="badge-mini" title="Combinable"><app-icon name="link" class="app-icon-inline"></app-icon></span>
+          <!-- Pestañas de categorías del catálogo -->
+          <div class="toolbox-category-tabs">
+            <button
+              class="toolbox-cat-btn"
+              [class.active]="filtroCategoriaCatalogo() === 'TODAS'"
+              (click)="filtroCategoriaCatalogo.set('TODAS')"
+            >
+              Todas
+            </button>
+            <button
+              class="toolbox-cat-btn"
+              [class.active]="filtroCategoriaCatalogo() === 'REDONDA'"
+              (click)="filtroCategoriaCatalogo.set('REDONDA')"
+            >
+              Redondas
+            </button>
+            <button
+              class="toolbox-cat-btn"
+              [class.active]="filtroCategoriaCatalogo() === 'CUADRADA'"
+              (click)="filtroCategoriaCatalogo.set('CUADRADA')"
+            >
+              Cuadradas
+            </button>
+            <button
+              class="toolbox-cat-btn"
+              [class.active]="filtroCategoriaCatalogo() === 'RECTANGULAR'"
+              (click)="filtroCategoriaCatalogo.set('RECTANGULAR')"
+            >
+              Rectangulares
+            </button>
+          </div>
+
+          <!-- Grid de modelos arrastrables -->
+          <div class="toolbox-items-grid">
+            <div
+              *ngFor="let m of modelosFiltrados()"
+              class="toolbox-item-card"
+              draggable="true"
+              (dragstart)="onDragStartFromCatalog($event, m)"
+              (click)="crearMesaDirecta(m)"
+              [title]="'Arrastre al lienzo o haga clic para agregar: ' + m.nombre"
+            >
+              <div class="toolbox-item-preview">
+                <app-mesa-svg
+                  [forma]="m.forma"
+                  [capacidad]="m.capacidad"
+                  [disposicion]="m.disposicion"
+                  [tamanoPx]="60"
+                />
+              </div>
+              <div class="toolbox-item-label">
+                <span class="toolbox-item-title">{{ m.nombre }}</span>
+                <span class="toolbox-item-badge">{{ m.capacidad }} personas</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL: LIENZO 2D INTERACTIVO -->
+        <div class="canvas-main-viewport">
+          <!-- Banner flotante cuando está activo el Modo Combinar (CU19) -->
+          <div *ngIf="mesaParaCombinar() as combOrig" class="comb-mode-banner">
+            <div class="comb-mode-banner-content">
+              <span class="comb-mode-icon">🔗</span>
+              <span>
+                <strong>Modo Combinar Activo:</strong> Haga clic sobre otra mesa del plano para unirla con la <strong>Mesa {{ combOrig.numero }}</strong> ({{ combOrig.capacidad }} personas).
+              </span>
+            </div>
+            <button class="btn btn-outline btn-xs" (click)="cancelarModoCombinar()">
+              Cancelar
+            </button>
+          </div>
+
+          <div
+            class="canvas-wrapper"
+            (dragover)="onCanvasDragOver($event)"
+            (drop)="onCanvasDrop($event)"
+          >
+            <div
+              #canvasContainer
+              class="canvas-viewport"
+              (pointermove)="onPointerMove($event)"
+              (pointerup)="onPointerUp($event)"
+              (pointercancel)="onPointerUp($event)"
+            >
+              <!-- CAPA SVG DE CONEXIONES DE MESAS COMBINADAS (CU19) -->
+              <svg class="canvas-connections-svg">
+                <g *ngFor="let line of getLineasCombinaciones()">
+                  <!-- Sombra / contorno grueso exterior -->
+                  <line
+                    [attr.x1]="line.x1 + '%'"
+                    [attr.y1]="line.y1 + '%'"
+                    [attr.x2]="line.x2 + '%'"
+                    [attr.y2]="line.y2 + '%'"
+                    class="comb-line-outer"
+                  />
+                  <!-- Línea punteada interior neón/azul -->
+                  <line
+                    [attr.x1]="line.x1 + '%'"
+                    [attr.y1]="line.y1 + '%'"
+                    [attr.x2]="line.x2 + '%'"
+                    [attr.y2]="line.y2 + '%'"
+                    class="comb-line-inner"
+                  />
+                </g>
+              </svg>
+
+              <!-- CHIPS FLOTANTES EN EL CENTRO DEL ENLACE CON DESCOMBINAR (CU19) -->
+              <div
+                *ngFor="let line of getLineasCombinaciones()"
+                class="comb-center-badge"
+                [style.left]="line.midX + '%'"
+                [style.top]="line.midY + '%'"
+                (click)="confirmarDescombinar(line.combinacion, $event)"
+                [title]="'Combinación: ' + line.m1.numero + ' + ' + line.m2.numero + ' (' + line.capacidad + ' comensales). Clic para descombinar.'"
+              >
+                <span class="comb-badge-icon">🔗</span>
+                <span class="comb-badge-label">{{ line.m1.numero }}+{{ line.m2.numero }}</span>
+                <span class="comb-badge-pax">{{ line.capacidad }}p</span>
+                <button class="comb-badge-close" title="Descombinar estas mesas">&times;</button>
+              </div>
+
+              <!-- Mensaje cuando el área no tiene mesas -->
+              <div
+                *ngIf="mesas().length === 0"
+                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); z-index: 1;"
+              >
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="ruler" class="app-icon-inline"></app-icon></div>
+                <h4 style="margin-bottom: 0.25rem;">Esta área aún no tiene mesas</h4>
+                <p style="font-size: 0.85rem; margin-bottom: 1rem;">
+                  Arrastre una mesa desde el catálogo de la izquierda o genere una distribución automática.
+                </p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                  <button class="btn btn-primary btn-sm" (click)="abrirModalGenerar()">
+                    <app-icon name="zap" class="app-icon-inline"></app-icon> Generar Cuadrícula
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mesas Renderizadas en Coordenadas Normalizadas con SVG Arquitectónico -->
+              <div
+                *ngFor="let mesa of mesas()"
+                class="mesa-item-svg-wrapper"
+                [class.selected]="mesaSeleccionada()?.id_mesa === mesa.id_mesa"
+                [class.fija]="mesa.es_fija"
+                [class.inactiva]="!mesa.activo"
+                [class.dragging]="mesaEnArrastre === mesa"
+                [class.comb-orig]="mesaParaCombinar()?.id_mesa === mesa.id_mesa"
+                [class.comb-target]="mesaParaCombinar() && mesaParaCombinar()?.id_mesa !== mesa.id_mesa && !mesa.es_fija"
+                [style.left]="(mesa.posicion_x * 100) + '%'"
+                [style.top]="(mesa.posicion_y * 100) + '%'"
+                [style.transform]="'translate(-50%, -50%) rotate(' + mesa.rotacion + 'deg)'"
+                (pointerdown)="onTablePointerDown($event, mesa)"
+                (click)="onMesaClick(mesa, $event)"
+                [title]="mesa.es_fija ? 'Mesa fija: No movible' : 'Mesa ' + mesa.numero + ' (' + mesa.capacidad + ' comensales)'"
+              >
+                <app-mesa-svg
+                  [forma]="mesa.forma"
+                  [capacidad]="mesa.capacidad"
+                  [texto]="mesa.numero"
+                  [tamanoPx]="mesa.forma === 'REDONDA' ? 76 : (mesa.capacidad >= 8 ? 92 : 82)"
+                  [colorFondoMesa]="mesaSeleccionada()?.id_mesa === mesa.id_mesa ? '#fff2e7' : (mesaParaCombinar()?.id_mesa === mesa.id_mesa ? '#e0f2fe' : '#ffffff')"
+                  [colorTrazo]="mesaSeleccionada()?.id_mesa === mesa.id_mesa ? '#ff6f00' : (mesaParaCombinar()?.id_mesa === mesa.id_mesa ? '#0284c7' : '#1e293b')"
+                  [colorTexto]="mesaSeleccionada()?.id_mesa === mesa.id_mesa ? '#ff6f00' : (mesaParaCombinar()?.id_mesa === mesa.id_mesa ? '#0284c7' : '#1e293b')"
+                />
+                <!-- Badges de estado fija y combinable -->
+                <div class="mesa-svg-badges" [style.transform]="'rotate(-' + mesa.rotacion + 'deg)'">
+                  <span *ngIf="mesa.es_fija" class="badge-mini" title="Mesa fija"><app-icon name="lock" class="app-icon-inline"></app-icon></span>
+                  <span *ngIf="mesa.combinable" class="badge-mini" title="Combinable (CU19)"><app-icon name="link" class="app-icon-inline"></app-icon></span>
+                </div>
+              </div>
+            </div>
+          </div>
 
       <!-- Barra de Inspector / Mesa Seleccionada -->
       <div *ngIf="mesaSeleccionada() as selMesa" class="inspector-bar">
@@ -215,6 +345,14 @@
         </div>
 
         <div class="inspector-actions">
+          <button
+            *ngIf="!selMesa.es_fija"
+            class="btn btn-primary btn-sm"
+            (click)="iniciarModoCombinacion(selMesa)"
+            title="Unir con otra mesa contigua para grupos grandes (CU19)"
+          >
+            <app-icon name="link" class="app-icon-inline"></app-icon> Combinar Mesa
+          </button>
           <button class="btn btn-outline btn-sm" (click)="rotarMesa90(selMesa)" title="Rotar 90 grados">
             <app-icon name="refresh" class="app-icon-inline"></app-icon> Rotar 90°
           </button>
@@ -254,7 +392,13 @@
           <span><app-icon name="link" class="app-icon-inline"></app-icon> Apta para combinar (CU19)</span>
         </div>
         <div class="legend-item">
+          <span style="display: inline-block; width: 18px; height: 3px; background: #0284c7; border-top: 2px dashed #0284c7;"></span>
+          <span>Mesas combinadas (CU19)</span>
+        </div>
+        <div class="legend-item">
           <span>Coordenadas normalizadas $[0.0, 1.0]$ adaptables a cualquier pantalla</span>
+        </div>
+      </div>
         </div>
       </div>
     </div>
@@ -405,9 +549,14 @@
       <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem;">
         Para configurar el plano 2D, comience creando las áreas de su restaurante (por ejemplo: Salón Principal, Terraza, Planta Alta).
       </p>
-      <button class="btn btn-primary" (click)="abrirModalNuevaArea()">
-        <app-icon name="plus" class="app-icon-inline"></app-icon> Crear Primera Área
-      </button>
+      <div style="display: flex; justify-content: center; gap: 0.75rem;">
+        <button class="btn btn-primary" (click)="crearAreaPorDefecto()">
+          <app-icon name="plus" class="app-icon-inline"></app-icon> Generar Salón Principal
+        </button>
+        <button class="btn btn-outline" (click)="abrirModalNuevaArea()">
+          Personalizada...
+        </button>
+      </div>
     </div>
   </ng-template>
 </div>
@@ -506,21 +655,7 @@
             />
           </div>
           <div>
-            <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Nombre descriptivo</label>
-            <input
-              type="text"
-              class="form-control"
-              style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
-              placeholder="Ej: Mesa ventana"
-              [(ngModel)]="formMesa.nombre"
-              name="nombreMesa"
-            />
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div>
-            <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Capacidad (personas) *</label>
+            <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Cantidad de Sillas (Capacidad) *</label>
             <input
               type="number"
               class="form-control"
@@ -528,39 +663,9 @@
               [(ngModel)]="formMesa.capacidad"
               name="capacidadMesa"
               min="1"
-              max="50"
+              max="24"
               required
             />
-          </div>
-          <div>
-            <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Forma geométrica *</label>
-            <select
-              class="form-control"
-              style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
-              [(ngModel)]="formMesa.forma"
-              name="formaMesa"
-            >
-              <option value="REDONDA">Redonda</option>
-              <option value="CUADRADA">Cuadrada</option>
-              <option value="RECTANGULAR">Rectangular</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div>
-            <label class="form-label" style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Rotación</label>
-            <select
-              class="form-control"
-              style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);"
-              [(ngModel)]="formMesa.rotacion"
-              name="rotacionMesa"
-            >
-              <option [ngValue]="0">0° (Horizontal)</option>
-              <option [ngValue]="90">90° (Vertical)</option>
-              <option [ngValue]="180">180°</option>
-              <option [ngValue]="270">270°</option>
-            </select>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 # CASO DE USO: CU17 - Crear plano 2D del restaurante & Distribución de mesas
 from decimal import Decimal
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.mesa import MesaRespuestaSchema
 
 
@@ -22,7 +22,16 @@ class ActualizarPosicionMesaItemSchema(BaseModel):
 
 
 class GuardarDistribucionRequestSchema(BaseModel):
-    mesas: List[ActualizarPosicionMesaItemSchema] = Field(..., description="Lista de mesas con nuevas coordenadas normalizadas")
+    mesas: Optional[List[ActualizarPosicionMesaItemSchema]] = Field(default=None, description="Lista de mesas con nuevas coordenadas")
+    posiciones: Optional[List[ActualizarPosicionMesaItemSchema]] = Field(default=None, description="Alias compatible de lista de mesas")
+
+    @model_validator(mode="after")
+    def normalizar_mesas_o_posiciones(self):
+        if not self.mesas and self.posiciones is not None:
+            self.mesas = self.posiciones
+        elif self.mesas is None:
+            self.mesas = []
+        return self
 
 
 class DistribucionAreaRespuestaSchema(BaseModel):

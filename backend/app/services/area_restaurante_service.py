@@ -61,7 +61,9 @@ class AreaRestauranteService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Área con ID {id_area} no encontrada."
             )
-        verificar_propiedad_area(area, usuario_actual)
+        rol_nombre = usuario_actual.rol.nombre if usuario_actual.rol else None
+        if rol_nombre != "CLIENTE":
+            verificar_propiedad_area(area, usuario_actual)
 
         total_mesas = AreaRestauranteRepository.contar_mesas_por_area(db, id_area)
         respuesta = AreaRestauranteRespuestaSchema.model_validate(area)
@@ -81,9 +83,28 @@ class AreaRestauranteService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Restaurante con ID {id_restaurante} no encontrado."
             )
-        verificar_propiedad_restaurante(restaurante, usuario_actual)
+        rol_nombre = usuario_actual.rol.nombre if usuario_actual.rol else None
+        if rol_nombre != "CLIENTE":
+            verificar_propiedad_restaurante(restaurante, usuario_actual)
 
         areas = AreaRestauranteRepository.listar_por_restaurante(db, id_restaurante, solo_activas=solo_activas)
+
+        # Automatización CU17: Si el restaurante no cuenta con áreas registradas, autogenerar "Salón Principal"
+        if not areas:
+            area_default = AreaRestaurante(
+                id_restaurante=id_restaurante,
+                nombre="Salón Principal",
+                descripcion="Área física principal del establecimiento",
+                ancho_mapa=1200,
+                alto_mapa=700,
+                orden=1,
+                activo=True
+            )
+            db.add(area_default)
+            db.commit()
+            db.refresh(area_default)
+            areas = [area_default]
+
         respuestas: List[AreaRestauranteRespuestaSchema] = []
         for a in areas:
             resp = AreaRestauranteRespuestaSchema.model_validate(a)

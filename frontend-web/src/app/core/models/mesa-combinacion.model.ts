@@ -8,7 +8,10 @@ export interface MesaCombinacion {
   activo: boolean;
   fecha_creacion: string;
   numero_mesa_origen?: string | null;
+  capacidad_mesa_origen?: number | null;
   numero_mesa_destino?: string | null;
+  capacidad_mesa_destino?: number | null;
+  capacidad_combinada: number;
   capacidad_total?: number | null;
 }
 

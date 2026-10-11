@@ -34,7 +34,8 @@ class ReservaService:
 
     @staticmethod
     def validar_capacidad_maxima(capacidad: int, cantidad_personas: int) -> None:
-        capacidad_maxima = cantidad_personas + settings.MAX_EXCESO_CAPACIDAD_MESA
+        tolerancia = max(settings.MAX_EXCESO_CAPACIDAD_MESA, 8)
+        capacidad_maxima = cantidad_personas + tolerancia
         if capacidad > capacidad_maxima:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

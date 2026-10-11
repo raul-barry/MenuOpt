@@ -18,6 +18,21 @@ class RestauranteRepository:
         db.flush()  # Asigna id_ubicacion sin hacer commit
         restaurante.id_ubicacion = ubicacion.id_ubicacion
         db.add(restaurante)
+        db.flush()
+
+        # Automatización CU17: Autogenerar área inicial "Salón Principal"
+        from app.models.area_restaurante import AreaRestaurante
+        area_inicial = AreaRestaurante(
+            id_restaurante=restaurante.id_restaurante,
+            nombre="Salón Principal",
+            descripcion="Área física principal del establecimiento",
+            ancho_mapa=1200,
+            alto_mapa=700,
+            orden=1,
+            activo=True
+        )
+        db.add(area_inicial)
+
         db.commit()
         db.refresh(restaurante)
         return restaurante

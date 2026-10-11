@@ -41,9 +41,6 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
               <a routerLink="/admin/categorias" routerLinkActive="active" class="nav-link">
                 <span><app-icon name="layers" class="app-icon-inline"></app-icon></span> Categorías
               </a>
-              <a routerLink="/ingredientes" routerLinkActive="active" class="nav-link">
-                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Ingredientes
-              </a>
               <div class="nav-section-title">PLANIFICACIÓN & IA</div>
               <a routerLink="/asistente" routerLinkActive="active" class="nav-link">
                 <span><app-icon name="bot" class="app-icon-inline"></app-icon></span> Asistente IA
@@ -92,9 +89,6 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
               <div class="nav-section-title">MI NEGOCIO</div>
               <a routerLink="/restaurantes" routerLinkActive="active" class="nav-link">
                 <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Mis Restaurantes
-              </a>
-              <a routerLink="/ingredientes" routerLinkActive="active" class="nav-link">
-                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Catálogo Ingredientes
               </a>
             </ng-container>
 
