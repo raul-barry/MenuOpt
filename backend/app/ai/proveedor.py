@@ -105,16 +105,19 @@ class MockProveedorIA(ProveedorIA):
         elif any(w in msg_lower for w in ["merienda", "merendar"]):
             tipo_comida = "MERIENDA"
 
-        # 4. Detectar Ubicación de Referencia (ej: "en Equipetrol", "cerca de Calacoto", "en el centro")
-        match_ub = re.search(r"(?:en|cerca\s+de|por|zona)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?)(?:[.,]|$)", mensaje)
+        # 4. Detectar Ubicación de Referencia (ej: "en Equipetrol", "cerca de Calacoto", "en el centro", "en 16 de julio", "en Santa Cruz")
+        match_ub = re.search(r"(?:en|cerca\s+de|por|zona)\s+([0-9A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?)(?:[.,]|$)", mensaje)
         if match_ub:
             candidato = match_ub.group(1).strip()
             # Limpiar palabras comunes
-            palabras_filtro = ["el almuerzo", "la cena", "familia", "amigos", "comida"]
+            palabras_filtro = ["el almuerzo", "la cena", "familia", "amigos", "comida", "mi móvil", "mi celular", "mi movil"]
             if not any(pf in candidato.lower() for pf in palabras_filtro) and len(candidato) >= 3:
-                ubicacion_referencia = candidato.split()[0].capitalize() if len(candidato.split()) <= 3 else candidato
+                ubicacion_referencia = candidato.title()
 
-        # 5. Detectar Preferencias (vegetariano, vegano, sin gluten, sin lactosa, keto, etc.)
+        # 5. Detectar Preferencias (vegetariano, vegano, sin gluten, sin lactosa, keto, silpancho, etc.)
+        if "silpancho" in msg_lower and "Silpancho" not in preferencias:
+            preferencias.append("Silpancho")
+
         keywords_pref = {
             "vegetariano": "Vegetariano",
             "vegetariana": "Vegetariano",

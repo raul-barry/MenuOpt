@@ -37,7 +37,7 @@ router = APIRouter(
 )
 def consultar_mesas_disponibles(
     id_restaurante: int = Path(..., gt=0),
-    id_area: int = Query(..., gt=0, description="ID del área física del restaurante"),
+    id_area: Optional[int] = Query(None, gt=0, description="ID del área física del restaurante (opcional: si se omite se toma el área principal)"),
     fecha: date = Query(..., description="Fecha de la reserva (YYYY-MM-DD)"),
     hora_inicio: time = Query(..., description="Hora de inicio (HH:MM:SS)"),
     hora_fin: time = Query(..., description="Hora de finalización (HH:MM:SS)"),

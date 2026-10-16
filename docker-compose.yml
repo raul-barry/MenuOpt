@@ -43,6 +43,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+    command: sh -c "alembic upgrade head && python -m app.database.crear_admin && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     networks:
       - menuopt_network
 
@@ -58,6 +59,20 @@ services:
       - backend
     networks:
       - menuopt_network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: menuopt_cloudflared
+    restart: unless-stopped
+    command: ${CLOUDFLARE_TUNNEL_COMMAND:-tunnel run}
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - backend
+    networks:
+      - menuopt_network
+    profiles:
+      - tunnel
 
 volumes:
   postgres_data:

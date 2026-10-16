@@ -47,6 +47,7 @@ class DisponibilidadRespuesta(BaseModel):
     hora_fin: time
     cantidad_personas: int
     mesas: List[MesaDisponibilidadRespuesta]
+    mesas_disponibles: Optional[List[MesaDisponibilidadRespuesta]] = None
     combinaciones: List[CombinacionDisponibleRespuesta]
 
     model_config = ConfigDict(from_attributes=True)

@@ -109,11 +109,28 @@ p { color: inherit; }
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
-.card-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid #ededed; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #ededed;
+}
 .card-header h2, .card-header h3, .card-header h4 { margin-bottom: 0; }
 
-.table-responsive { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
-.table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+.table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; min-width: 580px; }
 .table th { padding: 0.85rem 1rem; background: #f7f7f6; color: #696969; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.045em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
 .table td { padding: 0.85rem 1rem; border-bottom: 1px solid #eeeeee; vertical-align: middle; }
 .table tr:last-child td { border-bottom: 0; }
@@ -125,7 +142,7 @@ p { color: inherit; }
 .badge-danger { background: var(--danger-light); color: var(--danger); }
 .badge-secondary { background: #f1f1f1; color: #686868; }
 
-.alert { margin-bottom: 1rem; padding: 0.8rem 1rem; border: 1px solid transparent; border-radius: 11px; font-size: 0.9rem; }
+.alert { margin-bottom: 1rem; padding: 0.8rem 1rem; border: 1px solid transparent; border-radius: 11px; font-size: 0.9rem; word-break: break-word; }
 .alert-success { background: var(--success-light); color: #176344; border-color: #c9ead8; }
 .alert-danger { background: var(--danger-light); color: #a52e2a; border-color: #ffd1ce; }
 .alert-info { background: #f0f6fb; color: #315b73; border-color: #d2e5f0; }
@@ -145,22 +162,38 @@ p { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
-  background: rgb(28 25 23 / 0.48);
+  padding: 1rem;
+  background: rgb(28 25 23 / 0.52);
   backdrop-filter: blur(4px);
+  overflow-y: auto;
 }
 .modal-dialog, .modal-container, .modal-content, .modal-card {
+  width: 100%;
+  max-width: min(94vw, 560px);
+  max-height: 90vh;
+  overflow-y: auto;
   border: 1px solid rgb(255 255 255 / 0.7);
   border-radius: 18px;
   background: #fff;
   box-shadow: var(--shadow-lg);
+  margin: auto;
 }
 
 @media (max-width: 640px) {
-  .card { padding: 1.15rem; border-radius: 14px; }
+  .card { padding: 1.15rem 0.95rem; border-radius: 14px; }
   .card-header { align-items: flex-start; }
   .btn { min-height: 40px; }
-  .table { min-width: 600px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 0.9rem; }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.45rem; }
+  h2 { font-size: 1.25rem; }
+  .card { padding: 1rem 0.75rem; border-radius: 12px; }
+  .modal-dialog, .modal-container, .modal-content, .modal-card {
+    border-radius: 14px;
+    max-height: 94vh;
+  }
 }
 /* =========================================================================
    SISTEMA DE ICONOGRAFÍA VECTORIAL PROFESIONAL (LUCIDE)

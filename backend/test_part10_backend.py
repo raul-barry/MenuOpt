@@ -52,7 +52,7 @@ def run():
     # 1. Login ADMIN
     c, r = request("POST", "/autenticacion/login", {
         "correo": "admin@menuopt.com",
-        "contrasena": "Admin1234!"
+        "contrasena": "Admin1234*"
     })
     log_test(0, "Login ADMIN", c == 200, f"code={c}")
     admin_token = r["access_token"]

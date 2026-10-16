@@ -12,6 +12,7 @@ from app.schemas.restaurante import (
 )
 from app.security.dependencias import obtener_usuario_actual, requiere_roles
 from app.services.restaurante_service import RestauranteService
+from app.repositories.restaurante_repository import RestauranteRepository
 
 router = APIRouter(
     prefix="/restaurantes",
@@ -49,6 +50,26 @@ def registrar_restaurante(
 # =========================================================================
 # CASO DE USO: CU06 - GESTIONAR RESTAURANTE
 # =========================================================================
+
+# --- Listar Todos los Restaurantes (Catálogo general para clientes y reservas) ---
+# Endpoint: GET /restaurantes
+# Acceso: Cualquier usuario autenticado
+@router.get(
+    "",
+    response_model=List[RestauranteRespuestaSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Listar todos los restaurantes",
+    description="Devuelve el catálogo de restaurantes para consulta general y reservas."
+)
+def listar_restaurantes_catalogo(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+):
+    """
+    Controlador para listar restaurantes para catálogo general.
+    """
+    return RestauranteRepository.listar_todos(db)
+
 
 # --- CU06: Consultar Mis Restaurantes ---
 # Endpoint: GET /restaurantes/mis-restaurantes

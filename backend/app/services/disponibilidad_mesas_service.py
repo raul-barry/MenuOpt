@@ -1,6 +1,6 @@
 # CASO DE USO: CU20 - Consultar disponibilidad de mesas
 from datetime import datetime, date, time
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -78,7 +78,7 @@ class DisponibilidadMesasService:
         cls,
         db: Session,
         id_restaurante: int,
-        id_area: int,
+        id_area: Optional[int],
         fecha: date,
         hora_inicio: time,
         hora_fin: time,
@@ -98,12 +98,22 @@ class DisponibilidadMesasService:
                 detail=f"Restaurante #{id_restaurante} no encontrado o inactivo."
             )
 
-        area = AreaRestauranteRepository.obtener_por_id(db, id_area)
-        if not area or area.id_restaurante != id_restaurante or not area.activo:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Área #{id_area} no encontrada o inactiva en este restaurante."
-            )
+        if id_area is None:
+            areas = AreaRestauranteRepository.listar_por_restaurante(db, id_restaurante, solo_activas=True)
+            if not areas:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"El restaurante #{id_restaurante} no tiene áreas activas configuradas."
+                )
+            area = areas[0]
+            id_area = area.id_area
+        else:
+            area = AreaRestauranteRepository.obtener_por_id(db, id_area)
+            if not area or area.id_restaurante != id_restaurante or not area.activo:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Área #{id_area} no encontrada o inactiva en este restaurante."
+                )
 
         # 3. Obtener mesas activas del área (1 consulta)
         mesas_area: List[Mesa] = MesaRepository.listar_por_area(db, id_area, solo_activas=True)
@@ -221,5 +231,6 @@ class DisponibilidadMesasService:
             hora_fin=hora_fin,
             cantidad_personas=cantidad_personas,
             mesas=mesas_resultado,
+            mesas_disponibles=[m for m in mesas_resultado if m.seleccionable],
             combinaciones=combinaciones_resultado
         )

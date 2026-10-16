@@ -1,8 +1,8 @@
 # CASO DE USO: CU26 - Usar asistencia con IA
 # Esquemas Pydantic para el módulo de IA
 from decimal import Decimal
-from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ContextoPrevio(BaseModel):
@@ -16,6 +16,14 @@ class ContextoPrevio(BaseModel):
 class SolicitudInterpretar(BaseModel):
     mensaje: str = Field(..., min_length=1, max_length=1000, description="Mensaje del usuario en lenguaje natural")
     contexto_previo: Optional[ContextoPrevio] = Field(None, description="Contexto acumulado de la sesión")
+
+    @model_validator(mode="before")
+    @classmethod
+    def compatibilizar_solicitud(cls, data):
+        if isinstance(data, dict):
+            if "mensaje" not in data and "solicitud" in data:
+                data["mensaje"] = data["solicitud"]
+        return data
 
     @field_validator("mensaje")
     @classmethod
@@ -44,6 +52,39 @@ class SolicitudInterpretada(BaseModel):
     datos_faltantes: List[str] = []
     mensaje_asistente: str
     listo_para_crear: bool = False
+
+    # Campos de retrocompatibilidad con versiones de cliente móvil
+    explicacion: Optional[str] = None
+    respuesta: Optional[str] = None
+    intencion: Optional[str] = "CONSULTA"
+    entidades: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def enriquecer_compatibilidad(cls, data):
+        if isinstance(data, dict):
+            msg = data.get("mensaje_asistente")
+            if msg:
+                if not data.get("explicacion"):
+                    data["explicacion"] = msg
+                if not data.get("respuesta"):
+                    data["respuesta"] = msg
+            if not data.get("intencion"):
+                data["intencion"] = "PLANIFICACION" if data.get("listo_para_crear") else "CONSULTA"
+            if not data.get("entidades"):
+                ents = {}
+                if data.get("tipo_comida"):
+                    ents["tipo_comida"] = data["tipo_comida"]
+                if data.get("cantidad_personas"):
+                    ents["personas"] = data["cantidad_personas"]
+                if data.get("presupuesto"):
+                    ents["presupuesto"] = f"{data['presupuesto']} Bs"
+                if data.get("ubicacion_referencia"):
+                    ents["ubicacion"] = data["ubicacion_referencia"]
+                if data.get("preferencias_detectadas"):
+                    ents["preferencias"] = ", ".join(data["preferencias_detectadas"])
+                data["entidades"] = ents
+        return data
 
     model_config = ConfigDict(from_attributes=True)
 

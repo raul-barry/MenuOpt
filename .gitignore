@@ -46,6 +46,7 @@ dist/
 build/
 android/.gradle
 ios/.symlinks/
+*.apk
 
 # Base de datos y respaldos locales
 *.sql

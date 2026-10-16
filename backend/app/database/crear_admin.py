@@ -11,6 +11,7 @@ USUARIOS_DE_PRUEBA = [
     ("Laura", "Gerente", "restaurante2@menuopt.com", "Resto1234*", "RESTAURANTE", "72223344"),
     ("Cliente", "Uno", "cliente1@menuopt.com", "Cliente1234*", "CLIENTE", "73334455"),
     ("Cliente", "Dos", "cliente2@menuopt.com", "Cliente1234*", "CLIENTE", "74445566"),
+    ("Admin", "Eventos", "admineventos@gmail.com", "Admin1234*", "ADMINISTRADOR", "79998877"),
 ]
 
 

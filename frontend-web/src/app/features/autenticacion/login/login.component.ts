@@ -102,8 +102,12 @@ export class LoginComponent {
           this.errorMessage.set('Correo electrónico o contraseña incorrectos.');
         } else if (err.status === 403) {
           this.errorMessage.set('Su cuenta se encuentra inactiva o suspendida.');
+        } else if (err.status === 0) {
+          this.errorMessage.set('No se pudo conectar con el servidor backend. Verifique su conexión.');
+        } else if (err.status >= 500) {
+          this.errorMessage.set('Error interno del servidor. Por favor, intente nuevamente más tarde.');
         } else {
-          this.errorMessage.set('Ocurrió un error al intentar iniciar sesión. Verifique su conexión.');
+          this.errorMessage.set(err.error?.detail || 'Ocurrió un error al intentar iniciar sesión.');
         }
       }
     });
