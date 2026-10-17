@@ -60,20 +60,6 @@ services:
     networks:
       - menuopt_network
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: menuopt_cloudflared
-    restart: unless-stopped
-    command: ${CLOUDFLARE_TUNNEL_COMMAND:-tunnel run}
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
-    depends_on:
-      - backend
-    networks:
-      - menuopt_network
-    profiles:
-      - tunnel
-
 volumes:
   postgres_data:
     name: menuopt_postgres_data

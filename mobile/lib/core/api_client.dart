@@ -16,22 +16,16 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
   ApiClient._();
 
-  // Configuración de URL base en tiempo de compilación (--dart-define=API_BASE_URL=https://...)
-  // Compatible con API_BASE_URL (estándar de la skill) y BASE_URL (legacy)
-  static const String _envApiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
-  static const String _envBaseUrl = String.fromEnvironment('BASE_URL', defaultValue: '');
-  static final String _compileTimeBaseUrl = _envApiBaseUrl.isNotEmpty ? _envApiBaseUrl : _envBaseUrl;
-
-  // Si se pasa una URL explícita por --dart-define, se usa exclusivamente para evitar retardos
-  // intentando IPs LAN privadas cuando el móvil está con datos o en otra red Wi-Fi.
-  static final List<String> _candidateUrls = _compileTimeBaseUrl.isNotEmpty
-      ? [_compileTimeBaseUrl]
-      : [
-          'http://192.168.0.4:8000', // IP activa de red local Wi-Fi de la PC
-          'http://10.0.2.2:8000',     // Emulador Android estándar
-          'http://localhost:8000',    // Web / Windows desktop
-          'http://127.0.0.1:8000',
-        ];
+  // Lista de candidatos de conexión automática sin que el usuario deba escribir nada
+  static const String _compileTimeBaseUrl = String.fromEnvironment('BASE_URL', defaultValue: '');
+  
+  static final List<String> _candidateUrls = [
+    if (_compileTimeBaseUrl.isNotEmpty) _compileTimeBaseUrl,
+    'http://192.168.0.4:8000', // IP activa de red local Wi-Fi de la PC
+    'http://10.0.2.2:8000',     // Emulador Android estándar
+    'http://localhost:8000',    // Web / Windows desktop
+    'http://127.0.0.1:8000',
+  ];
 
   String baseUrl = _candidateUrls.first;
   bool _hostLocked = false;
@@ -103,7 +97,7 @@ class ApiClient {
     }
 
     throw ApiException(
-      'No se pudo conectar con el backend de MenuOpt (intentado en: ${tried.join(', ')}). Verifique su conexión a Internet o que el túnel/servidor esté activo.',
+      'No se pudo conectar con el backend de MenuOpt en la red local. Intentado en: ${tried.join(', ')}. Verifique que su servidor FastAPI esté activo.',
     );
   }
 
