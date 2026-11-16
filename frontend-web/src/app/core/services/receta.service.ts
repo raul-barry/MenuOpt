@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Receta, RecetaCrear } from '../models/receta.model';
+import { Receta, RecetaCrear, RecetaConsultaIA, RecetaConsultaIARespuesta } from '../models/receta.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +11,10 @@ import { Receta, RecetaCrear } from '../models/receta.model';
 export class RecetaService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/recetas`;
+
+  consultarIA(datos: RecetaConsultaIA): Observable<RecetaConsultaIARespuesta> {
+    return this.http.post<RecetaConsultaIARespuesta>(`${this.apiUrl}/consulta-ia`, datos);
+  }
 
   listarRecetas(tipoComida?: string, busqueda?: string): Observable<Receta[]> {
     let params = new HttpParams();

@@ -57,3 +57,33 @@ class RecetaRespuestaSchema(BaseModel):
     costo_estimado_insumos: Optional[Decimal] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RecetaConsultaIASchema(BaseModel):
+    mensaje: str = Field(..., min_length=3, description="Mensaje del usuario con ingredientes o preguntas")
+    comensales: Optional[int] = Field(None, ge=1, le=50, description="Cantidad deseada de comensales")
+
+
+class RecetaIngredienteFaltanteSchema(BaseModel):
+    nombre: str
+    cantidad_requerida: Decimal
+    unidad_medida: str
+    tienda_sugerida: Optional[str] = None
+    precio_referencial: Optional[Decimal] = None
+
+
+class RecetaTiendaRecomendadaSchema(BaseModel):
+    nombre_tienda: str
+    tipo: Optional[str] = None
+    insumos_disponibles: List[str] = []
+    costo_estimado: Optional[Decimal] = None
+
+
+class RecetaConsultaIARespuestaSchema(BaseModel):
+    mensaje_usuario: str
+    respuesta_ia: str
+    porciones_sugeridas: int
+    platos_sugeridos: List[RecetaRespuestaSchema] = []
+    ingredientes_faltantes: List[RecetaIngredienteFaltanteSchema] = []
+    tiendas_recomendadas: List[RecetaTiendaRecomendadaSchema] = []
+

@@ -14,7 +14,7 @@ import { LugaresCompraRecomendacion } from '../../../core/models/lugar-compra.mo
     <div class="lugares-container">
       <div style="margin-bottom: 1rem;">
         <a [routerLink]="['/recomendaciones', idRecomendacion, 'preparacion']" class="back-link">
-          &larr; Volver a la lista de ingredientes (CU15)
+          &larr; Volver a la lista de ingredientes
         </a>
       </div>
 

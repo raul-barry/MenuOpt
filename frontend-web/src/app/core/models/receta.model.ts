@@ -46,3 +46,32 @@ export interface RecetaCrear {
     unidad_medida: string;
   }[];
 }
+
+export interface RecetaConsultaIA {
+  mensaje: string;
+  comensales?: number | null;
+}
+
+export interface RecetaIngredienteFaltante {
+  nombre: string;
+  cantidad_requerida: number;
+  unidad_medida: string;
+  tienda_sugerida?: string | null;
+  precio_referencial?: number | null;
+}
+
+export interface RecetaTiendaRecomendada {
+  nombre_tienda: string;
+  tipo?: string | null;
+  insumos_disponibles: string[];
+  costo_estimado?: number | null;
+}
+
+export interface RecetaConsultaIARespuesta {
+  mensaje_usuario: string;
+  respuesta_ia: string;
+  porciones_sugeridas: number;
+  platos_sugeridos: Receta[];
+  ingredientes_faltantes: RecetaIngredienteFaltante[];
+  tiendas_recomendadas: RecetaTiendaRecomendada[];
+}

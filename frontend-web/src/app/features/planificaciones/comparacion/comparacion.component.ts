@@ -207,7 +207,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                   [routerLink]="['/recomendaciones', alt.id_recomendacion, 'preparacion']" 
                   class="btn btn-primary btn-sm"
                 >
-                  <app-icon name="salad" class="app-icon-inline"></app-icon> Ingredientes (CU15)
+                  <app-icon name="salad" class="app-icon-inline"></app-icon> Ingredientes
                 </a>
                 <a 
                   [routerLink]="['/recomendaciones', alt.id_recomendacion, 'lugares-compra']" 

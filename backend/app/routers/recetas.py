@@ -1,4 +1,4 @@
-# CASO DE USO: CU15 - Biblioteca de Recetas
+# CASO DE USO: Biblioteca de Recetas
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.orm import Session
@@ -7,18 +7,37 @@ from app.database.conexion import get_db
 from app.models.usuario import Usuario
 from app.schemas.receta import (
     RecetaCrearSchema,
-    RecetaRespuestaSchema
+    RecetaRespuestaSchema,
+    RecetaConsultaIASchema,
+    RecetaConsultaIARespuestaSchema
 )
 from app.security.dependencias import obtener_usuario_actual, requiere_roles
 from app.services.receta_service import RecetaService
 
 router = APIRouter(
     prefix="/recetas",
-    tags=["Biblioteca de Recetas (CU15)"]
+    tags=["Biblioteca de Recetas"]
 )
 
 
-# --- CU15: Consultar Biblioteca de Recetas ---
+# --- Consulta Culinaria con IA ---
+# Endpoint: POST /recetas/consulta-ia
+@router.post(
+    "/consulta-ia",
+    response_model=RecetaConsultaIARespuestaSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Consultar a la IA sobre preparación con ingredientes disponibles",
+    description="Permite al usuario indicar los ingredientes disponibles y recibir platos sugeridos, personas estimadas y tiendas más convenientes."
+)
+def consultar_ia(
+    datos: RecetaConsultaIASchema,
+    db: Session = Depends(get_db),
+    _usuario: Usuario = Depends(obtener_usuario_actual)
+):
+    return RecetaService.consultar_ia(db=db, mensaje=datos.mensaje, comensales=datos.comensales)
+
+
+# --- Consultar Biblioteca de Recetas ---
 # Endpoint: GET /recetas
 @router.get(
     "",

@@ -94,7 +94,7 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
                 <span><app-icon name="sliders-horizontal" class="app-icon-inline"></app-icon></span> Preferencias
               </a>
               <a routerLink="/recetas" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
-                <span><app-icon name="salad" class="app-icon-inline"></app-icon></span> Biblioteca Recetas (CU15)
+                <span><app-icon name="salad" class="app-icon-inline"></app-icon></span> Biblioteca de Recetas
               </a>
             </ng-container>
 
@@ -118,7 +118,7 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
                 <span><app-icon name="sliders-horizontal" class="app-icon-inline"></app-icon></span> Mis preferencias
               </a>
               <a routerLink="/recetas" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
-                <span><app-icon name="salad" class="app-icon-inline"></app-icon></span> Biblioteca de Recetas (CU15)
+                <span><app-icon name="salad" class="app-icon-inline"></app-icon></span> Biblioteca de Recetas
               </a>
               <div class="nav-section-title">PEDIDOS & RESERVAS</div>
               <a routerLink="/mis-reservas" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">

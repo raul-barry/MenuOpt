@@ -60,7 +60,7 @@ import { PreparacionPropia } from '../../../core/models/preparacion.model';
         <div class="card">
           <div class="card-header">
             <div>
-              <h3>Lista de Ingredientes Necesarios (CU15)</h3>
+              <h3>Lista de Ingredientes Necesarios</h3>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
                 Cantidades proporcionales exactas calculadas según la receta base para {{ prep.cantidad_personas }} personas.
               </p>

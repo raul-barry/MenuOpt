@@ -1,4 +1,4 @@
-// CASO DE USO: CU15 - Biblioteca de Recetas
+// CASO DE USO: Biblioteca de Recetas
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -6,7 +6,7 @@ import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { RecetaService } from '../../../core/services/receta.service';
 import { IngredienteService } from '../../../core/services/ingrediente.service';
-import { Receta, RecetaCrear } from '../../../core/models/receta.model';
+import { Receta, RecetaCrear, RecetaConsultaIARespuesta } from '../../../core/models/receta.model';
 import { Ingrediente } from '../../../core/models/ingrediente.model';
 
 @Component({
@@ -19,7 +19,7 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       <div class="card header-card">
         <div class="header-main">
           <div>
-            <span class="badge badge-primary">BIBLIOTECA GASTRONÓMICA (CU15)</span>
+            <span class="badge badge-primary">BIBLIOTECA GASTRONÓMICA</span>
             <h2 style="margin-top: 0.5rem;">Biblioteca de Recetas</h2>
             <p style="color: var(--text-muted); margin-top: 0.25rem;">
               Explora preparaciones culinarias caseras con sus ingredientes, porciones y costos estimados.
@@ -30,6 +30,116 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
             <button class="btn btn-primary" (click)="abrirModalCrear()">
               <app-icon name="plus" class="app-icon-inline"></app-icon> Añadir Receta (Admin)
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Interactivo de Consulta Culinaria con IA -->
+      <div class="card ai-consult-card">
+        <div class="ai-consult-header">
+          <div class="ai-icon-bubble">✨</div>
+          <div>
+            <h3 class="ai-title">Asistente Culinario IA: ¿Qué puedo cocinar hoy?</h3>
+            <p class="ai-subtitle">
+              Indica qué ingredientes tienes en casa y nuestro asistente te dirá qué plato preparar, para cuántas personas te alcanza y en qué tienda de Santa Cruz conseguir lo que te falte al mejor precio.
+            </p>
+          </div>
+        </div>
+
+        <div class="ai-input-wrapper">
+          <div class="ai-input-row">
+            <div class="ai-textarea-box">
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Ej: Tengo pechuga de pollo, arroz, tomate y cebolla. ¿Qué puedo preparar?"
+                [(ngModel)]="consultaIAMensaje"
+                (keyup.enter)="ejecutarConsultaIA()"
+              />
+            </div>
+            <div class="ai-person-box">
+              <label class="ai-label-inline">Comensales:</label>
+              <input 
+                type="number" 
+                min="1" 
+                max="25" 
+                class="form-control" 
+                style="width: 75px; text-align: center;"
+                [(ngModel)]="comensalesIA"
+              />
+            </div>
+            <button 
+              class="btn btn-primary btn-ai"
+              (click)="ejecutarConsultaIA()"
+              [disabled]="consultandoIA() || !consultaIAMensaje.trim()"
+            >
+              <span *ngIf="!consultandoIA()">🤖 Consultar con IA</span>
+              <span *ngIf="consultandoIA()">Consultando...</span>
+            </button>
+          </div>
+
+          <!-- Sugerencias Rápidas -->
+          <div class="ai-chips-row">
+            <span class="ai-chips-label">Prueba rápida:</span>
+            <button class="ai-chip" (click)="usarSugerenciaIA('Tengo pechuga de pollo, arroz, tomate y cebolla para 2 personas')">
+              🍗 Pollo, arroz y verduras
+            </button>
+            <button class="ai-chip" (click)="usarSugerenciaIA('Tengo carne molida, queso chaqueño y huevos para 4 personas')">
+              🍔 Carne molida, queso y huevos
+            </button>
+            <button class="ai-chip" (click)="usarSugerenciaIA('Tengo papas, cebolla roja, huevos y aceite para 4 personas')">
+              🥔 Tortilla de papas y huevos
+            </button>
+            <button class="ai-chip" (click)="usarSugerenciaIA('Tengo fideos espagueti, carne molida y queso chaqueño para 3 personas')">
+              🍝 Espagueti a la bolognesa
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel de Resultados de la Consulta IA -->
+        <div *ngIf="respuestaIA()" class="ai-result-panel">
+          <div class="ai-result-header">
+            <div class="ai-result-tag">
+              <span class="badge badge-primary">RESPUESTA DE IA CULINARIA</span>
+              <span class="badge badge-success">👥 Calculado para {{ respuestaIA()?.porciones_sugeridas }} comensales</span>
+            </div>
+            <button class="btn-clear-ai" (click)="limpiarConsultaIA()" title="Cerrar resultado">✕</button>
+          </div>
+
+          <!-- Platos sugeridos con foto -->
+          <div *ngIf="respuestaIA()?.platos_sugeridos?.length" class="ai-platos-grid">
+            <div *ngFor="let ps of respuestaIA()?.platos_sugeridos" class="ai-plato-mini-card" (click)="verDetalle(ps)">
+              <img [src]="ps.imagen_url || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800&auto=format&fit=crop&q=80'" [alt]="ps.nombre" class="ai-plato-img" (error)="onImgError($event)" />
+              <div class="ai-plato-info">
+                <span class="ai-plato-badge">{{ ps.tipo_comida }} • {{ ps.tiempo_minutos }} min</span>
+                <strong class="ai-plato-name">{{ ps.nombre }}</strong>
+                <span class="ai-ver-link">Ver receta completa &rarr;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Respuesta Explicada -->
+          <div class="ai-text-box">
+            <p style="white-space: pre-line; margin: 0; line-height: 1.6; color: #1e293b;">
+              {{ respuestaIA()?.respuesta_ia }}
+            </p>
+          </div>
+
+          <!-- Tiendas Sugeridas para Faltantes -->
+          <div *ngIf="respuestaIA()?.tiendas_recomendadas?.length" class="ai-stores-section">
+            <h4 class="ai-stores-title">🏪 Tiendas y mercados sugeridos en Santa Cruz:</h4>
+            <div class="ai-stores-grid">
+              <div *ngFor="let tienda of respuestaIA()?.tiendas_recomendadas" class="ai-store-card">
+                <div class="ai-store-top">
+                  <span class="ai-store-name">{{ tienda.nombre_tienda }}</span>
+                  <span class="badge badge-tipo">{{ tienda.tipo }}</span>
+                </div>
+                <div class="ai-store-body">
+                  <span class="ai-store-items">Insumos: {{ tienda.insumos_disponibles.join(', ') }}</span>
+                  <strong *ngIf="tienda.costo_estimado" class="text-success">Costo Est.: Bs {{ tienda.costo_estimado | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -97,52 +207,64 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
         </p>
       </div>
 
-      <!-- Grid de Recetas -->
+      <!-- Grid de Recetas con Fotos -->
       <div *ngIf="!cargando() && recetasFiltradas().length > 0" class="recetas-grid">
         <div *ngFor="let r of recetasFiltradas()" class="card receta-card">
-          <div class="card-top">
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <span class="badge badge-tipo">{{ r.tipo_comida }}</span>
-              <span class="badge" [ngClass]="getBadgeDificultad(r.dificultad)">{{ r.dificultad }}</span>
-              <span *ngIf="r.origen" class="badge badge-origen">{{ r.origen }}</span>
-            </div>
-            <button 
-              *ngIf="esAdmin()" 
-              class="btn-delete" 
-              title="Eliminar receta (Admin)"
-              (click)="eliminarReceta(r)"
-            >
-              <app-icon name="trash" class="app-icon-inline"></app-icon>
-            </button>
+          <!-- Imagen de la Receta -->
+          <div class="receta-img-wrap">
+            <img 
+              [src]="r.imagen_url || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800&auto=format&fit=crop&q=80'" 
+              [alt]="r.nombre" 
+              class="receta-cover-img" 
+              (error)="onImgError($event)" 
+            />
+            <span class="badge badge-tipo img-badge">{{ r.tipo_comida }}</span>
           </div>
 
-          <h3 class="receta-titulo">{{ r.nombre }}</h3>
-          <p class="receta-desc">{{ r.descripcion || 'Sin descripción disponible.' }}</p>
+          <div class="receta-card-body">
+            <div class="card-top">
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span class="badge" [ngClass]="getBadgeDificultad(r.dificultad)">{{ r.dificultad }}</span>
+                <span *ngIf="r.origen" class="badge badge-origen">{{ r.origen }}</span>
+              </div>
+              <button 
+                *ngIf="esAdmin()" 
+                class="btn-delete" 
+                title="Eliminar receta (Admin)"
+                (click)="eliminarReceta(r)"
+              >
+                <app-icon name="trash" class="app-icon-inline"></app-icon>
+              </button>
+            </div>
 
-          <!-- Métricas de la Receta -->
-          <div class="receta-metricas">
-            <div class="metrica-item" title="Tiempo de preparación">
-              <span class="metrica-icon">⏱️</span>
-              <span class="metrica-val">{{ r.tiempo_minutos }} min</span>
-            </div>
-            <div class="metrica-item" title="Porciones calculadas">
-              <span class="metrica-icon">👥</span>
-              <span class="metrica-val">{{ r.porciones }} porc.</span>
-            </div>
-            <div class="metrica-item" title="Ingredientes necesarios">
-              <span class="metrica-icon">🥗</span>
-              <span class="metrica-val">{{ r.total_ingredientes }} ingr.</span>
-            </div>
-            <div class="metrica-item highlight" title="Costo referencial de insumos en tiendas" *ngIf="r.costo_estimado_insumos">
-              <span class="metrica-icon">💵</span>
-              <span class="metrica-val text-success">Bs {{ r.costo_estimado_insumos | number:'1.2-2' }}</span>
-            </div>
-          </div>
+            <h3 class="receta-titulo">{{ r.nombre }}</h3>
+            <p class="receta-desc">{{ r.descripcion || 'Sin descripción disponible.' }}</p>
 
-          <div class="card-footer-action">
-            <button class="btn btn-outline btn-sm w-full" (click)="verDetalle(r)">
-              <app-icon name="search" class="app-icon-inline"></app-icon> Ver Ficha e Ingredientes
-            </button>
+            <!-- Métricas de la Receta -->
+            <div class="receta-metricas">
+              <div class="metrica-item" title="Tiempo de preparación">
+                <span class="metrica-icon">⏱️</span>
+                <span class="metrica-val">{{ r.tiempo_minutos }} min</span>
+              </div>
+              <div class="metrica-item" title="Porciones calculadas">
+                <span class="metrica-icon">👥</span>
+                <span class="metrica-val">{{ r.porciones }} porc.</span>
+              </div>
+              <div class="metrica-item" title="Ingredientes necesarios">
+                <span class="metrica-icon">🥗</span>
+                <span class="metrica-val">{{ r.total_ingredientes }} ingr.</span>
+              </div>
+              <div class="metrica-item highlight" title="Costo referencial de insumos en tiendas" *ngIf="r.costo_estimado_insumos">
+                <span class="metrica-icon">💵</span>
+                <span class="metrica-val text-success">Bs {{ r.costo_estimado_insumos | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="card-footer-action">
+              <button class="btn btn-outline btn-sm w-full" (click)="verDetalle(r)">
+                <app-icon name="search" class="app-icon-inline"></app-icon> Ver Ficha e Ingredientes
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -150,12 +272,19 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       <!-- MODAL: Ver Ficha de Receta -->
       <div *ngIf="recetaSeleccionada()" class="modal-overlay" (click)="cerrarModalDetalle()">
         <div class="modal-card card" (click)="$event.stopPropagation()">
-          <div class="modal-header">
+          <!-- Hero de Imagen en el Modal -->
+          <div *ngIf="recetaSeleccionada()?.imagen_url" class="modal-hero-wrap">
+            <img [src]="recetaSeleccionada()?.imagen_url!" [alt]="recetaSeleccionada()?.nombre" class="modal-hero-img" (error)="onImgError($event)" />
+            <button class="btn-close-hero" (click)="cerrarModalDetalle()">&times;</button>
+          </div>
+
+          <div class="modal-header" [style.borderTop]="recetaSeleccionada()?.imagen_url ? 'none' : ''">
             <div>
               <span class="badge badge-primary">{{ recetaSeleccionada()?.tipo_comida }}</span>
+              <span *ngIf="recetaSeleccionada()?.origen" class="badge badge-origen" style="margin-left: 0.5rem;">{{ recetaSeleccionada()?.origen }}</span>
               <h3 style="margin-top: 0.35rem;">{{ recetaSeleccionada()?.nombre }}</h3>
             </div>
-            <button class="btn-close" (click)="cerrarModalDetalle()">&times;</button>
+            <button *ngIf="!recetaSeleccionada()?.imagen_url" class="btn-close" (click)="cerrarModalDetalle()">&times;</button>
           </div>
 
           <div class="modal-body">
@@ -227,7 +356,7 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       <div *ngIf="mostrarModalCrear()" class="modal-overlay" (click)="cerrarModalCrear()">
         <div class="modal-card card modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3><app-icon name="plus" class="app-icon-inline"></app-icon> Añadir Receta a la Biblioteca (CU15)</h3>
+            <h3><app-icon name="plus" class="app-icon-inline"></app-icon> Añadir Receta a la Biblioteca</h3>
             <button class="btn-close" (click)="cerrarModalCrear()">&times;</button>
           </div>
 
@@ -268,6 +397,17 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
                 </div>
               </div>
 
+              <div class="grid-2" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label class="form-label">Origen / Región</label>
+                  <input type="text" class="form-control" formControlName="origen" placeholder="Ej: Tradicional Cruceña" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">URL de Imagen Representativa</label>
+                  <input type="text" class="form-control" formControlName="imagen_url" placeholder="https://images.unsplash.com/..." />
+                </div>
+              </div>
+
               <div class="form-group" style="margin-top: 1rem;">
                 <label class="form-label">Descripción Breve</label>
                 <input type="text" class="form-control" formControlName="descripcion" placeholder="Reseña breve o características..." />
@@ -282,7 +422,6 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
               <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <h4 style="margin-bottom: 0.75rem;">Ingredientes de la Receta</h4>
                 
-                <!-- Fila para agregar ingrediente -->
                 <div style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
                   <div style="flex: 2; min-width: 180px;">
                     <label class="form-label" style="font-size: 0.8rem;">Seleccionar del Catálogo</label>
@@ -310,7 +449,6 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
                   </button>
                 </div>
 
-                <!-- Lista de ingredientes agregados -->
                 <div class="table-responsive" style="margin-top: 1rem;">
                   <table class="table table-sm">
                     <thead>
@@ -372,6 +510,250 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       flex-wrap: wrap;
       gap: 1rem;
     }
+
+    /* Panel de Consulta IA */
+    .ai-consult-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #f0f9ff 100%);
+      border: 1px solid #bbf7d0;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08);
+    }
+    .ai-consult-header {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+    .ai-icon-bubble {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #10b981;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+    .ai-title {
+      font-size: 1.25rem;
+      margin: 0 0 0.25rem 0;
+      color: #065f46;
+      font-weight: 700;
+    }
+    .ai-subtitle {
+      font-size: 0.9rem;
+      color: #475569;
+      margin: 0;
+      line-height: 1.45;
+    }
+    .ai-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ai-input-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .ai-textarea-box {
+      flex: 1;
+      min-width: 280px;
+    }
+    .ai-person-box {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #fff;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .ai-label-inline {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+      margin: 0;
+    }
+    .btn-ai {
+      background: #059669;
+      border-color: #059669;
+      font-weight: 600;
+      padding: 0.55rem 1.25rem;
+      white-space: nowrap;
+    }
+    .btn-ai:hover {
+      background: #047857;
+      border-color: #047857;
+    }
+    .ai-chips-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .ai-chips-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+    .ai-chip {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #1e293b;
+      transition: all 0.15s ease;
+    }
+    .ai-chip:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+    }
+
+    /* Panel de Resultado IA */
+    .ai-result-panel {
+      margin-top: 1.25rem;
+      padding: 1.25rem;
+      background: #ffffff;
+      border-radius: 10px;
+      border: 1px solid #a7f3d0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    .ai-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .ai-result-tag {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-clear-ai {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #94a3b8;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .btn-clear-ai:hover {
+      color: #ef4444;
+    }
+    .ai-platos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .ai-plato-mini-card {
+      display: flex;
+      gap: 0.75rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.6rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      align-items: center;
+    }
+    .ai-plato-mini-card:hover {
+      background: #f1f5f9;
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+    }
+    .ai-plato-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .ai-plato-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      overflow: hidden;
+    }
+    .ai-plato-badge {
+      font-size: 0.7rem;
+      color: #0284c7;
+      font-weight: 600;
+    }
+    .ai-plato-name {
+      font-size: 0.88rem;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ai-ver-link {
+      font-size: 0.75rem;
+      color: #10b981;
+      font-weight: 600;
+    }
+    .ai-text-box {
+      background: #f8fafc;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1rem;
+    }
+    .ai-stores-section {
+      margin-top: 1rem;
+    }
+    .ai-stores-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 0.5rem;
+    }
+    .ai-stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+    .ai-store-card {
+      background: #f1f5f9;
+      border-radius: 6px;
+      padding: 0.75rem;
+      border: 1px solid #cbd5e1;
+    }
+    .ai-store-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+    .ai-store-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .ai-store-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+    .ai-store-items {
+      max-width: 70%;
+    }
+
+    /* Barra de Filtros */
     .filter-bar {
       padding: 1rem;
       display: flex;
@@ -395,22 +777,57 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
     .search-box {
       min-width: 260px;
     }
+
+    /* Grid de Recetas */
     .recetas-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.25rem;
     }
     .receta-card {
-      padding: 1.25rem;
+      padding: 0;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       border: 1px solid var(--border);
+      border-radius: 10px;
     }
     .receta-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+    .receta-img-wrap {
+      position: relative;
+      height: 180px;
+      width: 100%;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .receta-cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.25s ease;
+    }
+    .receta-card:hover .receta-cover-img {
+      transform: scale(1.04);
+    }
+    .img-badge {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0369a1;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    .receta-card-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
     }
     .card-top {
       display: flex;
@@ -454,6 +871,7 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       font-size: 1.2rem;
       margin: 0 0 0.5rem 0;
       color: var(--text-main);
+      font-weight: 700;
     }
     .receta-desc {
       font-size: 0.88rem;
@@ -493,6 +911,8 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       align-items: center;
       justify-content: center;
     }
+
+    /* Modales */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -508,9 +928,37 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       max-width: 600px;
       max-height: 90vh;
       overflow-y: auto;
-      padding: 1.5rem;
-      border-radius: 8px;
+      padding: 0;
+      border-radius: 12px;
       background: #fff;
+    }
+    .modal-hero-wrap {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      overflow: hidden;
+    }
+    .modal-hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .btn-close-hero {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
     .modal-lg {
       max-width: 750px;
@@ -519,9 +967,11 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
+      padding: 1.25rem 1.5rem 0.75rem 1.5rem;
       border-bottom: 1px solid var(--border);
+    }
+    .modal-body {
+      padding: 1.25rem 1.5rem;
     }
     .btn-close {
       background: none;
@@ -550,6 +1000,11 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       border-radius: 6px;
       border: 1px solid var(--border);
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   `]
 })
 export class BibliotecaRecetasComponent implements OnInit {
@@ -566,6 +1021,12 @@ export class BibliotecaRecetasComponent implements OnInit {
   filtroTipo = signal<string>('TODAS');
   busquedaTexto = '';
 
+  // Consulta IA Culinaria
+  consultaIAMensaje = '';
+  comensalesIA: number = 2;
+  consultandoIA = signal<boolean>(false);
+  respuestaIA = signal<RecetaConsultaIARespuesta | null>(null);
+
   mensajeExito = signal<string | null>(null);
   mensajeError = signal<string | null>(null);
 
@@ -580,6 +1041,8 @@ export class BibliotecaRecetasComponent implements OnInit {
     porciones: [2, [Validators.required, Validators.min(1)]],
     tiempo_minutos: [30, [Validators.required, Validators.min(1)]],
     dificultad: ['FACIL', Validators.required],
+    origen: ['Tradicional Cruceña'],
+    imagen_url: [''],
     descripcion: [''],
     instrucciones: ['']
   });
@@ -642,11 +1105,48 @@ export class BibliotecaRecetasComponent implements OnInit {
       list = list.filter(r =>
         r.nombre.toLowerCase().includes(q) ||
         (r.descripcion && r.descripcion.toLowerCase().includes(q)) ||
+        (r.origen && r.origen.toLowerCase().includes(q)) ||
         r.ingredientes.some(i => i.nombre_ingrediente.toLowerCase().includes(q))
       );
     }
 
     this.recetasFiltradas.set(list);
+  }
+
+  // --- Consulta Asistente Culinario IA ---
+  ejecutarConsultaIA(): void {
+    const texto = this.consultaIAMensaje.trim();
+    if (!texto) return;
+
+    this.consultandoIA.set(true);
+    this.recetaService.consultarIA({
+      mensaje: texto,
+      comensales: this.comensalesIA > 0 ? this.comensalesIA : 2
+    }).subscribe({
+      next: (resp) => {
+        this.respuestaIA.set(resp);
+        this.consultandoIA.set(false);
+      },
+      error: (err) => {
+        this.mensajeError.set(err.error?.detail || 'Error al consultar con el asistente culinario.');
+        this.consultandoIA.set(false);
+        setTimeout(() => this.mensajeError.set(null), 4000);
+      }
+    });
+  }
+
+  usarSugerenciaIA(sugerencia: string): void {
+    this.consultaIAMensaje = sugerencia;
+    this.ejecutarConsultaIA();
+  }
+
+  limpiarConsultaIA(): void {
+    this.respuestaIA.set(null);
+    this.consultaIAMensaje = '';
+  }
+
+  onImgError(event: any): void {
+    event.target.src = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800&auto=format&fit=crop&q=80';
   }
 
   getBadgeDificultad(dificultad: string): string {
@@ -671,6 +1171,8 @@ export class BibliotecaRecetasComponent implements OnInit {
       porciones: 2,
       tiempo_minutos: 30,
       dificultad: 'FACIL',
+      origen: 'Tradicional Cruceña',
+      imagen_url: '',
       descripcion: '',
       instrucciones: ''
     });
@@ -730,6 +1232,8 @@ export class BibliotecaRecetasComponent implements OnInit {
       porciones: Number(val.porciones),
       tiempo_minutos: Number(val.tiempo_minutos),
       dificultad: val.dificultad!,
+      origen: val.origen || 'Tradicional Cruceña',
+      imagen_url: val.imagen_url || undefined,
       descripcion: val.descripcion || undefined,
       instrucciones: val.instrucciones || undefined,
       ingredientes: this.listaIngredientesNuevos()

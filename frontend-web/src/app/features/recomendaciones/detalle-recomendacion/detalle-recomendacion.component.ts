@@ -116,7 +116,7 @@ import { Recomendacion } from '../../../core/models/recomendacion.model';
 
           <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <a [routerLink]="['/recomendaciones', rec.id_recomendacion, 'preparacion']" class="btn btn-primary">
-              <app-icon name="salad" class="app-icon-inline"></app-icon> Consultar Ingredientes Escalados (CU15)
+              <app-icon name="salad" class="app-icon-inline"></app-icon> Consultar Ingredientes Escalados
             </a>
             <a [routerLink]="['/recomendaciones', rec.id_recomendacion, 'lugares-compra']" class="btn btn-outline">
               <app-icon name="store" class="app-icon-inline"></app-icon> Consultar Lugares de Compra (CU16)
