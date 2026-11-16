@@ -1,0 +1,771 @@
+// CASO DE USO: CU15 - Biblioteca de Recetas
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { RecetaService } from '../../../core/services/receta.service';
+import { IngredienteService } from '../../../core/services/ingrediente.service';
+import { Receta, RecetaCrear } from '../../../core/models/receta.model';
+import { Ingrediente } from '../../../core/models/ingrediente.model';
+
+@Component({
+  selector: 'app-biblioteca-recetas',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, AppIconComponent],
+  template: `
+    <div class="recetas-container">
+      <!-- Encabezado Principal -->
+      <div class="card header-card">
+        <div class="header-main">
+          <div>
+            <span class="badge badge-primary">BIBLIOTECA GASTRONÓMICA (CU15)</span>
+            <h2 style="margin-top: 0.5rem;">Biblioteca de Recetas</h2>
+            <p style="color: var(--text-muted); margin-top: 0.25rem;">
+              Explora preparaciones culinarias caseras con sus ingredientes, porciones y costos estimados.
+            </p>
+          </div>
+          <!-- Botón Exclusivo para Administrador -->
+          <div *ngIf="esAdmin()">
+            <button class="btn btn-primary" (click)="abrirModalCrear()">
+              <app-icon name="plus" class="app-icon-inline"></app-icon> Añadir Receta (Admin)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="card filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Tipo de Comida:</span>
+          <button 
+            class="btn btn-sm" 
+            [ngClass]="filtroTipo() === 'TODAS' ? 'btn-primary' : 'btn-outline'"
+            (click)="cambiarTipo('TODAS')"
+          >
+            Todas ({{ recetas().length }})
+          </button>
+          <button 
+            class="btn btn-sm" 
+            [ngClass]="filtroTipo() === 'ALMUERZO' ? 'btn-primary' : 'btn-outline'"
+            (click)="cambiarTipo('ALMUERZO')"
+          >
+            Almuerzo
+          </button>
+          <button 
+            class="btn btn-sm" 
+            [ngClass]="filtroTipo() === 'CENA' ? 'btn-primary' : 'btn-outline'"
+            (click)="cambiarTipo('CENA')"
+          >
+            Cena
+          </button>
+          <button 
+            class="btn btn-sm" 
+            [ngClass]="filtroTipo() === 'DESAYUNO' ? 'btn-primary' : 'btn-outline'"
+            (click)="cambiarTipo('DESAYUNO')"
+          >
+            Desayuno
+          </button>
+        </div>
+
+        <div class="search-box">
+          <input 
+            type="text" 
+            class="form-control form-control-sm" 
+            placeholder="Buscar por nombre o ingrediente..." 
+            [(ngModel)]="busquedaTexto"
+            (input)="onBuscar()"
+          />
+        </div>
+      </div>
+
+      <!-- Feedback de Éxito / Error -->
+      <div *ngIf="mensajeExito()" class="alert alert-success">{{ mensajeExito() }}</div>
+      <div *ngIf="mensajeError()" class="alert alert-danger">{{ mensajeError() }}</div>
+
+      <!-- Estado de Carga -->
+      <div *ngIf="cargando()" class="card" style="text-align: center; padding: 3rem;">
+        <p style="color: var(--text-muted);">Cargando biblioteca de recetas...</p>
+      </div>
+
+      <!-- Sin Resultados -->
+      <div *ngIf="!cargando() && recetasFiltradas().length === 0" class="card empty-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🍲</div>
+        <h3>No se encontraron recetas</h3>
+        <p style="color: var(--text-muted); max-width: 450px;">
+          No hay recetas registradas que coincidan con los filtros seleccionados.
+        </p>
+      </div>
+
+      <!-- Grid de Recetas -->
+      <div *ngIf="!cargando() && recetasFiltradas().length > 0" class="recetas-grid">
+        <div *ngFor="let r of recetasFiltradas()" class="card receta-card">
+          <div class="card-top">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <span class="badge badge-tipo">{{ r.tipo_comida }}</span>
+              <span class="badge" [ngClass]="getBadgeDificultad(r.dificultad)">{{ r.dificultad }}</span>
+              <span *ngIf="r.origen" class="badge badge-origen">{{ r.origen }}</span>
+            </div>
+            <button 
+              *ngIf="esAdmin()" 
+              class="btn-delete" 
+              title="Eliminar receta (Admin)"
+              (click)="eliminarReceta(r)"
+            >
+              <app-icon name="trash" class="app-icon-inline"></app-icon>
+            </button>
+          </div>
+
+          <h3 class="receta-titulo">{{ r.nombre }}</h3>
+          <p class="receta-desc">{{ r.descripcion || 'Sin descripción disponible.' }}</p>
+
+          <!-- Métricas de la Receta -->
+          <div class="receta-metricas">
+            <div class="metrica-item" title="Tiempo de preparación">
+              <span class="metrica-icon">⏱️</span>
+              <span class="metrica-val">{{ r.tiempo_minutos }} min</span>
+            </div>
+            <div class="metrica-item" title="Porciones calculadas">
+              <span class="metrica-icon">👥</span>
+              <span class="metrica-val">{{ r.porciones }} porc.</span>
+            </div>
+            <div class="metrica-item" title="Ingredientes necesarios">
+              <span class="metrica-icon">🥗</span>
+              <span class="metrica-val">{{ r.total_ingredientes }} ingr.</span>
+            </div>
+            <div class="metrica-item highlight" title="Costo referencial de insumos en tiendas" *ngIf="r.costo_estimado_insumos">
+              <span class="metrica-icon">💵</span>
+              <span class="metrica-val text-success">Bs {{ r.costo_estimado_insumos | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="card-footer-action">
+            <button class="btn btn-outline btn-sm w-full" (click)="verDetalle(r)">
+              <app-icon name="search" class="app-icon-inline"></app-icon> Ver Ficha e Ingredientes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Ver Ficha de Receta -->
+      <div *ngIf="recetaSeleccionada()" class="modal-overlay" (click)="cerrarModalDetalle()">
+        <div class="modal-card card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <span class="badge badge-primary">{{ recetaSeleccionada()?.tipo_comida }}</span>
+              <h3 style="margin-top: 0.35rem;">{{ recetaSeleccionada()?.nombre }}</h3>
+            </div>
+            <button class="btn-close" (click)="cerrarModalDetalle()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">
+              {{ recetaSeleccionada()?.descripcion }}
+            </p>
+
+            <div class="grid-3" style="margin-bottom: 1.5rem;">
+              <div class="mini-box">
+                <span class="lbl">Porciones</span>
+                <strong>{{ recetaSeleccionada()?.porciones }} comensales</strong>
+              </div>
+              <div class="mini-box">
+                <span class="lbl">Tiempo</span>
+                <strong>{{ recetaSeleccionada()?.tiempo_minutos }} minutos</strong>
+              </div>
+              <div class="mini-box">
+                <span class="lbl">Costo Insumos</span>
+                <strong class="text-success">
+                  {{ recetaSeleccionada()?.costo_estimado_insumos ? 'Bs ' + (recetaSeleccionada()?.costo_estimado_insumos | number:'1.2-2') : 'A consultar' }}
+                </strong>
+              </div>
+            </div>
+
+            <!-- Tabla de Ingredientes -->
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🥗</span> Lista de Ingredientes Requeridos
+            </h4>
+            <div class="table-responsive" style="margin-bottom: 1.5rem;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Ingrediente</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                    <th>Subtotal Est.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ing of recetaSeleccionada()?.ingredientes">
+                    <td><strong>{{ ing.nombre_ingrediente }}</strong></td>
+                    <td>{{ ing.cantidad }}</td>
+                    <td>{{ ing.unidad_medida }}</td>
+                    <td>
+                      <span *ngIf="ing.costo_subtotal" class="text-success">Bs {{ ing.costo_subtotal | number:'1.2-2' }}</span>
+                      <span *ngIf="!ing.costo_subtotal" style="color: var(--text-muted);">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Instrucciones de Preparación -->
+            <div *ngIf="recetaSeleccionada()?.instrucciones">
+              <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📝</span> Paso a Paso de Preparación
+              </h4>
+              <div class="instrucciones-box">
+                <p style="white-space: pre-line; margin: 0; line-height: 1.6; color: #334155;">
+                  {{ recetaSeleccionada()?.instrucciones }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Añadir Nueva Receta (Solo Administrador) -->
+      <div *ngIf="mostrarModalCrear()" class="modal-overlay" (click)="cerrarModalCrear()">
+        <div class="modal-card card modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3><app-icon name="plus" class="app-icon-inline"></app-icon> Añadir Receta a la Biblioteca (CU15)</h3>
+            <button class="btn-close" (click)="cerrarModalCrear()">&times;</button>
+          </div>
+
+          <form [formGroup]="formReceta" (ngSubmit)="guardarNuevaReceta()">
+            <div class="modal-body">
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Nombre de la Receta *</label>
+                  <input type="text" class="form-control" formControlName="nombre" placeholder="Ej: Majadito de Pato" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo de Comida *</label>
+                  <select class="form-control" formControlName="tipo_comida">
+                    <option value="ALMUERZO">ALMUERZO</option>
+                    <option value="CENA">CENA</option>
+                    <option value="DESAYUNO">DESAYUNO</option>
+                    <option value="MERIENDA">MERIENDA</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid-3" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label class="form-label">Porciones *</label>
+                  <input type="number" class="form-control" formControlName="porciones" min="1" max="50" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tiempo (minutos) *</label>
+                  <input type="number" class="form-control" formControlName="tiempo_minutos" min="1" max="600" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Dificultad *</label>
+                  <select class="form-control" formControlName="dificultad">
+                    <option value="FACIL">FÁCIL</option>
+                    <option value="MEDIA">MEDIA</option>
+                    <option value="DIFICIL">DIFÍCIL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Descripción Breve</label>
+                <input type="text" class="form-control" formControlName="descripcion" placeholder="Reseña breve o características..." />
+              </div>
+
+              <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Instrucciones de Preparación</label>
+                <textarea class="form-control" rows="3" formControlName="instrucciones" placeholder="1. Calentar agua... 2. Saltear..."></textarea>
+              </div>
+
+              <!-- Sección de Ingredientes -->
+              <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <h4 style="margin-bottom: 0.75rem;">Ingredientes de la Receta</h4>
+                
+                <!-- Fila para agregar ingrediente -->
+                <div style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+                  <div style="flex: 2; min-width: 180px;">
+                    <label class="form-label" style="font-size: 0.8rem;">Seleccionar del Catálogo</label>
+                    <select class="form-control form-control-sm" [(ngModel)]="ingredienteSelect" [ngModelOptions]="{standalone: true}" (change)="alSeleccionarIngredienteCatalogo()">
+                      <option [ngValue]="null">-- Elegir insumo --</option>
+                      <option *ngFor="let cat of catalogoIngredientes()" [ngValue]="cat">
+                        {{ cat.nombre }} ({{ cat.unidad_medida }})
+                      </option>
+                    </select>
+                  </div>
+                  <div style="flex: 2; min-width: 150px;">
+                    <label class="form-label" style="font-size: 0.8rem;">Nombre Insumo *</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="nuevoIngNombre" [ngModelOptions]="{standalone: true}" placeholder="Nombre" />
+                  </div>
+                  <div style="flex: 1; min-width: 80px;">
+                    <label class="form-label" style="font-size: 0.8rem;">Cantidad *</label>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="nuevoIngCantidad" [ngModelOptions]="{standalone: true}" step="0.05" min="0.01" />
+                  </div>
+                  <div style="flex: 1; min-width: 80px;">
+                    <label class="form-label" style="font-size: 0.8rem;">Unidad *</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="nuevoIngUnidad" [ngModelOptions]="{standalone: true}" placeholder="kg/litro" />
+                  </div>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="agregarIngredienteATabla()">
+                    + Agregar
+                  </button>
+                </div>
+
+                <!-- Lista de ingredientes agregados -->
+                <div class="table-responsive" style="margin-top: 1rem;">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Ingrediente</th>
+                        <th>Cantidad</th>
+                        <th>Unidad</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of listaIngredientesNuevos(); let i = index">
+                        <td><strong>{{ item.nombre_ingrediente }}</strong></td>
+                        <td>{{ item.cantidad }}</td>
+                        <td>{{ item.unidad_medida }}</td>
+                        <td style="text-align: right;">
+                          <button type="button" class="btn btn-sm" style="color: #ef4444; padding: 0.1rem 0.4rem;" (click)="quitarIngredienteDeTabla(i)">
+                            &times;
+                          </button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="listaIngredientesNuevos().length === 0">
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                          Agrega al menos un ingrediente a la receta.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border);">
+              <button type="button" class="btn btn-outline btn-sm" (click)="cerrarModalCrear()">Cancelar</button>
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="formReceta.invalid || guardando() || listaIngredientesNuevos().length === 0">
+                <span *ngIf="guardando()">Guardando...</span>
+                <span *ngIf="!guardando()">Guardar Receta</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .recetas-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .header-card {
+      padding: 1.5rem;
+      border-radius: 8px;
+    }
+    .header-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filter-bar {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-right: 0.25rem;
+    }
+    .search-box {
+      min-width: 260px;
+    }
+    .recetas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .receta-card {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 1px solid var(--border);
+    }
+    .receta-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .badge-tipo {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: 600;
+    }
+    .badge-facil {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .badge-media {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    .badge-dificil {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .badge-origen {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+    .btn-delete:hover {
+      background: #fee2e2;
+    }
+    .receta-titulo {
+      font-size: 1.2rem;
+      margin: 0 0 0.5rem 0;
+      color: var(--text-main);
+    }
+    .receta-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 1rem;
+      flex-grow: 1;
+    }
+    .receta-metricas {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      background: #f8fafc;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .metrica-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      color: var(--text-main);
+    }
+    .metrica-icon {
+      font-size: 0.95rem;
+    }
+    .metrica-val {
+      font-weight: 600;
+    }
+    .w-full {
+      width: 100%;
+    }
+    .empty-card {
+      text-align: center;
+      padding: 3rem;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1050;
+      padding: 1rem;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .modal-lg {
+      max-width: 750px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .mini-box {
+      background: #f8fafc;
+      padding: 0.75rem;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .mini-box .lbl {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    .instrucciones-box {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+  `]
+})
+export class BibliotecaRecetasComponent implements OnInit {
+  private recetaService = inject(RecetaService);
+  private ingredienteService = inject(IngredienteService);
+  private authService = inject(AuthService);
+  private fb = inject(FormBuilder);
+
+  recetas = signal<Receta[]>([]);
+  recetasFiltradas = signal<Receta[]>([]);
+  catalogoIngredientes = signal<Ingrediente[]>([]);
+  cargando = signal<boolean>(true);
+  guardando = signal<boolean>(false);
+  filtroTipo = signal<string>('TODAS');
+  busquedaTexto = '';
+
+  mensajeExito = signal<string | null>(null);
+  mensajeError = signal<string | null>(null);
+
+  // Modales
+  recetaSeleccionada = signal<Receta | null>(null);
+  mostrarModalCrear = signal<boolean>(false);
+
+  // Formulario de creación
+  formReceta = this.fb.group({
+    nombre: ['', [Validators.required, Validators.minLength(3)]],
+    tipo_comida: ['ALMUERZO', Validators.required],
+    porciones: [2, [Validators.required, Validators.min(1)]],
+    tiempo_minutos: [30, [Validators.required, Validators.min(1)]],
+    dificultad: ['FACIL', Validators.required],
+    descripcion: [''],
+    instrucciones: ['']
+  });
+
+  // Lista temporal de ingredientes para nueva receta
+  listaIngredientesNuevos = signal<{ id_ingrediente: number | null; nombre_ingrediente: string; cantidad: number; unidad_medida: string }[]>([]);
+  ingredienteSelect: Ingrediente | null = null;
+  nuevoIngNombre = '';
+  nuevoIngCantidad = 0.50;
+  nuevoIngUnidad = 'kg';
+
+  esAdmin = () => this.authService.userRole() === 'ADMINISTRADOR';
+
+  ngOnInit(): void {
+    this.cargarRecetas();
+    this.cargarCatalogoIngredientes();
+  }
+
+  cargarRecetas(): void {
+    this.cargando.set(true);
+    this.recetaService.listarRecetas().subscribe({
+      next: (data) => {
+        this.recetas.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        this.mensajeError.set(err.error?.detail || 'Error al cargar la biblioteca de recetas.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  cargarCatalogoIngredientes(): void {
+    this.ingredienteService.getIngredientes('ACTIVO').subscribe({
+      next: (data) => this.catalogoIngredientes.set(data),
+      error: () => {}
+    });
+  }
+
+  cambiarTipo(tipo: string): void {
+    this.filtroTipo.set(tipo);
+    this.aplicarFiltros();
+  }
+
+  onBuscar(): void {
+    this.aplicarFiltros();
+  }
+
+  aplicarFiltros(): void {
+    let list = this.recetas();
+    const tipo = this.filtroTipo();
+    const q = this.busquedaTexto.toLowerCase().trim();
+
+    if (tipo !== 'TODAS') {
+      list = list.filter(r => r.tipo_comida.toUpperCase() === tipo.toUpperCase());
+    }
+
+    if (q) {
+      list = list.filter(r =>
+        r.nombre.toLowerCase().includes(q) ||
+        (r.descripcion && r.descripcion.toLowerCase().includes(q)) ||
+        r.ingredientes.some(i => i.nombre_ingrediente.toLowerCase().includes(q))
+      );
+    }
+
+    this.recetasFiltradas.set(list);
+  }
+
+  getBadgeDificultad(dificultad: string): string {
+    const d = dificultad?.toUpperCase();
+    if (d === 'FACIL') return 'badge-facil';
+    if (d === 'MEDIA') return 'badge-media';
+    return 'badge-dificil';
+  }
+
+  verDetalle(receta: Receta): void {
+    this.recetaSeleccionada.set(receta);
+  }
+
+  cerrarModalDetalle(): void {
+    this.recetaSeleccionada.set(null);
+  }
+
+  abrirModalCrear(): void {
+    this.formReceta.reset({
+      nombre: '',
+      tipo_comida: 'ALMUERZO',
+      porciones: 2,
+      tiempo_minutos: 30,
+      dificultad: 'FACIL',
+      descripcion: '',
+      instrucciones: ''
+    });
+    this.listaIngredientesNuevos.set([]);
+    this.ingredienteSelect = null;
+    this.nuevoIngNombre = '';
+    this.nuevoIngCantidad = 0.50;
+    this.nuevoIngUnidad = 'kg';
+    this.mostrarModalCrear.set(true);
+  }
+
+  cerrarModalCrear(): void {
+    this.mostrarModalCrear.set(false);
+  }
+
+  alSeleccionarIngredienteCatalogo(): void {
+    if (this.ingredienteSelect) {
+      this.nuevoIngNombre = this.ingredienteSelect.nombre;
+      this.nuevoIngUnidad = this.ingredienteSelect.unidad_medida;
+    }
+  }
+
+  agregarIngredienteATabla(): void {
+    if (!this.nuevoIngNombre.trim() || this.nuevoIngCantidad <= 0 || !this.nuevoIngUnidad.trim()) {
+      alert('Por favor completa el nombre, cantidad y unidad del ingrediente.');
+      return;
+    }
+
+    const item = {
+      id_ingrediente: this.ingredienteSelect ? this.ingredienteSelect.id_ingrediente : null,
+      nombre_ingrediente: this.nuevoIngNombre.trim(),
+      cantidad: Number(this.nuevoIngCantidad),
+      unidad_medida: this.nuevoIngUnidad.trim()
+    };
+
+    this.listaIngredientesNuevos.update(prev => [...prev, item]);
+    this.ingredienteSelect = null;
+    this.nuevoIngNombre = '';
+    this.nuevoIngCantidad = 0.50;
+    this.nuevoIngUnidad = 'kg';
+  }
+
+  quitarIngredienteDeTabla(index: number): void {
+    this.listaIngredientesNuevos.update(prev => prev.filter((_, i) => i !== index));
+  }
+
+  guardarNuevaReceta(): void {
+    if (this.formReceta.invalid || this.listaIngredientesNuevos().length === 0) {
+      return;
+    }
+
+    this.guardando.set(true);
+    const val = this.formReceta.value;
+    const payload: RecetaCrear = {
+      nombre: val.nombre!,
+      tipo_comida: val.tipo_comida!,
+      porciones: Number(val.porciones),
+      tiempo_minutos: Number(val.tiempo_minutos),
+      dificultad: val.dificultad!,
+      descripcion: val.descripcion || undefined,
+      instrucciones: val.instrucciones || undefined,
+      ingredientes: this.listaIngredientesNuevos()
+    };
+
+    this.recetaService.crearReceta(payload).subscribe({
+      next: (creada) => {
+        this.guardando.set(false);
+        this.cerrarModalCrear();
+        this.mensajeExito.set(`Receta '${creada.nombre}' añadida exitosamente a la biblioteca.`);
+        this.cargarRecetas();
+        setTimeout(() => this.mensajeExito.set(null), 4000);
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.mensajeError.set(err.error?.detail || 'Error al guardar la receta.');
+        setTimeout(() => this.mensajeError.set(null), 4000);
+      }
+    });
+  }
+
+  eliminarReceta(receta: Receta): void {
+    if (!confirm(`¿Estás seguro de eliminar la receta '${receta.nombre}' de la biblioteca?`)) {
+      return;
+    }
+
+    this.recetaService.eliminarReceta(receta.id_receta).subscribe({
+      next: (res) => {
+        this.mensajeExito.set(res.mensaje);
+        this.cargarRecetas();
+        setTimeout(() => this.mensajeExito.set(null), 3000);
+      },
+      error: (err) => {
+        this.mensajeError.set(err.error?.detail || 'Error al eliminar receta.');
+        setTimeout(() => this.mensajeError.set(null), 3000);
+      }
+    });
+  }
+}

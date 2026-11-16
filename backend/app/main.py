@@ -20,6 +20,7 @@ from app.routers.reservas import router as reservas_router
 from app.routers.pedidos import router as pedidos_router
 from app.routers.asistente_ia import router as asistente_ia_router
 from app.routers.bitacora import router as bitacora_router
+from app.routers.recetas import router as recetas_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -61,6 +62,7 @@ app.include_router(reservas_router)
 app.include_router(pedidos_router)
 app.include_router(asistente_ia_router)
 app.include_router(bitacora_router)
+app.include_router(recetas_router)
 
 
 @app.get("/", tags=["General"])

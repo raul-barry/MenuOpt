@@ -166,7 +166,165 @@ def sembrar_tiendas_por_defecto(db):
     db.commit()
 
 
+def sembrar_recetas_biblioteca(db):
+    """Siembra el catálogo inicial de la Biblioteca de Recetas (CU15)."""
+    from decimal import Decimal
+    from app.models.receta import Receta, RecetaIngrediente
+    from app.models.ingrediente import Ingrediente
+
+    if db.query(Receta).count() > 0:
+        return
+
+    admin_user = db.query(Usuario).filter(Usuario.correo == "admin@menuopt.com").first()
+    id_admin = admin_user.id_usuario if admin_user else None
+
+    # Catálogo de ingredientes mapeado por nombre minúsculo
+    ings_map = {ing.nombre.lower(): ing for ing in db.query(Ingrediente).all()}
+
+    def buscar_ing_id(nombre_clave):
+        for k, v in ings_map.items():
+            if nombre_clave.lower() in k:
+                return v.id_ingrediente, v.nombre, v.unidad_medida
+        return None, nombre_clave, "kg"
+
+    recetas_semilla = [
+        {
+            "nombre": "Majadito de Charque Tradicional",
+            "descripcion": "Plato insignia cruceño con arroz tostado, charque desmenuzado, plátano frito y huevo montado.",
+            "instrucciones": "1. Hervir el charque y desmenuzar en tacú.\n2. Tostar el arroz con cebolla, tomate y un toque de urucú.\n3. Incorporar el caldo del charque y cocinar hasta secar.\n4. Servir con huevo frito y plátano maduro.",
+            "tipo_comida": "ALMUERZO",
+            "porciones": 4,
+            "tiempo_minutos": 45,
+            "dificultad": "MEDIA",
+            "origen": "Tradicional Cruceña",
+            "ingredientes": [
+                ("carne de res", Decimal("0.50"), "kg"),
+                ("arroz grano de oro", Decimal("0.50"), "kg"),
+                ("huevos", Decimal("0.50"), "docena"),
+                ("cebolla roja", Decimal("0.30"), "kg"),
+                ("tomate manzano", Decimal("0.30"), "kg"),
+                ("aceite vegetal", Decimal("0.20"), "litro"),
+            ]
+        },
+        {
+            "nombre": "Silpancho Cochabambino Casero",
+            "descripcion": "Milanesa de carne apanada delgada sobre cama de arroz blanco y papas doradas, coronada con huevo y salsa criolla.",
+            "instrucciones": "1. Aplanar los filetes de pulpa con pan molido hasta dejarlos delgados.\n2. Freír en aceite caliente 2 minutos por lado.\n3. Cocinar arroz blanco y dorar rodajas de papa cocida.\n4. Montar con huevo frito y ensalada picada de tomate y cebolla.",
+            "tipo_comida": "ALMUERZO",
+            "porciones": 2,
+            "tiempo_minutos": 35,
+            "dificultad": "MEDIA",
+            "origen": "Tradicional Boliviana",
+            "ingredientes": [
+                ("carne de res", Decimal("0.40"), "kg"),
+                ("arroz grano de oro", Decimal("0.30"), "kg"),
+                ("papa holandesa", Decimal("0.40"), "kg"),
+                ("huevos", Decimal("0.25"), "docena"),
+                ("tomate manzano", Decimal("0.20"), "kg"),
+                ("cebolla roja", Decimal("0.20"), "kg"),
+            ]
+        },
+        {
+            "nombre": "Pizza Casera a la Piedra",
+            "descripcion": "Masa crocante casera con salsa de tomates frescos, queso chaqueño fundido y orégano.",
+            "instrucciones": "1. Amasar la harina con agua tibia, levadura, sal y aceite.\n2. Dejar levar 30 minutos.\n3. Estirar fino, agregar salsa de tomate y abundante queso.\n4. Hornear a 220°C durante 12-15 minutos.",
+            "tipo_comida": "CENA",
+            "porciones": 4,
+            "tiempo_minutos": 40,
+            "dificultad": "FACIL",
+            "origen": "Internacional",
+            "ingredientes": [
+                ("harina de trigo", Decimal("0.80"), "kg"),
+                ("queso chaqueño", Decimal("0.45"), "kg"),
+                ("tomate manzano", Decimal("0.40"), "kg"),
+                ("aceite vegetal", Decimal("0.15"), "litro"),
+            ]
+        },
+        {
+            "nombre": "Spaghetti a la Boloñesa Gratinado",
+            "descripcion": "Pasta al dente bañada en salsa espesa de carne molida, tomate concentrado y queso rallado.",
+            "instrucciones": "1. Sofreír cebolla picada y carne molida con sal y pimienta.\n2. Añadir tomate triturado y cocinar a fuego lento 20 minutos.\n3. Hervir los espaguetis en abundante agua con sal.\n4. Mezclar con la salsa, espolvorear queso y gratinar 5 minutos.",
+            "tipo_comida": "CENA",
+            "porciones": 3,
+            "tiempo_minutos": 30,
+            "dificultad": "FACIL",
+            "origen": "Internacional",
+            "ingredientes": [
+                ("fideos espagueti", Decimal("0.40"), "kg"),
+                ("carne molida", Decimal("0.40"), "kg"),
+                ("tomate manzano", Decimal("0.35"), "kg"),
+                ("queso chaqueño", Decimal("0.20"), "kg"),
+                ("cebolla roja", Decimal("0.20"), "kg"),
+            ]
+        },
+        {
+            "nombre": "Hamburguesas Caseras con Queso",
+            "descripcion": "Medallones jugosos de carne sazonada a la plancha con queso derretido y rodajas de tomate.",
+            "instrucciones": "1. Formar medallones de carne molida sazonados solo con sal y pimienta.\n2. Sellar a fuego fuerte 3 minutos por lado en plancha caliente.\n3. Colocar queso encima para fundir.\n4. Acompañar con rodajas de tomate fresco y cebolla salteada.",
+            "tipo_comida": "CENA",
+            "porciones": 2,
+            "tiempo_minutos": 25,
+            "dificultad": "FACIL",
+            "origen": "Comida Rápida Casera",
+            "ingredientes": [
+                ("carne molida", Decimal("0.35"), "kg"),
+                ("queso chaqueño", Decimal("0.20"), "kg"),
+                ("tomate manzano", Decimal("0.20"), "kg"),
+                ("cebolla roja", Decimal("0.15"), "kg"),
+            ]
+        },
+        {
+            "nombre": "Sopa de Maní Tradicional Festiva",
+            "descripcion": "Reconfortante sopa espesa de maní licuado con carne tierna, papas, arvejas y papas al hilo crocantes.",
+            "instrucciones": "1. Cocinar la carne con cebolla y zanahoria hasta obtener un caldo sabroso.\n2. Licuar el maní crudo con agua y verterlo a la olla hirviendo lentamente durante 45 min.\n3. Añadir papas y fideos tostados.\n4. Servir bien caliente con perejil fresco picado y papas hilo.",
+            "tipo_comida": "ALMUERZO",
+            "porciones": 4,
+            "tiempo_minutos": 60,
+            "dificultad": "MEDIA",
+            "origen": "Tradicional Cruceña",
+            "ingredientes": [
+                ("carne de res", Decimal("0.50"), "kg"),
+                ("papa holandesa", Decimal("0.40"), "kg"),
+                ("fideos espagueti", Decimal("0.20"), "kg"),
+                ("zanahoria", Decimal("0.20"), "kg"),
+                ("cebolla roja", Decimal("0.20"), "kg"),
+            ]
+        }
+    ]
+
+    for r_data in recetas_semilla:
+        rec = Receta(
+            nombre=r_data["nombre"],
+            descripcion=r_data["descripcion"],
+            instrucciones=r_data["instrucciones"],
+            tipo_comida=r_data["tipo_comida"],
+            porciones=r_data["porciones"],
+            tiempo_minutos=r_data["tiempo_minutos"],
+            dificultad=r_data["dificultad"],
+            origen=r_data["origen"],
+            id_usuario_creador=id_admin
+        )
+        for nom_clave, cant, un in r_data["ingredientes"]:
+            id_ing, nombre_oficial, unidad_oficial = buscar_ing_id(nom_clave)
+            ri = RecetaIngrediente(
+                id_ingrediente=id_ing,
+                nombre_ingrediente=nombre_oficial,
+                cantidad=cant,
+                unidad_medida=unidad_oficial if id_ing else un
+            )
+            rec.ingredientes.append(ri)
+        db.add(rec)
+
+    db.commit()
+    print(f"[OK] Biblioteca de Recetas sembrada con {len(recetas_semilla)} recetas.")
+
+
 def sembrar_usuarios_iniciales():
+    from app.database.conexion import engine
+    from app.database.base import Base
+    import app.models
+    Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
     try:
         sembrar_roles(db)
@@ -174,6 +332,7 @@ def sembrar_usuarios_iniciales():
         sembrar_preferencias_iniciales(db)
         sembrar_areas_por_defecto(db)
         sembrar_tiendas_por_defecto(db)
+        sembrar_recetas_biblioteca(db)
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Error al sembrar datos iniciales: {str(e)}")

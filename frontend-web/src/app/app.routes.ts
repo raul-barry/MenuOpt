@@ -114,7 +114,15 @@ export const routes: Routes = [
         data: { roles: ['CLIENTE', 'ADMINISTRADOR'] }
       },
 
-      // CASO DE USO: CU15 - INGREDIENTES PARA PREPARACIÓN PROPIA
+      // CASO DE USO: CU15 - BIBLIOTECA DE RECETAS
+      {
+        path: 'recetas',
+        loadComponent: () => import('./features/recetas/biblioteca-recetas/biblioteca-recetas.component').then(m => m.BibliotecaRecetasComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['CLIENTE', 'ADMINISTRADOR', 'RESTAURANTE'] }
+      },
+
+      // CASO DE USO: CU15 - INGREDIENTES PARA PREPARACIÓN PROPIA (RECOMENDACIÓN)
       {
         path: 'recomendaciones/:id/preparacion',
         loadComponent: () => import('./features/preparacion/detalle-preparacion/detalle-preparacion.component').then(m => m.DetallePreparacionComponent),

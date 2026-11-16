@@ -26,6 +26,7 @@ from app.models.mesa_reserva import MesaReserva
 from app.models.pedido import Pedido
 from app.models.detalle_pedido import DetallePedido
 from app.models.bitacora import Bitacora
+from app.models.receta import Receta, RecetaIngrediente
 
 __all__ = [
     "Rol",
@@ -56,4 +57,6 @@ __all__ = [
     "Pedido",
     "DetallePedido",
     "Bitacora",
+    "Receta",
+    "RecetaIngrediente",
 ]
