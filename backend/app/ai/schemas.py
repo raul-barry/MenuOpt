@@ -52,6 +52,7 @@ class SolicitudInterpretada(BaseModel):
     datos_faltantes: List[str] = []
     mensaje_asistente: str
     listo_para_crear: bool = False
+    opcion_recomendada: Optional[Dict[str, Any]] = None
 
     # Campos de retrocompatibilidad con versiones de cliente móvil
     explicacion: Optional[str] = None

@@ -50,6 +50,14 @@ class IngredienteLugarCompraRepository:
         return relacion
 
     @staticmethod
+    def eliminar(
+        db: Session,
+        relacion: IngredienteLugarCompra
+    ) -> None:
+        db.delete(relacion)
+        db.commit()
+
+    @staticmethod
     def listar_ingredientes_de_lugar(
         db: Session,
         id_lugar_compra: int

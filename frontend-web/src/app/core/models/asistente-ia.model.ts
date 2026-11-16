@@ -19,6 +19,26 @@ export interface PreferenciaCoincidencia {
   registrada: boolean;
 }
 
+export interface OpcionPlatoSugerido {
+  id_plato: number;
+  nombre: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+export interface OpcionRestauranteSugerida {
+  id_restaurante: number;
+  nombre_restaurante: string;
+  direccion?: string | null;
+  zona?: string | null;
+  platos: OpcionPlatoSugerido[];
+  costo_total: number;
+  ahorro: number;
+  costo_por_persona: number;
+  puntuacion?: number;
+}
+
 export interface SolicitudInterpretada {
   presupuesto?: number | null;
   cantidad_personas?: number | null;
@@ -29,6 +49,7 @@ export interface SolicitudInterpretada {
   datos_faltantes: string[];
   mensaje_asistente: string;
   listo_para_crear: boolean;
+  opcion_recomendada?: OpcionRestauranteSugerida | null;
 }
 
 export interface SolicitudExplicarRecomendacion {

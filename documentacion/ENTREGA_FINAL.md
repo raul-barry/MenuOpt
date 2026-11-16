@@ -32,11 +32,11 @@ El sistema implementa una arquitectura modular multicapa con alta cohesión y ba
 | **CU02** | Iniciar sesión | Público | COMPLETO | Generación de JWT (HS256) con expiración y respuesta tipada |
 | **CU03** | Gestionar perfil | Autenticado | COMPLETO | Actualización de datos personales y cambio seguro de contraseña |
 | **CU04** | Gestionar usuarios | ADMINISTRADOR | COMPLETO | Listado de usuarios, detalle y desactivación lógica (403 a otros roles) |
-| **CU05** | Registrar restaurante | RESTAURANTE / ADMIN | COMPLETO | Registro de local comercial vinculado al usuario titular |
-| **CU06** | Gestionar restaurante | RESTAURANTE / ADMIN | COMPLETO | Edición de establecimiento, control estricto IDOR (403 ajenos) |
+| **CU05** | Gestionar restaurantes | RESTAURANTE / ADMIN | COMPLETO | Ciclo de vida completo del restaurante (alta, consulta, edición y estado) |
+| **CU06** | Gestionar área física del restaurante | RESTAURANTE / ADMIN | COMPLETO | Ambientes, dimensiones y planos del establecimiento |
 | **CU07** | Gestionar categorías | ADMINISTRADOR | COMPLETO | Catálogo clasificado de comidas para los menús |
 | **CU08** | Gestionar platos | RESTAURANTE / ADMIN | COMPLETO | Alta de platos, asignación de tipo de comida, comensales y preferencias |
-| **CU09** | Gestionar ingredientes | RESTAURANTE / ADMIN | COMPLETO | Recetas estructuradas por plato con unidades de medida oficiales |
+| **CU09** | Gestionar proveedores | ADMINISTRADOR_TIENDA / ADMIN | COMPLETO | Gestión de comercios proveedores, insumos y actualización de precios unitarios para recetas y recomendaciones de IA |
 | **CU10** | Gestionar disponibilidad | RESTAURANTE / ADMIN | COMPLETO | Conmutador rápido de plato disponible / no disponible |
 | **CU11** | Registrar planificación gastronómica | CLIENTE / ADMIN | COMPLETO | Presupuesto > 0, comensales > 0, preferencias y titularidad |
 | **CU12** | Definir preferencias | Autenticado / ADMIN | COMPLETO | Catálogo de preferencias (vegetariano, sin gluten, etc.) y asignación |

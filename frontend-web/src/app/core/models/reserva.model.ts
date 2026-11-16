@@ -1,4 +1,5 @@
 // CASO DE USO: CU20, CU21, CU22 - Modelos de Reserva y Disponibilidad
+import { EspacioPlano } from './area-restaurante.model';
 
 export type EstadoDisponibilidadMesa = 'DISPONIBLE' | 'NO_DISPONIBLE' | 'NO_COMPATIBLE' | 'SELECCIONADA';
 export type EstadoReserva = 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA' | 'FINALIZADA';
@@ -48,6 +49,7 @@ export interface DisponibilidadRespuesta {
   cantidad_personas: number;
   mesas: MesaDisponibilidad[];
   combinaciones: CombinacionDisponible[];
+  elementos?: EspacioPlano[];
 }
 
 export interface MesaResumenReserva {

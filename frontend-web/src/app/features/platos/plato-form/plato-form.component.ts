@@ -4,8 +4,10 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { PlatoService } from '../../../core/services/plato.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
+import { IngredienteService } from '../../../core/services/ingrediente.service';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Plato, CrearPlatoRequest, ActualizarPlatoRequest } from '../../../core/models/plato.model';
+import { Ingrediente, PlatoIngredienteDetalle } from '../../../core/models/ingrediente.model';
 
 @Component({
   selector: 'app-plato-form',
@@ -56,35 +58,34 @@ import { Plato, CrearPlatoRequest, ActualizarPlatoRequest } from '../../../core/
                 <input
                   id="precio"
                   type="number"
-                  step="0.50"
-                  min="0"
+                  step="0.5"
                   class="form-control"
                   formControlName="precio"
                   placeholder="0.00"
                 />
                 <div *ngIf="formPlato.get('precio')?.touched && formPlato.get('precio')?.invalid" class="text-danger" style="font-size: 0.8rem; margin-top: 0.25rem;">
-                  El precio es obligatorio y debe ser positivo.
+                  Ingrese un precio válido.
                 </div>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="descripcion">Descripción del Plato</label>
+              <label class="form-label" for="descripcion">Descripción</label>
               <textarea
                 id="descripcion"
                 class="form-control"
-                rows="2"
+                rows="3"
                 formControlName="descripcion"
-                placeholder="Breve reseña del plato, guarniciones incluidas, etc."
+                placeholder="Breve reseña o ingredientes principales..."
               ></textarea>
             </div>
 
             <div class="form-row">
               <div class="form-group col-4">
-                <label class="form-label" for="categoria">Categoría *</label>
-                <select id="categoria" class="form-control" formControlName="id_categoria">
-                  <option [ngValue]="null" disabled>Seleccione categoría...</option>
-                  <option *ngFor="let cat of categorias()" [ngValue]="cat.id_categoria">
+                <label class="form-label" for="id_categoria">Categoría *</label>
+                <select id="id_categoria" class="form-control" formControlName="id_categoria">
+                  <option [ngValue]="null" disabled>Seleccione una categoría</option>
+                  <option *ngFor="let cat of categorias()" [value]="cat.id_categoria">
                     {{ cat.nombre }}
                   </option>
                 </select>
@@ -96,18 +97,16 @@ import { Plato, CrearPlatoRequest, ActualizarPlatoRequest } from '../../../core/
               <div class="form-group col-4">
                 <label class="form-label" for="tipo_comida">Tipo de Comida</label>
                 <select id="tipo_comida" class="form-control" formControlName="tipo_comida">
-                  <option value="">No especificado</option>
-                  <option value="Desayuno">Desayuno</option>
-                  <option value="Almuerzo">Almuerzo</option>
-                  <option value="Cena">Cena</option>
-                  <option value="Snack">Snack</option>
-                  <option value="Postre">Postre</option>
-                  <option value="Bebida">Bebida</option>
+                  <option value="">Cualquiera / No especificado</option>
+                  <option value="DESAYUNO">Desayuno</option>
+                  <option value="ALMUERZO">Almuerzo</option>
+                  <option value="CENA">Cena</option>
+                  <option value="MERIENDA">Merienda / Postre</option>
                 </select>
               </div>
 
               <div class="form-group col-4">
-                <label class="form-label" for="personas_cubiertas">Porciones / Personas *</label>
+                <label class="form-label" for="personas_cubiertas">Comensales *</label>
                 <input
                   id="personas_cubiertas"
                   type="number"
@@ -121,12 +120,12 @@ import { Plato, CrearPlatoRequest, ActualizarPlatoRequest } from '../../../core/
               </div>
             </div>
 
-            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <div class="form-check" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
               <input
-                type="checkbox"
                 id="disponible"
+                type="checkbox"
                 formControlName="disponible"
-                style="width: 18px; height: 18px; accent-color: var(--primary-color);"
+                style="width: 18px; height: 18px; cursor: pointer;"
               />
               <label for="disponible" style="margin: 0; cursor: pointer; font-weight: 500;">
                 Plato disponible para pedidos de forma inmediata
@@ -144,6 +143,106 @@ import { Plato, CrearPlatoRequest, ActualizarPlatoRequest } from '../../../core/
         </div>
       </div>
 
+      <!-- Sección de Composición de Ingredientes / Receta (CU09) -->
+      <div *ngIf="isEditMode()" class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem;">
+              Composición de Ingredientes y Receta (CU09)
+            </h3>
+            <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">
+              Especifique los insumos requeridos para este plato con sus cantidades exactas.
+            </p>
+          </div>
+          <button class="btn btn-sm btn-primary" (click)="abrirModalAsociar()">
+            + Asignar Ingrediente
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div *ngIf="mensajeIngrediente()" class="alert" [ngClass]="errorIngrediente() ? 'alert-danger' : 'alert-success'">
+            {{ mensajeIngrediente() }}
+          </div>
+
+          <div *ngIf="cargandoIngredientes()" style="text-align: center; padding: 1.5rem;">
+            <p style="color: var(--text-muted);">Cargando receta del plato...</p>
+          </div>
+
+          <div *ngIf="!cargandoIngredientes()" class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ingrediente</th>
+                  <th>Cantidad Requerida</th>
+                  <th>Unidad de Medida</th>
+                  <th style="width: 140px; text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let pi of ingredientesPlato()">
+                  <td><strong>{{ pi.nombre_ingrediente || 'Ingrediente #' + pi.id_ingrediente }}</strong></td>
+                  <td>{{ pi.cantidad }}</td>
+                  <td><span class="badge badge-secondary">{{ pi.unidad_medida }}</span></td>
+                  <td style="text-align: right;">
+                    <button class="btn btn-sm btn-outline" style="margin-right: 0.35rem; padding: 0.2rem 0.5rem;" (click)="abrirModalEditarIngrediente(pi)">
+                      Editar
+                    </button>
+                    <button class="btn btn-sm btn-outline" style="color: #ef4444; border-color: #ef4444; padding: 0.2rem 0.5rem;" (click)="quitarIngrediente(pi)">
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="ingredientesPlato().length === 0">
+                  <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                    Este plato aún no tiene ingredientes asociados en su receta.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para Asociar o Editar Ingrediente en el Plato (CU09) -->
+    <div *ngIf="mostrarModalIngrediente()" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1050; padding: 1rem;">
+      <div class="card" style="width: 100%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+          <h3 style="margin: 0; font-size: 1.15rem;">
+            {{ ingredienteEditando() ? 'Editar Ingrediente en Receta' : 'Asociar Ingrediente a Receta' }}
+          </h3>
+          <button class="btn btn-sm btn-outline" (click)="cerrarModalIngrediente()" style="padding: 0.2rem 0.5rem;">&times;</button>
+        </div>
+
+        <form [formGroup]="formAsociar" (ngSubmit)="guardarIngredientePlato()">
+          <div class="form-group" *ngIf="!ingredienteEditando()" style="margin-bottom: 1rem;">
+            <label class="form-label">Ingrediente *</label>
+            <select class="form-control" formControlName="id_ingrediente">
+              <option [ngValue]="null" disabled>Seleccione un ingrediente</option>
+              <option *ngFor="let ing of ingredientesCatalogo()" [value]="ing.id_ingrediente">
+                {{ ing.nombre }} ({{ ing.unidad_medida }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Cantidad Requerida *</label>
+            <input type="number" step="0.01" min="0.001" class="form-control" formControlName="cantidad" placeholder="Ej. 250, 1.5, etc." />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label">Unidad de Medida *</label>
+            <input type="text" class="form-control" formControlName="unidad_medida" placeholder="Ej. gramos, kg, ml, unidades" />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="cerrarModalIngrediente()">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="formAsociar.invalid || guardandoIngrediente()">
+              {{ ingredienteEditando() ? 'Actualizar' : 'Agregar' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   `,
   styles: [`
@@ -159,6 +258,7 @@ export class PlatoFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private platoService = inject(PlatoService);
   private categoriaService = inject(CategoriaService);
+  private ingredienteService = inject(IngredienteService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -174,6 +274,16 @@ export class PlatoFormComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
+  // CU09: Ingredientes y Receta
+  ingredientesCatalogo = signal<Ingrediente[]>([]);
+  ingredientesPlato = signal<PlatoIngredienteDetalle[]>([]);
+  cargandoIngredientes = signal<boolean>(false);
+  mostrarModalIngrediente = signal<boolean>(false);
+  guardandoIngrediente = signal<boolean>(false);
+  ingredienteEditando = signal<PlatoIngredienteDetalle | null>(null);
+  mensajeIngrediente = signal<string | null>(null);
+  errorIngrediente = signal<boolean>(false);
+
   formPlato: FormGroup = this.fb.group({
     nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
     descripcion: [''],
@@ -184,8 +294,15 @@ export class PlatoFormComponent implements OnInit {
     id_categoria: [null, [Validators.required]]
   });
 
+  formAsociar: FormGroup = this.fb.group({
+    id_ingrediente: [null, [Validators.required]],
+    cantidad: [null, [Validators.required, Validators.min(0.001)]],
+    unidad_medida: ['', [Validators.required]]
+  });
+
   ngOnInit(): void {
     this.cargarCategorias();
+    this.cargarCatalogoIngredientes();
 
     // Comprobar si estamos creando un plato para un restaurante
     const idRestoParam = this.route.snapshot.paramMap.get('id');
@@ -199,12 +316,10 @@ export class PlatoFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.platoId.set(+idRestoParam);
       this.cargarPlato(+idRestoParam);
+      this.cargarIngredientesPlato(+idRestoParam);
     }
   }
 
-  // =========================================================================
-  // CASO DE USO: CU07 - GESTIONAR CATEGORÍAS (LISTA DE CATEGORÍAS PARA SELECT)
-  // =========================================================================
   cargarCategorias(): void {
     this.categoriaService.getCategorias().subscribe({
       next: (cats) => this.categorias.set(cats),
@@ -212,9 +327,13 @@ export class PlatoFormComponent implements OnInit {
     });
   }
 
-  // =========================================================================
-  // CASO DE USO: CU08 - GESTIONAR PLATOS (CARGAR PLATO PARA EDICIÓN)
-  // =========================================================================
+  cargarCatalogoIngredientes(): void {
+    this.ingredienteService.getIngredientes().subscribe({
+      next: (ings) => this.ingredientesCatalogo.set(ings),
+      error: () => {}
+    });
+  }
+
   cargarPlato(idPlato: number): void {
     this.loading.set(true);
     this.platoService.getPlato(idPlato).subscribe({
@@ -239,8 +358,123 @@ export class PlatoFormComponent implements OnInit {
   }
 
   // =========================================================================
-  // CASO DE USO: CU08 - GESTIONAR PLATOS (CREAR O ACTUALIZAR PLATO)
+  // CASO DE USO: CU09 - COMPOSICIÓN DE PLATOS E INGREDIENTES
   // =========================================================================
+  cargarIngredientesPlato(idPlato: number): void {
+    this.cargandoIngredientes.set(true);
+    this.platoService.getIngredientesPlato(idPlato).subscribe({
+      next: (res) => {
+        this.cargandoIngredientes.set(false);
+        this.ingredientesPlato.set(res);
+      },
+      error: () => {
+        this.cargandoIngredientes.set(false);
+      }
+    });
+  }
+
+  abrirModalAsociar(): void {
+    this.ingredienteEditando.set(null);
+    this.formAsociar.reset({
+      id_ingrediente: null,
+      cantidad: null,
+      unidad_medida: ''
+    });
+    this.mostrarModalIngrediente.set(true);
+  }
+
+  abrirModalEditarIngrediente(pi: PlatoIngredienteDetalle): void {
+    this.ingredienteEditando.set(pi);
+    this.formAsociar.patchValue({
+      id_ingrediente: pi.id_ingrediente,
+      cantidad: pi.cantidad,
+      unidad_medida: pi.unidad_medida
+    });
+    this.mostrarModalIngrediente.set(true);
+  }
+
+  cerrarModalIngrediente(): void {
+    this.mostrarModalIngrediente.set(false);
+    this.ingredienteEditando.set(null);
+  }
+
+  guardarIngredientePlato(): void {
+    if (this.formAsociar.invalid) {
+      this.formAsociar.markAllAsTouched();
+      return;
+    }
+
+    this.guardandoIngrediente.set(true);
+    const val = this.formAsociar.value;
+
+    if (this.ingredienteEditando()) {
+      this.platoService.updateIngredientePlato(
+        this.platoId()!,
+        this.ingredienteEditando()!.id_ingrediente,
+        {
+          cantidad: Number(val.cantidad),
+          unidad_medida: val.unidad_medida
+        }
+      ).subscribe({
+        next: () => {
+          this.guardandoIngrediente.set(false);
+          this.cerrarModalIngrediente();
+          this.errorIngrediente.set(false);
+          this.mensajeIngrediente.set('Ingrediente actualizado en la receta.');
+          this.cargarIngredientesPlato(this.platoId()!);
+          setTimeout(() => this.mensajeIngrediente.set(null), 3000);
+        },
+        error: (err) => {
+          this.guardandoIngrediente.set(false);
+          this.errorIngrediente.set(true);
+          this.mensajeIngrediente.set(err.error?.detail || 'Error al actualizar ingrediente.');
+        }
+      });
+    } else {
+      this.platoService.asociarIngrediente(
+        this.platoId()!,
+        {
+          id_ingrediente: Number(val.id_ingrediente),
+          cantidad: Number(val.cantidad),
+          unidad_medida: val.unidad_medida
+        }
+      ).subscribe({
+        next: () => {
+          this.guardandoIngrediente.set(false);
+          this.cerrarModalIngrediente();
+          this.errorIngrediente.set(false);
+          this.mensajeIngrediente.set('Ingrediente agregado a la receta correctamente.');
+          this.cargarIngredientesPlato(this.platoId()!);
+          setTimeout(() => this.mensajeIngrediente.set(null), 3000);
+        },
+        error: (err) => {
+          this.guardandoIngrediente.set(false);
+          this.errorIngrediente.set(true);
+          this.mensajeIngrediente.set(err.error?.detail || 'Error al agregar ingrediente.');
+        }
+      });
+    }
+  }
+
+  quitarIngrediente(pi: PlatoIngredienteDetalle): void {
+    if (!confirm(`¿Desea quitar "${pi.nombre_ingrediente}" de la receta de este plato?`)) {
+      return;
+    }
+
+    this.platoService.quitarIngrediente(this.platoId()!, pi.id_ingrediente).subscribe({
+      next: () => {
+        this.errorIngrediente.set(false);
+        this.mensajeIngrediente.set('Ingrediente desvinculado de la receta.');
+        this.cargarIngredientesPlato(this.platoId()!);
+        setTimeout(() => this.mensajeIngrediente.set(null), 3000);
+      },
+      error: (err) => {
+        this.errorIngrediente.set(true);
+        this.mensajeIngrediente.set(err.error?.detail || 'Error al quitar ingrediente.');
+      }
+    });
+  }
+
   onSubmitPlato(): void {
     if (this.formPlato.invalid) {
       this.formPlato.markAllAsTouched();
@@ -287,7 +521,7 @@ export class PlatoFormComponent implements OnInit {
       };
 
       this.platoService.crearPlato(this.restauranteId()!, createData).subscribe({
-        next: (nuevo) => {
+        next: () => {
           this.guardando.set(false);
           this.successMessage.set('Plato creado exitosamente.');
           setTimeout(() => {

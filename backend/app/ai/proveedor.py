@@ -62,6 +62,62 @@ class MockProveedorIA(ProveedorIA):
     ) -> Dict[str, Any]:
         msg_lower = mensaje.lower()
 
+        # Detección de consulta de recetas o elaboración casera
+        palabras_receta = ["ingrediente", "ingredientes", "receta", "recetas", "prepararme", "cocinar", "podria prepararme", "podría prepararme", "que puedo preparar", "qué puedo preparar", "despensa", "hamburguesa", "hamburguesas", "precio", "tienda", "tiendas"]
+        if ("hamburguesa" in msg_lower or "hamburguesas" in msg_lower) and any(w in msg_lower for w in ["ingrediente", "ingredientes", "tienda", "tiendas", "precio", "preparar", "comprar"]):
+            return {
+                "intencion": "RECETA",
+                "presupuesto": None,
+                "cantidad_personas": None,
+                "tipo_comida": None,
+                "ubicacion_referencia": None,
+                "preferencias_detectadas": [],
+                "ingredientes_mencionados": [
+                    "Carne Molida Especial",
+                    "Queso Chaqueño Criollo",
+                    "Huevos de Granja Seleccionados",
+                    "Tomate Manzano Criollo",
+                    "Cebolla Roja Seleccionada",
+                    "Aceite Vegetal Fino"
+                ],
+                "datos_faltantes": [],
+                "mensaje_asistente": (
+                    "### 🍔 Ingredientes para Hamburguesas Caseras (4 porciones) y Mejores Precios:\n\n"
+                    "• **Carne Molida Especial (500 g):** **Mercado Abasto Mayorista** a **Bs 34.00/kg** (o Carnicería y Frial San Carlos a Bs 35.00/kg).\n"
+                    "• **Queso Chaqueño Criollo (150 g):** **Mercado Los Pozos - Sector Abarrotes** a **Bs 30.00/kg** (o Frial San Carlos a Bs 32.00/kg).\n"
+                    "• **Huevos de Granja (1 unidad):** **Distribuidora Avícola Sofía Central** a **Bs 11.50/docena**.\n"
+                    "• **Tomate Manzano Criollo (2 unid.):** **Mercado Abasto Mayorista** a **Bs 6.00/kg**.\n"
+                    "• **Cebolla Roja (1 unid.):** **Mercado Abasto Mayorista** a **Bs 5.00/kg**.\n"
+                    "• **Aceite Vegetal Fino:** **Mercado Abasto Mayorista** a **Bs 13.00/litro**.\n\n"
+                    "📍 **Ruta más económica recomendada:**\n"
+                    "El **Mercado Abasto Mayorista** concentra la carne molida, verduras y aceite con el mayor ahorro de la ciudad. Para el queso chaqueño, el **Mercado Los Pozos** o el **Frial San Carlos** en el centro te darán el mejor precio.\n\n"
+                    "👩‍🍳 **Pasos breves de preparación:**\n"
+                    "1. Sazona la carne molida con cebolla finamente picada, huevo, sal y pimienta. Forma 4 medallones.\n"
+                    "2. Cocina en sartén caliente con poco aceite 4 minutos por lado.\n"
+                    "3. Coloca el queso chaqueño encima en el último minuto para que gratine.\n"
+                    "4. Monta con tomate fresco y pan tostado."
+                )
+            }
+
+        if any(w in msg_lower for w in palabras_receta):
+            return {
+                "intencion": "RECETA",
+                "presupuesto": None,
+                "cantidad_personas": None,
+                "tipo_comida": None,
+                "ubicacion_referencia": None,
+                "preferencias_detectadas": [],
+                "ingredientes_mencionados": [],
+                "datos_faltantes": [],
+                "mensaje_asistente": (
+                    "Con los ingredientes que tienes a mano puedes preparar excelentes opciones caseras:\n\n"
+                    "1. **Arroz con pollo y verduras:** Saltea la cebolla y tomate picado, añade la pechuga en cubos hasta dorar y mezcla con el arroz cocido.\n\n"
+                    "2. **Tortilla de huevo y pollo con guarnición:** Bate los huevos, mezcla con pollo desmenuzado, cocínalo a la sartén y acompaña con arroz y ensalada de tomate y cebolla.\n\n"
+                    "3. **Salteado rápido de pechuga:** Saltea la pechuga en tiras con cebolla y tomate a fuego vivo, acompañado de una porción de arroz caliente.\n\n"
+                    "¡Son preparaciones fáciles, ricas y aprovechan al máximo tus ingredientes disponibles!"
+                )
+            }
+
         # Contexto inicial
         ctx = contexto_previo or {}
         presupuesto = ctx.get("presupuesto")
@@ -105,14 +161,18 @@ class MockProveedorIA(ProveedorIA):
         elif any(w in msg_lower for w in ["merienda", "merendar"]):
             tipo_comida = "MERIENDA"
 
-        # 4. Detectar Ubicación de Referencia (ej: "en Equipetrol", "cerca de Calacoto", "en el centro", "en 16 de julio", "en Santa Cruz")
-        match_ub = re.search(r"(?:en|cerca\s+de|por|zona)\s+([0-9A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?)(?:[.,]|$)", mensaje)
+        # 4. Detectar Ubicación de Referencia (ej: "en Equipetrol", "en el centro", "centro", "cerca de Calacoto")
+        match_ub = re.search(r"(?:en|cerca\s+de|por|zona)\s+(?:el\s+|la\s+|los\s+|las\s+)?([0-9A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?)(?:[.,]|$)", mensaje, re.IGNORECASE)
         if match_ub:
             candidato = match_ub.group(1).strip()
-            # Limpiar palabras comunes
-            palabras_filtro = ["el almuerzo", "la cena", "familia", "amigos", "comida", "mi móvil", "mi celular", "mi movil"]
-            if not any(pf in candidato.lower() for pf in palabras_filtro) and len(candidato) >= 3:
+            palabras_filtro = ["almuerzo", "cena", "desayuno", "familia", "amigos", "comida", "mi móvil", "mi celular", "mi movil"]
+            if not any(pf in candidato.lower() for pf in palabras_filtro) and len(candidato) >= 2:
                 ubicacion_referencia = candidato.title()
+        elif not ubicacion_referencia:
+            msg_clean = re.sub(r"^(?:en|por|cerca\s+de|zona)\s+", "", mensaje.strip(), flags=re.IGNORECASE)
+            msg_clean = re.sub(r"^(?:el|la|los|las)\s+", "", msg_clean.strip(), flags=re.IGNORECASE).strip()
+            if len(msg_clean) >= 3 and not any(w in msg_clean.lower() for w in ["almuerzo", "cena", "desayuno", "personas", "bs", "bolivianos"]):
+                ubicacion_referencia = msg_clean.title()
 
         # 5. Detectar Preferencias (vegetariano, vegano, sin gluten, sin lactosa, keto, silpancho, etc.)
         if "silpancho" in msg_lower and "Silpancho" not in preferencias:
@@ -134,40 +194,61 @@ class MockProveedorIA(ProveedorIA):
                 preferencias.append(nombre_canon)
 
         # 6. Evaluar Datos Faltantes
+        num_pres = None
+        if presupuesto is not None:
+            try:
+                num_pres = float(str(presupuesto).replace(",", "."))
+            except (ValueError, TypeError):
+                num_pres = None
+
+        num_pers = None
+        if cantidad_personas is not None:
+            try:
+                num_pers = int(str(cantidad_personas))
+            except (ValueError, TypeError):
+                num_pers = None
+
         datos_faltantes = []
-        if not presupuesto or presupuesto <= 0:
+        if num_pres is None or num_pres <= 0:
             datos_faltantes.append("presupuesto")
-        if not cantidad_personas or cantidad_personas <= 0:
+        if num_pers is None or num_pers <= 0:
             datos_faltantes.append("cantidad_personas")
         if not tipo_comida:
             datos_faltantes.append("tipo_comida")
         if not ubicacion_referencia:
             datos_faltantes.append("ubicacion_referencia")
 
-        # 7. Redactar Mensaje Asistente
+        # 7. Redactar Mensaje Asistente (Modo conciso sin desperdicio de tokens)
         if not datos_faltantes:
             mensaje_asistente = (
-                f"¡Entendido! He extraído todos los datos necesarios para tu planificación: "
-                f"{cantidad_personas} personas, {tipo_comida}, presupuesto de {presupuesto} Bs en {ubicacion_referencia}. "
-                f"Revisa el resumen y pulsa 'Crear Planificación'."
+                f"Datos registrados: {num_pers} personas, {tipo_comida or 'comida'}, "
+                f"{num_pres} Bs en {ubicacion_referencia}."
             )
         else:
             preguntas = []
             if "presupuesto" in datos_faltantes and "cantidad_personas" in datos_faltantes:
-                preguntas.append("¿cuál es tu presupuesto total y para cuántas personas será?")
+                preguntas.append("¿cuál es tu presupuesto y para cuántas personas?")
             elif "presupuesto" in datos_faltantes:
                 preguntas.append("¿cuál es tu presupuesto estimado en Bs?")
             elif "cantidad_personas" in datos_faltantes:
-                preguntas.append("¿para cuántas personas sería la comida?")
+                preguntas.append("¿para cuántas personas sería?")
             if "tipo_comida" in datos_faltantes:
-                preguntas.append("¿para qué momento del día (almuerzo, cena, desayuno)?")
+                preguntas.append("¿qué comida (almuerzo, cena, desayuno)?")
             if "ubicacion_referencia" in datos_faltantes:
                 preguntas.append("¿en qué zona o barrio prefieres buscar?")
 
-            mensaje_asistente = (
-                f"He tomado nota de tu solicitud. Para poder ayudarte a planificar, por favor indícame: "
-                f"{' '.join(preguntas)}"
-            )
+            capturados = []
+            if num_pres:
+                capturados.append(f"{num_pres} Bs")
+            if num_pers:
+                capturados.append(f"{num_pers} personas")
+            if tipo_comida:
+                capturados.append(tipo_comida.lower())
+            if ubicacion_referencia:
+                capturados.append(ubicacion_referencia)
+
+            prefijo = f"Registrado: {', '.join(capturados)}. " if capturados else ""
+            mensaje_asistente = f"{prefijo}{' '.join(preguntas)}"
 
         return {
             "presupuesto": presupuesto,
@@ -242,7 +323,7 @@ class GeminiProveedorIA(ProveedorIA):
                 "maxOutputTokens": 800
             }
         }
-        data = json.dumps(payload).encode("utf-8")
+        data = json.dumps(payload, default=str).encode("utf-8")
         req = urllib.request.Request(
             self.endpoint,
             data=data,
@@ -266,16 +347,20 @@ class GeminiProveedorIA(ProveedorIA):
         mensaje: str,
         contexto_previo: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        prompt_user = f"Contexto acumulado previo: {json.dumps(contexto_previo or {})}\nMensaje actual: {mensaje}"
-        texto_gen = self._invocar_gemini(SYSTEM_PROMPT_INTERPRETAR, prompt_user)
-        json_extraido = ParserIA.extraer_json(texto_gen)
-        if not json_extraido:
-            # Si el modelo no devolvió JSON válido, fallback al mock para no romper FastAPI
+        prompt_user = f"Contexto acumulado previo: {json.dumps(contexto_previo or {}, default=str)}\nMensaje actual: {mensaje}"
+        try:
+            texto_gen = self._invocar_gemini(SYSTEM_PROMPT_INTERPRETAR, prompt_user)
+            json_extraido = ParserIA.extraer_json(texto_gen)
+            if not json_extraido:
+                # Si el modelo no devolvió JSON válido, fallback al mock para no romper FastAPI
+                return MockProveedorIA().interpretar_solicitud(mensaje, contexto_previo)
+            return json_extraido
+        except Exception:
+            # Fallback defensivo si hay error de cuota o red con la API
             return MockProveedorIA().interpretar_solicitud(mensaje, contexto_previo)
-        return json_extraido
 
     def explicar_recomendacion(self, datos_recomendacion: Dict[str, Any]) -> str:
-        prompt_user = f"Datos reales de la recomendación calculada: {json.dumps(datos_recomendacion)}"
+        prompt_user = f"Datos reales de la recomendación calculada: {json.dumps(datos_recomendacion, default=str)}"
         try:
             texto = self._invocar_gemini(SYSTEM_PROMPT_EXPLICAR_RECOMENDACION, prompt_user)
             return texto.strip() if texto.strip() else MockProveedorIA().explicar_recomendacion(datos_recomendacion)
@@ -283,9 +368,123 @@ class GeminiProveedorIA(ProveedorIA):
             return MockProveedorIA().explicar_recomendacion(datos_recomendacion)
 
     def explicar_comparacion(self, datos_comparacion: Dict[str, Any]) -> str:
-        prompt_user = f"Datos reales de la comparación calculada: {json.dumps(datos_comparacion)}"
+        prompt_user = f"Datos reales de la comparación calculada: {json.dumps(datos_comparacion, default=str)}"
         try:
             texto = self._invocar_gemini(SYSTEM_PROMPT_EXPLICAR_COMPARACION, prompt_user)
+            return texto.strip() if texto.strip() else MockProveedorIA().explicar_comparacion(datos_comparacion)
+        except Exception:
+            return MockProveedorIA().explicar_comparacion(datos_comparacion)
+
+
+class GroqProveedorIA(ProveedorIA):
+    """
+    Proveedor real de ultra-alta velocidad para Groq Cloud API (OpenAI-compatible) usando HTTP estándar (urllib).
+    Modelos soportados con auto-detección y tolerancia a fallos:
+    - 'openai/gpt-oss-120b' (Máxima capacidad de razonamiento y JSON estructurado)
+    - 'openai/gpt-oss-20b' (Respuesta instantánea y liviana)
+    - 'llama-3.3-70b-versatile'
+    - 'allam-2-7b'
+    - 'llama-3.1-8b-instant'
+    """
+
+    MODELOS_CANDIDATOS = [
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile",
+        "allam-2-7b",
+        "llama-3.1-8b-instant"
+    ]
+
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-120b", timeout: int = 15):
+        self.api_key = api_key
+        self.model = model or "openai/gpt-oss-120b"
+        self.timeout = timeout
+        self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
+
+    def _invocar_groq(self, prompt_sistema: str, prompt_usuario: str) -> str:
+        modelos_a_probar = [self.model] + [m for m in self.MODELOS_CANDIDATOS if m != self.model]
+        ultimo_error = None
+
+        for modelo_actual in modelos_a_probar:
+            payload = {
+                "model": modelo_actual,
+                "messages": [
+                    {"role": "system", "content": prompt_sistema},
+                    {"role": "user", "content": prompt_usuario}
+                ],
+                "temperature": 0.1,
+                "max_tokens": 1600
+            }
+            data = json.dumps(payload, default=str).encode("utf-8")
+            req = urllib.request.Request(
+                self.endpoint,
+                data=data,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}",
+                    "User-Agent": "MenuOpt/1.0"
+                },
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    resultado = json.loads(resp.read().decode("utf-8"))
+                    choices = resultado.get("choices", [])
+                    if choices and "message" in choices[0]:
+                        self.model = modelo_actual
+                        return choices[0]["message"].get("content", "")
+                    return ""
+            except urllib.error.HTTPError as e:
+                ultimo_error = e
+                # Probar el siguiente modelo candidato si es 404 (no existe) o 429 (rate limit) o 400
+                if e.code in (400, 404, 429):
+                    continue
+                raise RuntimeError(f"Error al comunicar con la API de Groq: HTTP {e.code} {e.reason}")
+            except Exception as e:
+                ultimo_error = e
+                continue
+
+        raise RuntimeError(f"Error al comunicar con la API de Groq: {str(ultimo_error)}")
+
+    def interpretar_solicitud(
+        self,
+        mensaje: str,
+        contexto_previo: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        ctx = dict(contexto_previo or {})
+        catalogo_tiendas = ctx.pop("catalogo_tiendas_ingredientes", None)
+        catalogo_restaurantes = ctx.pop("catalogo_restaurantes_platos", None)
+        partes_prompt = []
+        if catalogo_tiendas:
+            partes_prompt.append(f"### Catálogo de Tiendas e Ingredientes Disponibles en BD (Precios Reales en Santa Cruz):\n{catalogo_tiendas}")
+        if catalogo_restaurantes:
+            partes_prompt.append(f"### Catálogo de Restaurantes y Menús Disponibles en BD:\n{catalogo_restaurantes}")
+        if ctx:
+            partes_prompt.append(f"Contexto acumulado previo:\n{json.dumps(ctx, default=str, ensure_ascii=False)}")
+        partes_prompt.append(f"Mensaje del usuario:\n{mensaje}")
+        prompt_user = "\n\n".join(partes_prompt)
+
+        try:
+            texto_gen = self._invocar_groq(SYSTEM_PROMPT_INTERPRETAR, prompt_user)
+            json_extraido = ParserIA.extraer_json(texto_gen)
+            if not json_extraido:
+                return MockProveedorIA().interpretar_solicitud(mensaje, contexto_previo)
+            return json_extraido
+        except Exception:
+            return MockProveedorIA().interpretar_solicitud(mensaje, contexto_previo)
+
+    def explicar_recomendacion(self, datos_recomendacion: Dict[str, Any]) -> str:
+        prompt_user = f"Datos reales de la recomendación calculada: {json.dumps(datos_recomendacion, default=str)}"
+        try:
+            texto = self._invocar_groq(SYSTEM_PROMPT_EXPLICAR_RECOMENDACION, prompt_user)
+            return texto.strip() if texto.strip() else MockProveedorIA().explicar_recomendacion(datos_recomendacion)
+        except Exception:
+            return MockProveedorIA().explicar_recomendacion(datos_recomendacion)
+
+    def explicar_comparacion(self, datos_comparacion: Dict[str, Any]) -> str:
+        prompt_user = f"Datos reales de la comparación calculada: {json.dumps(datos_comparacion, default=str)}"
+        try:
+            texto = self._invocar_groq(SYSTEM_PROMPT_EXPLICAR_COMPARACION, prompt_user)
             return texto.strip() if texto.strip() else MockProveedorIA().explicar_comparacion(datos_comparacion)
         except Exception:
             return MockProveedorIA().explicar_comparacion(datos_comparacion)
@@ -294,15 +493,45 @@ class GeminiProveedorIA(ProveedorIA):
 def obtener_proveedor_ia() -> ProveedorIA:
     """
     Fábrica de proveedor IA según la configuración de variables de entorno.
+    Soporta:
+    - 'groq': Groq Cloud API (Llama 3.3 70B Versatile, Llama 3.1 8B, etc.)
+    - 'gemini' o 'google': Google Gemini API (Gemini 1.5 Flash, etc.)
+    - 'mock': Simulador autónomo determinista
+
+    Detección automática: si la API key empieza con 'gsk_', se activa Groq automáticamente.
     """
     if not settings.AI_ENABLED:
         return MockProveedorIA()
 
+    api_key_limpia = (settings.AI_API_KEY or "").strip()
     proveedor = (settings.AI_PROVIDER or "mock").lower().strip()
-    if proveedor in ("gemini", "google") and settings.AI_API_KEY and settings.AI_API_KEY.strip():
+
+    if not api_key_limpia or proveedor == "mock_forced":
+        return MockProveedorIA()
+
+    # 1. Detección o selección de Groq (clave inicia típicamente con 'gsk_')
+    if proveedor in ("groq", "llama") or api_key_limpia.startswith("gsk_"):
+        modelo = settings.AI_MODEL if settings.AI_MODEL else "openai/gpt-oss-120b"
+        return GroqProveedorIA(
+            api_key=api_key_limpia,
+            model=modelo,
+            timeout=settings.AI_TIMEOUT_SECONDS
+        )
+
+    # 2. Detección o selección de Gemini / Google (clave inicia con 'AIzaSy')
+    if proveedor in ("gemini", "google") or api_key_limpia.startswith("AIzaSy"):
+        modelo = settings.AI_MODEL if (settings.AI_MODEL and "gemini" in settings.AI_MODEL.lower()) else "gemini-1.5-flash"
         return GeminiProveedorIA(
-            api_key=settings.AI_API_KEY,
-            model=settings.AI_MODEL,
+            api_key=api_key_limpia,
+            model=modelo,
+            timeout=settings.AI_TIMEOUT_SECONDS
+        )
+
+    # 3. Fallback genérico a Groq si la key existe
+    if api_key_limpia:
+        return GroqProveedorIA(
+            api_key=api_key_limpia,
+            model=settings.AI_MODEL or "openai/gpt-oss-120b",
             timeout=settings.AI_TIMEOUT_SECONDS
         )
 

@@ -53,10 +53,12 @@ import {
   LucideLoaderCircle,
   LucideMenu,
   LucideLogOut,
+  LucideShield,
   LucideIcon,
 } from '@lucide/angular';
 
 const ICONS = {
+  shield: LucideShield,
   // Íconos requeridos formalmente por MenuOpt
   house: LucideHouse,
   home: LucideHouse,

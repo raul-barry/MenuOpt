@@ -43,6 +43,16 @@ class LugarCompraRepository:
         return query.order_by(LugarCompra.nombre.asc()).all()
 
     @staticmethod
+    def listar_por_usuario(db: Session, id_usuario: int) -> List[LugarCompra]:
+        return (
+            db.query(LugarCompra)
+            .options(joinedload(LugarCompra.ubicacion))
+            .filter(LugarCompra.id_usuario_responsable == id_usuario)
+            .order_by(LugarCompra.nombre.asc())
+            .all()
+        )
+
+    @staticmethod
     def crear(db: Session, lugar: LugarCompra) -> LugarCompra:
         db.add(lugar)
         db.commit()

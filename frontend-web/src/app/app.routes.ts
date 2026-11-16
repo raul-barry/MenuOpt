@@ -152,6 +152,14 @@ export const routes: Routes = [
         data: { roles: ['ADMINISTRADOR'] }
       },
 
+      // CASO DE USO: CU25 - CONSULTAR BITÁCORA DEL SISTEMA (Solo ADMINISTRADOR)
+      {
+        path: 'admin/bitacora',
+        loadComponent: () => import('./features/bitacora/bitacora-lista/bitacora-lista.component').then(m => m.BitacoraListaComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMINISTRADOR'] }
+      },
+
       // CASO DE USO: CU06 - GESTIONAR RESTAURANTE (Lista de restaurantes)
       {
         path: 'restaurantes',
@@ -276,6 +284,22 @@ export const routes: Routes = [
       {
         path: 'platos/:id/editar',
         loadComponent: () => import('./features/platos/plato-form/plato-form.component').then(m => m.PlatoFormComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['RESTAURANTE', 'ADMINISTRADOR'] }
+      },
+
+      // CASO DE USO: CU09 - GESTIONAR PROVEEDORES Y PRECIOS DE INGREDIENTES
+      {
+        path: 'proveedores',
+        loadComponent: () => import('./features/proveedores/proveedores-lista/proveedores-lista.component').then(m => m.ProveedoresListaComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMINISTRADOR_TIENDA', 'ADMINISTRADOR'] }
+      },
+
+      // CASO DE USO: CU09 - GESTIONAR INGREDIENTES (Catálogo General)
+      {
+        path: 'ingredientes',
+        loadComponent: () => import('./features/ingredientes/ingredientes-lista/ingredientes-lista.component').then(m => m.IngredientesListaComponent),
         canActivate: [roleGuard],
         data: { roles: ['RESTAURANTE', 'ADMINISTRADOR'] }
       }

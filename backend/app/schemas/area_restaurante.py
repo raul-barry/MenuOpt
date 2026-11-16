@@ -1,7 +1,8 @@
 # CASO DE USO: CU17 - Crear plano 2D del restaurante
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field
+import json
+from typing import Optional, List, Any
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CrearAreaRestauranteSchema(BaseModel):
@@ -37,5 +38,18 @@ class AreaRestauranteRespuestaSchema(BaseModel):
     fecha_creacion: datetime
     fecha_actualizacion: datetime
     total_mesas: Optional[int] = 0
+    elementos: Optional[List[Any]] = Field(default_factory=list)
+
+    @field_validator("elementos", mode="before")
+    @classmethod
+    def normalizar_elementos(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except Exception:
+                return []
+        if isinstance(v, list):
+            return v
+        return []
 
     model_config = ConfigDict(from_attributes=True)

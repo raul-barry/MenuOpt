@@ -38,6 +38,11 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-menuopt_jwt_secret_key_development_only_2026_super_secure_random}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-groq}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-openai/gpt-oss-120b}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-15}
     depends_on:
       postgres:
         condition: service_healthy

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.ubicacion import Ubicacion
     from app.models.ingrediente_lugar_compra import IngredienteLugarCompra
     from app.models.preparacion_ingrediente import PreparacionIngrediente
+    from app.models.usuario import Usuario
 
 
 class LugarCompra(Base):
@@ -28,9 +29,16 @@ class LugarCompra(Base):
         nullable=True,
         index=True
     )
+    id_usuario_responsable: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuario.id_usuario", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
 
     # Relaciones
     ubicacion: Mapped[Optional["Ubicacion"]] = relationship("Ubicacion", back_populates="lugares_compra")
+    usuario_responsable: Mapped[Optional["Usuario"]] = relationship("Usuario")
     ingrediente_lugares: Mapped[List["IngredienteLugarCompra"]] = relationship(
         "IngredienteLugarCompra",
         back_populates="lugar_compra",

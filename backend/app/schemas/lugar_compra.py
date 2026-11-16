@@ -14,6 +14,7 @@ class CrearLugarCompraSchema(BaseModel):
     telefono: Optional[str] = Field(None, max_length=20, description="Teléfono de contacto")
     id_ubicacion: Optional[int] = Field(None, ge=1, description="ID de una ubicación existente")
     ubicacion: Optional[CrearUbicacionSchema] = Field(None, description="Datos para crear una nueva ubicación")
+    id_usuario_responsable: Optional[int] = Field(None, ge=1, description="ID del usuario administrador de la tienda")
 
 
 class ActualizarLugarCompraSchema(BaseModel):
@@ -22,6 +23,7 @@ class ActualizarLugarCompraSchema(BaseModel):
     telefono: Optional[str] = Field(None, max_length=20)
     id_ubicacion: Optional[int] = Field(None, ge=1)
     ubicacion: Optional[ActualizarUbicacionSchema] = None
+    id_usuario_responsable: Optional[int] = Field(None, ge=1)
 
 
 class CambiarEstadoLugarCompraSchema(BaseModel):
@@ -35,6 +37,7 @@ class LugarCompraRespuestaSchema(BaseModel):
     telefono: Optional[str] = None
     estado: str
     id_ubicacion: Optional[int] = None
+    id_usuario_responsable: Optional[int] = None
     ubicacion: Optional[UbicacionRespuestaSchema] = None
 
     model_config = ConfigDict(from_attributes=True)

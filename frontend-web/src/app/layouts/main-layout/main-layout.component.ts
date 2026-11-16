@@ -71,6 +71,15 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
               <a routerLink="/admin/categorias" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
                 <span><app-icon name="layers" class="app-icon-inline"></app-icon></span> Categorías
               </a>
+              <a routerLink="/proveedores" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Proveedores & Precios
+              </a>
+              <a routerLink="/ingredientes" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Ingredientes
+              </a>
+              <a routerLink="/admin/bitacora" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="shield" class="app-icon-inline"></app-icon></span> Bitácora
+              </a>
               <div class="nav-section-title">PLANIFICACIÓN & IA</div>
               <a routerLink="/asistente" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
                 <span><app-icon name="bot" class="app-icon-inline"></app-icon></span> Asistente IA
@@ -119,6 +128,20 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
               <div class="nav-section-title">MI NEGOCIO</div>
               <a routerLink="/restaurantes" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
                 <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Mis Restaurantes
+              </a>
+              <a routerLink="/ingredientes" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Catálogo Ingredientes
+              </a>
+            </ng-container>
+
+            <!-- Menú para ADMINISTRADOR_TIENDA -->
+            <ng-container *ngIf="authService.userRole() === 'ADMINISTRADOR_TIENDA'">
+              <div class="nav-section-title">MI TIENDA / PROVEEDOR</div>
+              <a routerLink="/proveedores" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="store" class="app-icon-inline"></app-icon></span> Mis Tiendas & Precios
+              </a>
+              <a routerLink="/ingredientes" routerLinkActive="active" (click)="cerrarMenuMovil()" class="nav-link">
+                <span><app-icon name="carrot" class="app-icon-inline"></app-icon></span> Catálogo Ingredientes
               </a>
             </ng-container>
 
@@ -393,6 +416,7 @@ export class MainLayoutComponent {
     switch (role) {
       case 'ADMINISTRADOR': return 'badge-danger';
       case 'RESTAURANTE': return 'badge-warning';
+      case 'ADMINISTRADOR_TIENDA': return 'badge-info';
       default: return 'badge-secondary';
     }
   }

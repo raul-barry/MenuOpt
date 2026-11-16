@@ -7,7 +7,8 @@ from app.schemas.ubicacion import UbicacionRespuestaSchema
 
 
 class AsociarIngredienteLugarCompraSchema(BaseModel):
-    id_ingrediente: int = Field(..., ge=1, description="ID del ingrediente")
+    id_ingrediente: Optional[int] = Field(None, ge=1, description="ID del ingrediente")
+    nombre_ingrediente: Optional[str] = Field(None, min_length=1, max_length=100, description="Nombre manual del ingrediente")
     precio: Decimal = Field(..., ge=0, description="Precio unitario o por lote de referencia")
     cantidad_referencia: Decimal = Field(Decimal("1.00"), gt=0, description="Cantidad a la que corresponde el precio")
     unidad_medida: str = Field(..., min_length=1, max_length=50, description="Unidad de medida del precio (ej. kg, litro, unidad)")

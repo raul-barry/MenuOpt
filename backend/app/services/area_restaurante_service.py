@@ -1,5 +1,6 @@
 # CASO DE USO: CU17 - Crear plano 2D del restaurante
-from typing import List
+import json
+from typing import List, Any
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
@@ -54,6 +55,17 @@ class AreaRestauranteService:
         return AreaRestauranteRepository.crear(db, nueva_area)
 
     @staticmethod
+    def _parsear_elementos(raw) -> List[Any]:
+        if not raw:
+            return []
+        if isinstance(raw, list):
+            return raw
+        try:
+            return json.loads(raw)
+        except Exception:
+            return []
+
+    @staticmethod
     def obtener_area(db: Session, id_area: int, usuario_actual: Usuario) -> AreaRestauranteRespuestaSchema:
         area = AreaRestauranteRepository.obtener_por_id(db, id_area)
         if not area:
@@ -68,6 +80,7 @@ class AreaRestauranteService:
         total_mesas = AreaRestauranteRepository.contar_mesas_por_area(db, id_area)
         respuesta = AreaRestauranteRespuestaSchema.model_validate(area)
         respuesta.total_mesas = total_mesas
+        respuesta.elementos = AreaRestauranteService._parsear_elementos(area.elementos)
         return respuesta
 
     @staticmethod
@@ -109,6 +122,7 @@ class AreaRestauranteService:
         for a in areas:
             resp = AreaRestauranteRespuestaSchema.model_validate(a)
             resp.total_mesas = AreaRestauranteRepository.contar_mesas_por_area(db, a.id_area)
+            resp.elementos = AreaRestauranteService._parsear_elementos(a.elementos)
             respuestas.append(resp)
         return respuestas
 

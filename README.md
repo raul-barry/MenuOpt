@@ -45,11 +45,11 @@ Esta versión integra **PARTE 1, PARTE 2, PARTE 3, PARTE 4, PARTE 5, PARTE 6, PA
 | **CU02** | Iniciar sesión | Público | `POST /autenticacion/login` |
 | **CU03** | Gestionar perfil | Autenticado | `GET /usuarios/perfil`, `PUT /usuarios/perfil`, `PUT /usuarios/perfil/contrasena` |
 | **CU04** | Gestionar usuarios | ADMINISTRADOR | `GET /usuarios`, `GET /usuarios/{id}`, `PATCH /usuarios/{id}/estado` |
-| **CU05** | Registrar restaurante | RESTAURANTE / ADMIN | `POST /restaurantes` |
-| **CU06** | Gestionar restaurante | RESTAURANTE / ADMIN | `GET /restaurantes/mis-restaurantes`, `GET /restaurantes/{id}`, `PUT /restaurantes/{id}`, `PATCH /restaurantes/{id}/estado` |
+| **CU05** | Gestionar restaurantes | RESTAURANTE / ADMIN | `POST /restaurantes`, `GET /restaurantes/mis-restaurantes`, `GET /restaurantes/{id}`, `PUT /restaurantes/{id}` |
+| **CU06** | Gestionar área física del restaurante | RESTAURANTE / ADMIN | `GET /restaurantes/{id}/areas`, `POST /restaurantes/{id}/areas`, `PUT /areas/{id}` |
 | **CU07** | Gestionar categorías | ADMINISTRADOR | `GET /categorias`, `POST /categorias`, `PUT /categorias/{id}` |
 | **CU08** | Gestionar platos y preferencias | RESTAURANTE / ADMIN | `GET /restaurantes/{id}/platos`, `POST /restaurantes/{id}/platos`, `GET /platos/{id}`, `PUT /platos/{id}`, `PATCH /platos/{id}/estado`, `GET /platos/{id}/preferencias`, `PUT /platos/{id}/preferencias` |
-| **CU09** | Gestionar ingredientes | RESTAURANTE / ADMIN | `GET /ingredientes`, `POST /ingredientes`, `PUT /ingredientes/{id}`, `POST /platos/{id}/ingredientes`, `PUT /platos/{id}/ingredientes/{id_ing}`, `DELETE /platos/{id}/ingredientes/{id_ing}` |
+| **CU09** | Gestionar proveedores | ADMINISTRADOR_TIENDA / ADMIN | `GET /lugares-compra`, `POST /lugares-compra`, `GET /lugares-compra/mis-tiendas`, `PUT /lugares-compra/{id}`, `POST /lugares-compra/{id}/ingredientes`, `PUT /lugares-compra/{id}/ingredientes/{id_ing}`, `DELETE /lugares-compra/{id}/ingredientes/{id_ing}` |
 | **CU10** | Gestionar disponibilidad | RESTAURANTE / ADMIN | `PATCH /platos/{id}/disponibilidad` |
 | **CU11** | Registrar planificación | CLIENTE / ADMIN | `POST /planificaciones`, `GET /planificaciones/mis-planificaciones`, `GET /planificaciones/{id}`, `PUT /planificaciones/{id}`, `PATCH /planificaciones/{id}/estado` |
 | **CU12** | Definir preferencias | Autenticado / ADMIN | `GET /preferencias`, `GET /usuarios/preferencias`, `PUT /usuarios/preferencias`, `POST /preferencias`, `PUT /preferencias/{id}`, `PATCH /preferencias/{id}/estado` |
@@ -107,6 +107,7 @@ Este comando crea las cinco cuentas de la tabla siguiente. También restaura sus
 | Rol | Correo Electrónico | Contraseña | Destino Inicial Post-Login |
 |---|---|---|---|
 | **ADMINISTRADOR** | `admin@menuopt.com` | `Admin1234*` | `/admin/usuarios` |
+| **ADMINISTRADOR_TIENDA** | `tienda@menuopt.com` | `Tienda1234*` | `/proveedores` |
 | **RESTAURANTE** | `restaurante@menuopt.com` | `Resto1234*` | `/restaurantes` |
 | **RESTAURANTE 2** | `restaurante2@menuopt.com` | `Resto1234*` | `/restaurantes` |
 | **CLIENTE 1** | `cliente1@menuopt.com` | `Cliente1234*` | `/inicio` |

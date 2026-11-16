@@ -1,5 +1,6 @@
 import { AppIconComponent } from '../../../shared/app-icon/app-icon.component';
 import { MesaSvgComponent } from '../../../shared/mesa-svg/mesa-svg.component';
+import { EspacioSvgComponent } from '../../../shared/espacio-svg/espacio-svg.component';
 // CASO DE USO: CU20 - Consultar disponibilidad & CU21 - Realizar reserva
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -24,7 +25,7 @@ import {
 @Component({
   selector: 'app-nueva-reserva',
   standalone: true,
-  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule, MesaSvgComponent],
+  imports: [AppIconComponent, CommonModule, RouterModule, FormsModule, MesaSvgComponent, EspacioSvgComponent],
   templateUrl: './nueva-reserva.component.html',
   styleUrls: ['./nueva-reserva.component.css']
 })

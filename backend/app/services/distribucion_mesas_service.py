@@ -1,4 +1,5 @@
 # CASO DE USO: CU17 - Crear plano 2D del restaurante & Generación y guardado de distribución
+import json
 from typing import List, Dict, Any, Set
 from decimal import Decimal
 from fastapi import HTTPException, status
@@ -21,6 +22,18 @@ from app.security.propiedad import verificar_propiedad_area
 
 
 class DistribucionMesasService:
+
+    @staticmethod
+    def _parsear_elementos(area) -> List[Dict[str, Any]]:
+        raw = getattr(area, "elementos", None)
+        if not raw:
+            return []
+        if isinstance(raw, list):
+            return raw
+        try:
+            return json.loads(raw)
+        except Exception:
+            return []
 
     @staticmethod
     def generar_distribucion_automatica(
@@ -110,7 +123,8 @@ class DistribucionMesasService:
             ancho_mapa=area.ancho_mapa,
             alto_mapa=area.alto_mapa,
             total_mesas=len(mesas_actuales),
-            mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales]
+            mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales],
+            elementos=DistribucionMesasService._parsear_elementos(area)
         )
 
     @staticmethod
@@ -174,6 +188,11 @@ class DistribucionMesasService:
             )
         verificar_propiedad_area(area, usuario_actual)
 
+        if datos.elementos is not None:
+            area.elementos = json.dumps([item.model_dump(mode="json") for item in datos.elementos])
+            db.commit()
+            db.refresh(area)
+
         ids_solicitados = [item.id_mesa for item in datos.mesas]
         if not ids_solicitados:
             mesas_actuales = MesaRepository.listar_por_area(db, id_area, solo_activas=True)
@@ -183,7 +202,8 @@ class DistribucionMesasService:
                 ancho_mapa=area.ancho_mapa,
                 alto_mapa=area.alto_mapa,
                 total_mesas=len(mesas_actuales),
-                mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales]
+                mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales],
+                elementos=DistribucionMesasService._parsear_elementos(area)
             )
 
         # Validar pertenencia estricta de todas las mesas a esta área
@@ -220,5 +240,6 @@ class DistribucionMesasService:
             ancho_mapa=area.ancho_mapa,
             alto_mapa=area.alto_mapa,
             total_mesas=len(mesas_actuales),
-            mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales]
+            mesas=[MesaRespuestaSchema.model_validate(m) for m in mesas_actuales],
+            elementos=DistribucionMesasService._parsear_elementos(area)
         )

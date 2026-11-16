@@ -22,7 +22,7 @@ def clean_isolated_database():
         with engine.begin() as connection:
             connection.execute(text(f"TRUNCATE TABLE {quoted} RESTART IDENTITY CASCADE"))
     with SessionLocal() as db:
-        roles = {name: Rol(nombre=name, activo=True) for name in ("ADMINISTRADOR", "RESTAURANTE", "CLIENTE")}
+        roles = {name: Rol(nombre=name, activo=True) for name in ("ADMINISTRADOR", "RESTAURANTE", "CLIENTE", "ADMINISTRADOR_TIENDA")}
         db.add_all(roles.values())
         db.flush()
         for email, names, role in (
@@ -32,6 +32,7 @@ def clean_isolated_database():
             ("test-client@example.com", ("Test", "Client"), "CLIENTE"),
             ("test-guest@example.com", ("Test", "Guest"), "CLIENTE"),
             ("test-unlinked@example.com", ("Unlinked", "Client"), "CLIENTE"),
+            ("test-tienda@example.com", ("Test", "Tienda"), "ADMINISTRADOR_TIENDA"),
         ):
             db.add(Usuario(
                 nombres=names[0], apellidos=names[1], correo=email,
@@ -62,6 +63,7 @@ def world(api):
         ("client", "test-client@example.com"),
         ("guest", "test-guest@example.com"),
         ("unlinked", "test-unlinked@example.com"),
+        ("tienda", "test-tienda@example.com"),
     ):
         response = api.post("/autenticacion/login", json={"correo": email, "contrasena": "TestPass123!"})
         assert response.status_code == 200, response.text

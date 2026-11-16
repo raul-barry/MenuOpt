@@ -5,6 +5,13 @@ from app.models.rol import Rol
 from app.models.preferencia import Preferencia
 from app.security.contrasenas import generar_hash_contrasena, verificar_contrasena
 
+ROLES_BASE = [
+    ("ADMINISTRADOR", "Acceso total a la administración y bitácora del sistema"),
+    ("RESTAURANTE", "Gestión de establecimientos gastronómicos, cartas, planos y reservas"),
+    ("CLIENTE", "Planificación gastronómica, reservas, pedidos y asistente virtual"),
+    ("ADMINISTRADOR_TIENDA", "Gestión de proveedores, tiendas e insumos con precios actualizados"),
+]
+
 USUARIOS_DE_PRUEBA = [
     ("Administrador", "Principal", "admin@menuopt.com", "Admin1234*", "ADMINISTRADOR", "70000000"),
     ("Carlos", "Chef", "restaurante@menuopt.com", "Resto1234*", "RESTAURANTE", "71112233"),
@@ -12,7 +19,18 @@ USUARIOS_DE_PRUEBA = [
     ("Cliente", "Uno", "cliente1@menuopt.com", "Cliente1234*", "CLIENTE", "73334455"),
     ("Cliente", "Dos", "cliente2@menuopt.com", "Cliente1234*", "CLIENTE", "74445566"),
     ("Admin", "Eventos", "admineventos@gmail.com", "Admin1234*", "ADMINISTRADOR", "79998877"),
+    ("Tienda", "Central", "tienda@menuopt.com", "Tienda1234*", "ADMINISTRADOR_TIENDA", "78889900"),
 ]
+
+
+def sembrar_roles(db):
+    """Garantiza la presencia de todos los roles del sistema."""
+    for nombre_rol, desc in ROLES_BASE:
+        rol = db.query(Rol).filter(Rol.nombre == nombre_rol).first()
+        if not rol:
+            db.add(Rol(nombre=nombre_rol, descripcion=desc, activo=True))
+            print(f"[OK] Rol creado: {nombre_rol}")
+    db.commit()
 
 
 def sembrar_usuarios_de_prueba(db):
@@ -95,12 +113,67 @@ def sembrar_areas_por_defecto(db):
     db.commit()
 
 
+def sembrar_tiendas_por_defecto(db):
+    """Siembra proveedores y tiendas por defecto para el rol ADMINISTRADOR_TIENDA (CU09)."""
+    from app.models.lugar_compra import LugarCompra
+    from app.models.ingrediente import Ingrediente
+    from app.models.ingrediente_lugar_compra import IngredienteLugarCompra
+    from app.models.ubicacion import Ubicacion
+    from decimal import Decimal
+
+    usuario_tienda = db.query(Usuario).filter(Usuario.correo == "tienda@menuopt.com").first()
+    if not usuario_tienda:
+        return
+
+    tiendas_data = [
+        {
+            "nombre": "Supermercado Hipermaxi Central",
+            "tipo": "SUPERMERCADO",
+            "telefono": "33445566",
+            "ciudad": "Santa Cruz",
+            "direccion": "Av. San Martín esq. 4to Anillo"
+        },
+        {
+            "nombre": "Mercado La Cancha - Sección Abarrotes",
+            "tipo": "MERCADO",
+            "telefono": "71234567",
+            "ciudad": "Cochabamba",
+            "direccion": "Calle Punata y San Martín"
+        }
+    ]
+
+    for td in tiendas_data:
+        lugar = db.query(LugarCompra).filter(LugarCompra.nombre == td["nombre"]).first()
+        if not lugar:
+            ub = Ubicacion(direccion=td["direccion"], ciudad=td["ciudad"])
+            db.add(ub)
+            db.flush()
+            lugar = LugarCompra(
+                nombre=td["nombre"],
+                tipo=td["tipo"],
+                telefono=td["telefono"],
+                estado="ACTIVO",
+                id_ubicacion=ub.id_ubicacion,
+                id_usuario_responsable=usuario_tienda.id_usuario
+            )
+            db.add(lugar)
+            db.flush()
+            print(f"[OK] Proveedor / Tienda creada: {lugar.nombre}")
+        else:
+            if not lugar.id_usuario_responsable:
+                lugar.id_usuario_responsable = usuario_tienda.id_usuario
+
+    db.commit()
+
+
 def sembrar_usuarios_iniciales():
     db = SessionLocal()
     try:
+        sembrar_roles(db)
         sembrar_usuarios_de_prueba(db)
         sembrar_preferencias_iniciales(db)
         sembrar_areas_por_defecto(db)
+        sembrar_tiendas_por_defecto(db)
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Error al sembrar datos iniciales: {str(e)}")

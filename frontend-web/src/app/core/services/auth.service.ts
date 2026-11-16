@@ -101,6 +101,9 @@ export class AuthService {
       case 'ADMINISTRADOR':
         this.router.navigate(['/admin/usuarios']);
         break;
+      case 'ADMINISTRADOR_TIENDA':
+        this.router.navigate(['/proveedores']);
+        break;
       case 'RESTAURANTE':
         this.router.navigate(['/restaurantes']);
         break;

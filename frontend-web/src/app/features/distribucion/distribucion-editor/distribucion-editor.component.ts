@@ -14,12 +14,13 @@ import { DistribucionMesasService } from '../../../core/services/distribucion-me
 import { MesaCombinacionService } from '../../../core/services/mesa-combinacion.service';
 
 import { Restaurante } from '../../../core/models/restaurante.model';
-import { AreaRestaurante, AreaRestauranteCrear, AreaRestauranteActualizar } from '../../../core/models/area-restaurante.model';
+import { AreaRestaurante, AreaRestauranteCrear, AreaRestauranteActualizar, EspacioPlano, TipoEspacioPlano } from '../../../core/models/area-restaurante.model';
 import { Mesa, FormaMesa, MesaCrear, MesaActualizar } from '../../../core/models/mesa.model';
 import { MesaCombinacion, MesaCombinacionCrear } from '../../../core/models/mesa-combinacion.model';
 import { GenerarDistribucionRequest } from '../../../core/models/distribucion.model';
 
 import { MesaSvgComponent, DisposicionMesa } from '../../../shared/mesa-svg/mesa-svg.component';
+import { EspacioSvgComponent } from '../../../shared/espacio-svg/espacio-svg.component';
 
 export interface ModeloMesaPreset {
   id: string;
@@ -30,10 +31,20 @@ export interface ModeloMesaPreset {
   categoria: 'REDONDA' | 'CUADRADA' | 'RECTANGULAR';
 }
 
+export interface ModeloEspacioPreset {
+  id: string;
+  tipo: TipoEspacioPlano;
+  nombre: string;
+  subtitulo: string;
+  ancho: number;
+  alto: number;
+  categoria: 'ACCESOS' | 'SERVICIOS' | 'ATENCION' | 'ENTRETENIMIENTO' | 'PERSONALIZADO';
+}
+
 @Component({
   selector: 'app-distribucion-editor',
   standalone: true,
-  imports: [AppIconComponent, MesaSvgComponent, CommonModule, RouterModule, FormsModule],
+  imports: [AppIconComponent, MesaSvgComponent, EspacioSvgComponent, CommonModule, RouterModule, FormsModule],
   templateUrl: './distribucion-editor.component.html',
   styleUrls: ['./distribucion-editor.component.css']
 })
@@ -70,8 +81,42 @@ export class DistribucionEditorComponent implements OnInit {
     { id: 'rec8_long', nombre: 'Rectangular 8 sillas (alargada)', forma: 'RECTANGULAR', capacidad: 8, disposicion: 'rect-8-largo', categoria: 'RECTANGULAR' }
   ];
 
+  // Catálogo oficial de espacios y herramientas arquitectónicas del local
+  readonly ESPACIOS_CATALOGO: ModeloEspacioPreset[] = [
+    // 1. Accesos y Circulación
+    { id: 'esp_acceso', tipo: 'ACCESO', nombre: 'Ingreso / Salida', subtitulo: 'Puerta Principal', ancho: 0.14, alto: 0.08, categoria: 'ACCESOS' },
+    { id: 'esp_escalera', tipo: 'ESCALERA', nombre: 'Escalera Planta Alta', subtitulo: 'Hacia otra planta', ancho: 0.13, alto: 0.10, categoria: 'ACCESOS' },
+
+    // 2. Atención y Pagos
+    { id: 'esp_caja', tipo: 'CAJA', nombre: 'Caja Principal', subtitulo: 'Punto de Cobro', ancho: 0.12, alto: 0.08, categoria: 'ATENCION' },
+    { id: 'esp_retiro', tipo: 'RETIRO', nombre: 'Retiro de Pedidos', subtitulo: 'Take Away / Llevar', ancho: 0.14, alto: 0.08, categoria: 'ATENCION' },
+    { id: 'esp_barra', tipo: 'BARRA', nombre: 'Barra de Bar', subtitulo: 'Bebidas & Cócteles', ancho: 0.18, alto: 0.08, categoria: 'ATENCION' },
+
+    // 3. Servicios y Operaciones
+    { id: 'esp_banos', tipo: 'BANOS', nombre: 'Baños / Sanitarios', subtitulo: 'Servicios Higiénicos', ancho: 0.13, alto: 0.08, categoria: 'SERVICIOS' },
+    { id: 'esp_cocina', tipo: 'COCINA', nombre: 'Cocina / Despacho', subtitulo: 'Salida de Platos', ancho: 0.16, alto: 0.10, categoria: 'SERVICIOS' },
+    { id: 'esp_espera', tipo: 'ESPERA', nombre: 'Zona de Espera', subtitulo: 'Lounge / Recepción', ancho: 0.15, alto: 0.09, categoria: 'SERVICIOS' },
+
+    // 4. Entretenimiento y Ambientes
+    { id: 'esp_juegos', tipo: 'JUEGOS', nombre: 'Patio de Juegos', subtitulo: 'Zona Infantil', ancho: 0.18, alto: 0.12, categoria: 'ENTRETENIMIENTO' },
+    { id: 'esp_terraza', tipo: 'TERRAZA', nombre: 'Terraza Exterior', subtitulo: 'Área al Aire Libre', ancho: 0.18, alto: 0.12, categoria: 'ENTRETENIMIENTO' },
+    { id: 'esp_escenario', tipo: 'ESCENARIO', nombre: 'Escenario / Música', subtitulo: 'Tarima en Vivo', ancho: 0.18, alto: 0.10, categoria: 'ENTRETENIMIENTO' },
+
+    // 5. Personalizado / A Medida (CU06 - Espacio libre configurable)
+    { id: 'esp_personalizado', tipo: 'PERSONALIZADO', nombre: 'Espacio Personalizado', subtitulo: 'Tamaño libre a placer', ancho: 0.18, alto: 0.12, categoria: 'PERSONALIZADO' }
+  ];
+
+  tabHerramientas = signal<'mesas' | 'espacios'>('mesas');
   filtroCategoriaCatalogo = signal<'TODAS' | 'REDONDA' | 'CUADRADA' | 'RECTANGULAR'>('TODAS');
+  filtroCategoriaEspacios = signal<'TODOS' | 'ACCESOS' | 'ATENCION' | 'SERVICIOS' | 'ENTRETENIMIENTO' | 'PERSONALIZADO'>('TODOS');
   modeloArrastrando: ModeloMesaPreset | null = null;
+  espacioArrastrando: ModeloEspacioPreset | null = null;
+  espacios = signal<EspacioPlano[]>([]);
+  espacioSeleccionado = signal<EspacioPlano | null>(null);
+  espacioEnArrastre: EspacioPlano | null = null;
+  espacioEnRedimension: EspacioPlano | null = null;
+  initialEspacioAncho: number = 0.14;
+  initialEspacioAlto: number = 0.08;
 
   modelosFiltrados(): ModeloMesaPreset[] {
     const cat = this.filtroCategoriaCatalogo();
@@ -79,11 +124,27 @@ export class DistribucionEditorComponent implements OnInit {
     return this.MODELOS_CATALOGO.filter(m => m.categoria === cat);
   }
 
+  espaciosFiltrados(): ModeloEspacioPreset[] {
+    const cat = this.filtroCategoriaEspacios();
+    if (cat === 'TODOS') return this.ESPACIOS_CATALOGO;
+    return this.ESPACIOS_CATALOGO.filter(e => e.categoria === cat);
+  }
+
   // Drag and Drop desde la barra lateral de herramientas hacia el lienzo 2D
   onDragStartFromCatalog(event: DragEvent, modelo: ModeloMesaPreset): void {
     this.modeloArrastrando = modelo;
+    this.espacioArrastrando = null;
     if (event.dataTransfer) {
-      event.dataTransfer.setData('application/json', JSON.stringify(modelo));
+      event.dataTransfer.setData('application/json', JSON.stringify({ tipoObjeto: 'mesa', data: modelo }));
+      event.dataTransfer.effectAllowed = 'copy';
+    }
+  }
+
+  onDragStartEspacioFromCatalog(event: DragEvent, preset: ModeloEspacioPreset): void {
+    this.espacioArrastrando = preset;
+    this.modeloArrastrando = null;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('application/json', JSON.stringify({ tipoObjeto: 'espacio', data: preset }));
       event.dataTransfer.effectAllowed = 'copy';
     }
   }
@@ -103,17 +164,7 @@ export class DistribucionEditorComponent implements OnInit {
       return;
     }
 
-    let modelo = this.modeloArrastrando;
-    if (!modelo && event.dataTransfer) {
-      const dataStr = event.dataTransfer.getData('application/json');
-      if (dataStr) {
-        try {
-          modelo = JSON.parse(dataStr);
-        } catch {}
-      }
-    }
-
-    if (!modelo || !this.canvasContainer) return;
+    if (!this.canvasContainer) return;
 
     const rect = this.canvasContainer.nativeElement.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -121,14 +172,158 @@ export class DistribucionEditorComponent implements OnInit {
     let posX = (event.clientX - rect.left) / rect.width;
     let posY = (event.clientY - rect.top) / rect.height;
 
-    // Acotar posiciones para que la mesa no quede fuera de los márgenes
+    // Acotar posiciones para que el elemento no quede fuera de los márgenes
     posX = Math.max(0.06, Math.min(0.94, posX));
     posY = Math.max(0.06, Math.min(0.94, posY));
     posX = Math.round(posX * 10000) / 10000;
     posY = Math.round(posY * 10000) / 10000;
 
-    this.crearMesaDirecta(modelo, posX, posY);
-    this.modeloArrastrando = null;
+    let modeloMesa = this.modeloArrastrando;
+    let modeloEspacio = this.espacioArrastrando;
+
+    if (!modeloMesa && !modeloEspacio && event.dataTransfer) {
+      const dataStr = event.dataTransfer.getData('application/json');
+      if (dataStr) {
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.tipoObjeto === 'espacio') {
+            modeloEspacio = parsed.data;
+          } else if (parsed.tipoObjeto === 'mesa') {
+            modeloMesa = parsed.data;
+          } else if (parsed.tipo) {
+            modeloEspacio = parsed;
+          } else if (parsed.forma) {
+            modeloMesa = parsed;
+          }
+        } catch {}
+      }
+    }
+
+    if (modeloEspacio) {
+      this.crearEspacioDirecto(modeloEspacio, posX, posY);
+      this.espacioArrastrando = null;
+    } else if (modeloMesa) {
+      this.crearMesaDirecta(modeloMesa, posX, posY);
+      this.modeloArrastrando = null;
+    }
+  }
+
+  crearEspacioDirecto(preset: ModeloEspacioPreset, posX?: number, posY?: number): void {
+    const area = this.areaSeleccionada();
+    if (!area) {
+      this.mostrarError('Primero seleccione o cree un área.');
+      return;
+    }
+
+    const count = this.espacios().length;
+    if (posX === undefined || posY === undefined) {
+      const col = count % 4;
+      const row = Math.floor(count / 4) % 3;
+      posX = Math.round((0.15 + col * 0.22) * 100) / 100;
+      posY = Math.round((0.15 + row * 0.22) * 100) / 100;
+    }
+
+    let nombreFinal = preset.nombre;
+    if (preset.tipo === 'PERSONALIZADO') {
+      const resp = prompt('Nombre o descripción del espacio a medida:', 'Zona VIP / Buffet');
+      if (resp && resp.trim()) {
+        nombreFinal = resp.trim();
+      }
+    }
+
+    const nuevo: EspacioPlano = {
+      id: 'esp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      tipo: preset.tipo,
+      nombre: nombreFinal,
+      posicion_x: posX,
+      posicion_y: posY,
+      ancho: preset.ancho,
+      alto: preset.alto,
+      rotacion: 0
+    };
+
+    this.espacios.update(list => [...list, nuevo]);
+    this.seleccionarEspacio(nuevo);
+    this.hayCambios.set(true);
+    this.mostrarMensaje(`Espacio '${nuevo.nombre}' añadido al plano.`);
+  }
+
+  seleccionarEspacio(espacio: EspacioPlano, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.espacioSeleccionado.set(espacio);
+    this.mesaSeleccionada.set(null);
+  }
+
+  onEspacioPointerDown(event: PointerEvent, espacio: EspacioPlano): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.seleccionarEspacio(espacio);
+    this.espacioEnArrastre = espacio;
+    this.mesaEnArrastre = null;
+
+    this.dragStartPointerX = event.clientX;
+    this.dragStartPointerY = event.clientY;
+    this.initialMesaX = espacio.posicion_x;
+    this.initialMesaY = espacio.posicion_y;
+
+    const target = event.currentTarget as HTMLElement;
+    if (target.setPointerCapture) {
+      target.setPointerCapture(event.pointerId);
+    }
+  }
+
+  onEspacioResizePointerDown(event: PointerEvent, espacio: EspacioPlano): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.seleccionarEspacio(espacio);
+    this.espacioEnRedimension = espacio;
+    this.espacioEnArrastre = null;
+    this.mesaEnArrastre = null;
+
+    this.dragStartPointerX = event.clientX;
+    this.dragStartPointerY = event.clientY;
+    this.initialEspacioAncho = espacio.ancho || 0.14;
+    this.initialEspacioAlto = espacio.alto || 0.08;
+
+    const target = event.currentTarget as HTMLElement;
+    if (target.setPointerCapture) {
+      target.setPointerCapture(event.pointerId);
+    }
+  }
+
+  ajustarDimensionEspacio(espacio: EspacioPlano, deltaAncho: number, deltaAlto: number): void {
+    const actAncho = espacio.ancho || 0.14;
+    const actAlto = espacio.alto || 0.08;
+    const nuevoAncho = Math.max(0.05, Math.min(0.85, Math.round((actAncho + deltaAncho) * 100) / 100));
+    const nuevoAlto = Math.max(0.04, Math.min(0.85, Math.round((actAlto + deltaAlto) * 100) / 100));
+    espacio.ancho = nuevoAncho;
+    espacio.alto = nuevoAlto;
+    this.hayCambios.set(true);
+  }
+
+  rotarEspacio(espacio: EspacioPlano): void {
+    const rot = ((espacio.rotacion || 0) + 90) % 360;
+    espacio.rotacion = rot;
+    this.hayCambios.set(true);
+    this.mostrarMensaje(`Rotación de '${espacio.nombre}': ${rot}°`);
+  }
+
+  renombrarEspacio(espacio: EspacioPlano): void {
+    const nuevoNombre = prompt('Nombre o etiqueta para este espacio:', espacio.nombre);
+    if (nuevoNombre && nuevoNombre.trim()) {
+      espacio.nombre = nuevoNombre.trim();
+      this.hayCambios.set(true);
+    }
+  }
+
+  eliminarEspacio(espacio: EspacioPlano): void {
+    if (!confirm(`¿Desea eliminar el espacio '${espacio.nombre}' del plano?`)) return;
+    this.espacios.update(list => list.filter(e => e.id !== espacio.id));
+    if (this.espacioSeleccionado()?.id === espacio.id) {
+      this.espacioSeleccionado.set(null);
+    }
+    this.hayCambios.set(true);
+    this.mostrarMensaje(`Espacio '${espacio.nombre}' retirado.`);
   }
 
   crearMesaDirecta(modelo: ModeloMesaPreset, posX?: number, posY?: number): void {
@@ -344,6 +539,8 @@ export class DistribucionEditorComponent implements OnInit {
   private aplicarCambioArea(area: AreaRestaurante): void {
     this.areaSeleccionada.set(area);
     this.mesaSeleccionada.set(null);
+    this.espacioSeleccionado.set(null);
+    this.espacios.set(area.elementos || []);
     this.hayCambios.set(false);
     this.cargarMesasArea(area.id_area);
     this.cargarCombinacionesArea(area.id_area);
@@ -414,31 +611,48 @@ export class DistribucionEditorComponent implements OnInit {
   }
 
   onPointerMove(event: PointerEvent): void {
-    if (!this.mesaEnArrastre || !this.canvasContainer) {
-      return;
-    }
+    if (!this.canvasContainer) return;
     const rect = this.canvasContainer.nativeElement.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      return;
-    }
+    if (rect.width === 0 || rect.height === 0) return;
 
     const deltaX = (event.clientX - this.dragStartPointerX) / rect.width;
     const deltaY = (event.clientY - this.dragStartPointerY) / rect.height;
 
-    // Acotar posiciones para que las mesas no salgan del lienzo
-    let newX = Math.max(0.04, Math.min(0.94, this.initialMesaX + deltaX));
-    let newY = Math.max(0.04, Math.min(0.94, this.initialMesaY + deltaY));
-
-    // Redondear a 4 decimales
-    newX = Math.round(newX * 10000) / 10000;
-    newY = Math.round(newY * 10000) / 10000;
-
-    this.mesaEnArrastre.posicion_x = newX;
-    this.mesaEnArrastre.posicion_y = newY;
-    this.hayCambios.set(true);
+    if (this.espacioEnRedimension) {
+      let newW = Math.max(0.04, Math.min(0.85, this.initialEspacioAncho + deltaX));
+      let newH = Math.max(0.04, Math.min(0.85, this.initialEspacioAlto + deltaY));
+      newW = Math.round(newW * 1000) / 1000;
+      newH = Math.round(newH * 1000) / 1000;
+      this.espacioEnRedimension.ancho = newW;
+      this.espacioEnRedimension.alto = newH;
+      this.hayCambios.set(true);
+    } else if (this.mesaEnArrastre) {
+      let newX = Math.max(0.04, Math.min(0.94, this.initialMesaX + deltaX));
+      let newY = Math.max(0.04, Math.min(0.94, this.initialMesaY + deltaY));
+      newX = Math.round(newX * 10000) / 10000;
+      newY = Math.round(newY * 10000) / 10000;
+      this.mesaEnArrastre.posicion_x = newX;
+      this.mesaEnArrastre.posicion_y = newY;
+      this.hayCambios.set(true);
+    } else if (this.espacioEnArrastre) {
+      let newX = Math.max(0.04, Math.min(0.94, this.initialMesaX + deltaX));
+      let newY = Math.max(0.04, Math.min(0.94, this.initialMesaY + deltaY));
+      newX = Math.round(newX * 10000) / 10000;
+      newY = Math.round(newY * 10000) / 10000;
+      this.espacioEnArrastre.posicion_x = newX;
+      this.espacioEnArrastre.posicion_y = newY;
+      this.hayCambios.set(true);
+    }
   }
 
   onPointerUp(event: PointerEvent): void {
+    if (this.espacioEnRedimension) {
+      const target = event.currentTarget as HTMLElement;
+      if (target.releasePointerCapture && target.hasPointerCapture(event.pointerId)) {
+        target.releasePointerCapture(event.pointerId);
+      }
+      this.espacioEnRedimension = null;
+    }
     if (this.mesaEnArrastre) {
       const target = event.currentTarget as HTMLElement;
       if (target.releasePointerCapture && target.hasPointerCapture(event.pointerId)) {
@@ -446,10 +660,18 @@ export class DistribucionEditorComponent implements OnInit {
       }
       this.mesaEnArrastre = null;
     }
+    if (this.espacioEnArrastre) {
+      const target = event.currentTarget as HTMLElement;
+      if (target.releasePointerCapture && target.hasPointerCapture(event.pointerId)) {
+        target.releasePointerCapture(event.pointerId);
+      }
+      this.espacioEnArrastre = null;
+    }
   }
 
   seleccionarMesa(mesa: Mesa): void {
     this.mesaSeleccionada.set(mesa);
+    this.espacioSeleccionado.set(null);
   }
 
   rotarMesa90(mesa: Mesa): void {
@@ -507,14 +729,17 @@ export class DistribucionEditorComponent implements OnInit {
       rotacion: m.rotacion
     }));
 
-    this.distribucionService.guardarDistribucion(area.id_area, posiciones).subscribe({
+    this.distribucionService.guardarDistribucion(area.id_area, posiciones, this.espacios()).subscribe({
       next: (res) => {
         this.guardandoDistribucion.set(false);
         this.hayCambios.set(false);
         if (res && res.mesas && res.mesas.length > 0) {
           this.mesas.set(res.mesas);
         }
-        this.mostrarMensaje(res.mensaje || 'Distribución guardada exitosamente.');
+        if (res && res.elementos) {
+          this.espacios.set(res.elementos);
+        }
+        this.mostrarMensaje(res.mensaje || 'Distribución y espacios guardados exitosamente.');
         if (onSuccess) onSuccess();
       },
       error: (err) => {

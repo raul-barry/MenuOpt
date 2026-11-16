@@ -7,6 +7,7 @@ from app.schemas.autenticacion import RegistroUsuarioSchema, LoginSchema
 from app.schemas.token import TokenSchema
 from app.security.contrasenas import generar_hash_contrasena, verificar_contrasena
 from app.security.jwt import crear_token_acceso
+from app.services.bitacora_service import BitacoraService
 
 
 class AutenticacionService:
@@ -60,6 +61,14 @@ class AutenticacionService:
         )
 
         usuario_creado = UsuarioRepository.crear_usuario(db, nuevo_usuario)
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="REGISTRO_CLIENTE",
+            modulo="AUTENTICACION",
+            descripcion=f"Registro de nuevo cliente: {usuario_creado.correo}",
+            id_usuario=usuario_creado.id_usuario,
+            detalles={"rol": "CLIENTE"}
+        )
         # Recargar para asegurar que la relación 'rol' esté accesible
         return UsuarioRepository.buscar_por_id(db, usuario_creado.id_usuario)
 
@@ -85,14 +94,34 @@ class AutenticacionService:
         )
 
         if not usuario:
+            BitacoraService.registrar_evento(
+                db=db,
+                accion="LOGIN_FALLIDO",
+                modulo="AUTENTICACION",
+                descripcion=f"Intento fallido de login con correo no existente: {correo_normalizado}"
+            )
             raise error_credenciales
 
         # Verificar contraseña
         if not verificar_contrasena(credenciales.contrasena, usuario.contrasena_hash):
+            BitacoraService.registrar_evento(
+                db=db,
+                accion="LOGIN_FALLIDO",
+                modulo="AUTENTICACION",
+                descripcion=f"Contraseña incorrecta para el usuario: {usuario.correo}",
+                id_usuario=usuario.id_usuario
+            )
             raise error_credenciales
 
         # Comprobar estado del usuario
         if usuario.estado != "ACTIVO":
+            BitacoraService.registrar_evento(
+                db=db,
+                accion="LOGIN_BLOQUEADO",
+                modulo="AUTENTICACION",
+                descripcion=f"Intento de login con cuenta inactiva: {usuario.correo}",
+                id_usuario=usuario.id_usuario
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Su cuenta se encuentra inactiva o suspendida. Contacte al administrador."
@@ -106,6 +135,15 @@ class AutenticacionService:
             "rol": usuario.rol.nombre if usuario.rol else "CLIENTE"
         }
         token_acceso = crear_token_acceso(datos=payload)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="LOGIN_EXITOSO",
+            modulo="AUTENTICACION",
+            descripcion=f"Inicio de sesión exitoso: {usuario.correo}",
+            id_usuario=usuario.id_usuario,
+            detalles={"rol": usuario.rol.nombre if usuario.rol else None}
+        )
 
         return TokenSchema(
             access_token=token_acceso,

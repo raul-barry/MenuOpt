@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.usuario import Usuario
 from app.models.lugar_compra import LugarCompra
+from app.models.ingrediente import Ingrediente
 from app.models.ingrediente_lugar_compra import IngredienteLugarCompra
 from app.models.ubicacion import Ubicacion
 from app.repositories.lugar_compra_repository import LugarCompraRepository
@@ -21,12 +22,30 @@ from app.schemas.ingrediente_lugar_compra import (
     IngredienteLugarCompraRespuestaSchema,
     LugarCompraParaIngredienteRespuestaSchema,
 )
+from app.services.bitacora_service import BitacoraService
 
 
 class LugarCompraService:
     """
-    Servicio de administración y consulta de establecimientos de compra de ingredientes (CU16).
+    Servicio de administración y consulta de establecimientos de compra de ingredientes (CU09 y CU16).
     """
+
+    @staticmethod
+    def _validar_permiso_tienda(lugar: LugarCompra, usuario_actual: Usuario) -> None:
+        rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+        if rol == "ADMINISTRADOR":
+            return
+        if rol == "ADMINISTRADOR_TIENDA":
+            if lugar.id_usuario_responsable != usuario_actual.id_usuario:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tiene permiso para administrar los insumos o datos de otra tienda/proveedor."
+                )
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rol no autorizado para gestionar este comercio."
+        )
 
     # =========================================================================
     # GESTIÓN DE LUGARES DE COMPRA (ADMIN)
@@ -64,16 +83,49 @@ class LugarCompraService:
             db.flush()
             id_ubicacion = nueva_ubicacion.id_ubicacion
 
+        rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+        id_responsable = None
+        if rol == "ADMINISTRADOR_TIENDA":
+            id_responsable = usuario_actual.id_usuario
+        elif rol == "ADMINISTRADOR":
+            id_responsable = datos.id_usuario_responsable or usuario_actual.id_usuario
+
         nuevo_lugar = LugarCompra(
             nombre=nombre_limpio,
             tipo=datos.tipo.strip().upper() if datos.tipo else None,
             telefono=datos.telefono.strip() if datos.telefono else None,
             estado="ACTIVO",
-            id_ubicacion=id_ubicacion
+            id_ubicacion=id_ubicacion,
+            id_usuario_responsable=id_responsable
         )
 
         creado = LugarCompraRepository.crear(db, nuevo_lugar)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CREAR_PROVEEDOR",
+            modulo="PROVEEDORES",
+            descripcion=f"Proveedor / Tienda '{creado.nombre}' registrado por {usuario_actual.correo}",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_lugar_compra": creado.id_lugar_compra, "tipo": creado.tipo}
+        )
+
         return LugarCompraRespuestaSchema.model_validate(creado)
+
+    @staticmethod
+    def listar_mis_tiendas(
+        db: Session,
+        usuario_actual: Usuario
+    ) -> List[LugarCompraRespuestaSchema]:
+        """
+        Lista las tiendas o proveedores administrados por el usuario autenticado.
+        """
+        rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+        if rol == "ADMINISTRADOR":
+            lugares = LugarCompraRepository.listar(db)
+        else:
+            lugares = LugarCompraRepository.listar_por_usuario(db, usuario_actual.id_usuario)
+        return [LugarCompraRespuestaSchema.model_validate(l) for l in lugares]
 
     @staticmethod
     def listar_lugares(
@@ -110,6 +162,7 @@ class LugarCompraService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No se encontró el lugar de compra con ID {id_lugar_compra}."
             )
+        LugarCompraService._validar_permiso_tienda(lugar, usuario_actual)
 
         if datos.nombre is not None:
             nombre_limpio = datos.nombre.strip()
@@ -193,30 +246,66 @@ class LugarCompraService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No se encontró el lugar de compra con ID {id_lugar_compra}."
             )
+        LugarCompraService._validar_permiso_tienda(lugar, usuario_actual)
 
-        ingrediente = IngredienteRepository.buscar_por_id(db, datos.id_ingrediente)
+        ingrediente = None
+        if datos.id_ingrediente:
+            ingrediente = IngredienteRepository.buscar_por_id(db, datos.id_ingrediente)
+
+        if not ingrediente and datos.nombre_ingrediente:
+            nombre_limpio = datos.nombre_ingrediente.strip()
+            if nombre_limpio:
+                ingrediente = IngredienteRepository.buscar_por_nombre(db, nombre_limpio)
+                if not ingrediente:
+                    # Crear nuevo ingrediente en el catálogo automáticamente
+                    nuevo_ing = Ingrediente(
+                        nombre=nombre_limpio,
+                        unidad_medida=datos.unidad_medida.strip() if datos.unidad_medida else "kg",
+                        precio_estimado=datos.precio,
+                        estado="ACTIVO"
+                    )
+                    ingrediente = IngredienteRepository.crear(db, nuevo_ing)
+
         if not ingrediente:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No se encontró el ingrediente con ID {datos.id_ingrediente}."
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Debe ingresar el nombre del ingrediente o seleccionar uno del catálogo."
             )
 
-        existente = IngredienteLugarCompraRepository.buscar_relacion(db, datos.id_ingrediente, id_lugar_compra)
+        id_ing = ingrediente.id_ingrediente
+        existente = IngredienteLugarCompraRepository.buscar_relacion(db, id_ing, id_lugar_compra)
         if existente:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Este ingrediente ya se encuentra registrado en el lugar de compra. Utilice PUT para actualizar su precio o disponibilidad."
+            existente.precio = datos.precio
+            if datos.cantidad_referencia:
+                existente.cantidad_referencia = datos.cantidad_referencia
+            if datos.unidad_medida:
+                existente.unidad_medida = datos.unidad_medida.strip()
+            existente.disponible = datos.disponible
+            guardada = IngredienteLugarCompraRepository.actualizar(db, existente)
+            accion_bitacora = "ACTUALIZAR_PRECIO_PROVEEDOR"
+            desc_bitacora = f"Precio de '{ingrediente.nombre}' en '{lugar.nombre}' actualizado a Bs. {datos.precio}"
+        else:
+            relacion = IngredienteLugarCompra(
+                id_ingrediente=id_ing,
+                id_lugar_compra=id_lugar_compra,
+                precio=datos.precio,
+                cantidad_referencia=datos.cantidad_referencia,
+                unidad_medida=datos.unidad_medida.strip() if datos.unidad_medida else ingrediente.unidad_medida,
+                disponible=datos.disponible
             )
+            guardada = IngredienteLugarCompraRepository.asociar(db, relacion)
+            accion_bitacora = "ASOCIAR_PRECIO_PROVEEDOR"
+            desc_bitacora = f"Ingrediente '{ingrediente.nombre}' asociado a '{lugar.nombre}' con precio Bs. {datos.precio}"
 
-        relacion = IngredienteLugarCompra(
-            id_ingrediente=datos.id_ingrediente,
-            id_lugar_compra=id_lugar_compra,
-            precio=datos.precio,
-            cantidad_referencia=datos.cantidad_referencia,
-            unidad_medida=datos.unidad_medida.strip(),
-            disponible=datos.disponible
+        BitacoraService.registrar_evento(
+            db=db,
+            accion=accion_bitacora,
+            modulo="PROVEEDORES",
+            descripcion=desc_bitacora,
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_lugar_compra": id_lugar_compra, "id_ingrediente": id_ing, "precio": float(datos.precio)}
         )
-        guardada = IngredienteLugarCompraRepository.asociar(db, relacion)
+
         return LugarCompraService._mapear_relacion_schema(guardada)
 
     @staticmethod
@@ -227,6 +316,14 @@ class LugarCompraService:
         datos: ActualizarIngredienteLugarCompraSchema,
         usuario_actual: Usuario
     ) -> IngredienteLugarCompraRespuestaSchema:
+        lugar = LugarCompraRepository.buscar_por_id(db, id_lugar_compra)
+        if not lugar:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró el lugar de compra con ID {id_lugar_compra}."
+            )
+        LugarCompraService._validar_permiso_tienda(lugar, usuario_actual)
+
         relacion = IngredienteLugarCompraRepository.buscar_relacion(db, id_ingrediente, id_lugar_compra)
         if not relacion:
             raise HTTPException(
@@ -234,6 +331,7 @@ class LugarCompraService:
                 detail=f"No existe registro del ingrediente ID {id_ingrediente} en el lugar ID {id_lugar_compra}."
             )
 
+        precio_anterior = float(relacion.precio)
         if datos.precio is not None:
             relacion.precio = datos.precio
         if datos.cantidad_referencia is not None:
@@ -244,7 +342,51 @@ class LugarCompraService:
             relacion.disponible = datos.disponible
 
         actualizada = IngredienteLugarCompraRepository.actualizar(db, relacion)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="ACTUALIZAR_PRECIO_PROVEEDOR",
+            modulo="PROVEEDORES",
+            descripcion=f"Precio actualizado de ingrediente #{id_ingrediente} en '{lugar.nombre}' de Bs. {precio_anterior} a Bs. {relacion.precio}",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_lugar_compra": id_lugar_compra, "id_ingrediente": id_ingrediente, "precio": float(relacion.precio)}
+        )
+
         return LugarCompraService._mapear_relacion_schema(actualizada)
+
+    @staticmethod
+    def quitar_ingrediente_de_lugar(
+        db: Session,
+        id_lugar_compra: int,
+        id_ingrediente: int,
+        usuario_actual: Usuario
+    ) -> dict:
+        lugar = LugarCompraRepository.buscar_por_id(db, id_lugar_compra)
+        if not lugar:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró el lugar de compra con ID {id_lugar_compra}."
+            )
+        LugarCompraService._validar_permiso_tienda(lugar, usuario_actual)
+
+        relacion = IngredienteLugarCompraRepository.buscar_relacion(db, id_ingrediente, id_lugar_compra)
+        if not relacion:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No existe registro del ingrediente ID {id_ingrediente} en el lugar ID {id_lugar_compra}."
+            )
+
+        IngredienteLugarCompraRepository.eliminar(db, relacion)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="QUITAR_PRECIO_PROVEEDOR",
+            modulo="PROVEEDORES",
+            descripcion=f"Ingrediente #{id_ingrediente} retirado del catálogo de '{lugar.nombre}'",
+            id_usuario=usuario_actual.id_usuario
+        )
+
+        return {"mensaje": "Ingrediente retirado exitosamente del proveedor."}
 
     @staticmethod
     def listar_ingredientes_de_lugar(

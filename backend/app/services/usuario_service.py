@@ -11,6 +11,7 @@ from app.schemas.usuario import (
     UsuariosPaginadosSchema
 )
 from app.security.contrasenas import generar_hash_contrasena, verificar_contrasena
+from app.services.bitacora_service import BitacoraService
 
 
 class UsuarioService:
@@ -93,6 +94,14 @@ class UsuarioService:
 
         usuario_actual.contrasena_hash = generar_hash_contrasena(datos.contrasena_nueva)
         UsuarioRepository.actualizar_usuario(db, usuario_actual)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CAMBIO_CONTRASENA",
+            modulo="USUARIOS",
+            descripcion=f"El usuario {usuario_actual.correo} cambió su contraseña",
+            id_usuario=usuario_actual.id_usuario
+        )
 
         return {"mensaje": "Contraseña actualizada exitosamente."}
 
@@ -177,5 +186,17 @@ class UsuarioService:
                 detail="No puede desactivar su propia cuenta de administrador."
             )
 
+        estado_anterior = usuario.estado
         usuario.estado = estado_upper
-        return UsuarioRepository.actualizar_usuario(db, usuario)
+        usuario_actualizado = UsuarioRepository.actualizar_usuario(db, usuario)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CAMBIO_ESTADO_USUARIO",
+            modulo="USUARIOS",
+            descripcion=f"El administrador {admin_actual.correo} cambió el estado del usuario #{id_usuario} ({usuario.correo}) de '{estado_anterior}' a '{estado_upper}'",
+            id_usuario=admin_actual.id_usuario,
+            detalles={"id_usuario_afectado": id_usuario, "estado_anterior": estado_anterior, "estado_nuevo": estado_upper}
+        )
+
+        return usuario_actualizado

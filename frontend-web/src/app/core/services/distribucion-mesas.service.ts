@@ -9,6 +9,7 @@ import {
   DistribucionRespuesta
 } from '../models/distribucion.model';
 import { MesaPosicionActualizar } from '../models/mesa.model';
+import { EspacioPlano } from '../models/area-restaurante.model';
 
 @Injectable({
   providedIn: 'root'
@@ -21,10 +22,15 @@ export class DistribucionMesasService {
     return this.http.post<DistribucionRespuesta>(`${this.baseUrl}/areas/${idArea}/distribucion/generar`, datos);
   }
 
-  guardarDistribucion(idArea: number, posiciones: MesaPosicionActualizar[]): Observable<DistribucionRespuesta> {
+  guardarDistribucion(
+    idArea: number,
+    posiciones: MesaPosicionActualizar[],
+    elementos?: EspacioPlano[]
+  ): Observable<DistribucionRespuesta> {
     const payload: GuardarDistribucionRequest = {
       mesas: posiciones,
-      posiciones: posiciones
+      posiciones: posiciones,
+      elementos: elementos || []
     };
     return this.http.put<DistribucionRespuesta>(`${this.baseUrl}/areas/${idArea}/distribucion`, payload);
   }

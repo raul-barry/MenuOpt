@@ -20,6 +20,7 @@ class AreaRestaurante(Base):
     alto_mapa: Mapped[int] = mapped_column(Integer, default=700, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    elementos: Mapped[str | None] = mapped_column(Text, nullable=True, server_default="[]")
     id_restaurante: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("restaurante.id_restaurante", ondelete="CASCADE"),

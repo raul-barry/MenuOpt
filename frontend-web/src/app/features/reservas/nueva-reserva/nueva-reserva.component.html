@@ -191,6 +191,21 @@
           <span>🔗 {{ line.combinacion.numeros_mesas.join('+') }} ({{ line.capacidad }}p)</span>
         </div>
 
+        <!-- ESPACIOS Y ZONAS ARQUITECTÓNICAS (CU06 / ORIENTACIÓN AL CLIENTE) -->
+        <div
+          *ngFor="let esp of disp.elementos || []"
+          class="espacio-item-canvas-reserva"
+          [style.left]="(esp.posicion_x * 100) + '%'"
+          [style.top]="(esp.posicion_y * 100) + '%'"
+          [style.width]="(esp.ancho ? esp.ancho * 100 : 13) + '%'"
+          [style.height]="(esp.alto ? esp.alto * 100 : 8.5) + '%'"
+          [style.transform]="'translate(-50%, -50%) rotate(' + (esp.rotacion || 0) + 'deg)'"
+          [title]="esp.nombre + ' (' + esp.tipo + ')'"
+          style="position: absolute; pointer-events: none; z-index: 5; display: flex; align-items: center; justify-content: center;"
+        >
+          <app-espacio-svg [tipo]="esp.tipo" [nombre]="esp.nombre" [mostrarSubtitulo]="false" />
+        </div>
+
         <!-- Mesas Renderizadas en Posiciones Normalizadas con SVG Arquitectónico y Semáforo -->
         <div
           *ngFor="let mesa of disp.mesas"

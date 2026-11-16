@@ -25,6 +25,7 @@ from app.models.reserva_invitado import ReservaInvitado
 from app.models.mesa_reserva import MesaReserva
 from app.models.pedido import Pedido
 from app.models.detalle_pedido import DetallePedido
+from app.models.bitacora import Bitacora
 
 __all__ = [
     "Rol",
@@ -54,4 +55,5 @@ __all__ = [
     "MesaReserva",
     "Pedido",
     "DetallePedido",
+    "Bitacora",
 ]

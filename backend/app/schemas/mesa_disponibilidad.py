@@ -1,7 +1,8 @@
 # CASO DE USO: CU20 - Consultar disponibilidad de mesas
 from datetime import date, time
-from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+import json
+from typing import List, Optional, Any
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class MesaDisponibilidadRespuesta(BaseModel):
@@ -49,5 +50,18 @@ class DisponibilidadRespuesta(BaseModel):
     mesas: List[MesaDisponibilidadRespuesta]
     mesas_disponibles: Optional[List[MesaDisponibilidadRespuesta]] = None
     combinaciones: List[CombinacionDisponibleRespuesta]
+    elementos: Optional[List[Any]] = Field(default_factory=list)
+
+    @field_validator("elementos", mode="before")
+    @classmethod
+    def normalizar_elementos(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except Exception:
+                return []
+        if isinstance(v, list):
+            return v
+        return []
 
     model_config = ConfigDict(from_attributes=True)

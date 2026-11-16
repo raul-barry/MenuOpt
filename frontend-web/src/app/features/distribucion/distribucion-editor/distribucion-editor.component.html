@@ -127,71 +127,171 @@
 
       <!-- WORKSPACE CON BARRA LATERAL DE HERRAMIENTAS Y LIENZO 2D -->
       <div class="editor-workspace-layout">
-        <!-- BARRA LATERAL: CATÁLOGO DE MODELOS DE MESAS Y SILLAS -->
+        <!-- BARRA LATERAL: HERRAMIENTAS DE PLANO (MESAS Y ESPACIOS) -->
         <aside class="mesa-toolbox-sidebar">
-          <div class="toolbox-header">
-            <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem; display: flex; align-items: center; gap: 0.35rem;">
-              <app-icon name="store" class="app-icon-inline"></app-icon> Modelos de Mesas
-            </h4>
-            <p class="toolbox-hint">Arrastre una mesa al plano o haga clic para agregarla directamente.</p>
-          </div>
-
-          <!-- Pestañas de categorías del catálogo -->
-          <div class="toolbox-category-tabs">
+          <!-- Selector Principal de Herramienta: Mesas vs Espacios -->
+          <div class="toolbox-main-tabs">
             <button
-              class="toolbox-cat-btn"
-              [class.active]="filtroCategoriaCatalogo() === 'TODAS'"
-              (click)="filtroCategoriaCatalogo.set('TODAS')"
+              class="toolbox-main-tab-btn"
+              [class.active]="tabHerramientas() === 'mesas'"
+              (click)="tabHerramientas.set('mesas')"
+              title="Herramientas de Mesas y Sillas"
             >
-              Todas
+              <app-icon name="store" class="app-icon-inline"></app-icon> Mesas
             </button>
             <button
-              class="toolbox-cat-btn"
-              [class.active]="filtroCategoriaCatalogo() === 'REDONDA'"
-              (click)="filtroCategoriaCatalogo.set('REDONDA')"
+              class="toolbox-main-tab-btn"
+              [class.active]="tabHerramientas() === 'espacios'"
+              (click)="tabHerramientas.set('espacios')"
+              title="Herramientas de Espacios, Zonas y Puntos de Interés"
             >
-              Redondas
-            </button>
-            <button
-              class="toolbox-cat-btn"
-              [class.active]="filtroCategoriaCatalogo() === 'CUADRADA'"
-              (click)="filtroCategoriaCatalogo.set('CUADRADA')"
-            >
-              Cuadradas
-            </button>
-            <button
-              class="toolbox-cat-btn"
-              [class.active]="filtroCategoriaCatalogo() === 'RECTANGULAR'"
-              (click)="filtroCategoriaCatalogo.set('RECTANGULAR')"
-            >
-              Rectangulares
+              <app-icon name="layers" class="app-icon-inline"></app-icon> Espacios & Zonas
             </button>
           </div>
 
-          <!-- Grid de modelos arrastrables -->
-          <div class="toolbox-items-grid">
-            <div
-              *ngFor="let m of modelosFiltrados()"
-              class="toolbox-item-card"
-              draggable="true"
-              (dragstart)="onDragStartFromCatalog($event, m)"
-              (click)="crearMesaDirecta(m)"
-              [title]="'Arrastre al lienzo o haga clic para agregar: ' + m.nombre"
-            >
-              <div class="toolbox-item-preview">
-                <app-mesa-svg
-                  [forma]="m.forma"
-                  [capacidad]="m.capacidad"
-                  [disposicion]="m.disposicion"
-                  [tamanoPx]="60"
-                />
-              </div>
-              <div class="toolbox-item-label">
-                <span class="toolbox-item-title">{{ m.nombre }}</span>
-                <span class="toolbox-item-badge">{{ m.capacidad }} personas</span>
+          <!-- PESTAÑA 1: CATÁLOGO DE MODELOS DE MESAS Y SILLAS -->
+          <ng-container *ngIf="tabHerramientas() === 'mesas'">
+            <div class="toolbox-header">
+              <h4 style="margin: 0 0 0.25rem 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem;">
+                Modelos de Mesas
+              </h4>
+              <p class="toolbox-hint">Arrastre una mesa al plano o haga clic para agregarla directamente.</p>
+            </div>
+
+            <!-- Pestañas de categorías del catálogo de mesas -->
+            <div class="toolbox-category-tabs">
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaCatalogo() === 'TODAS'"
+                (click)="filtroCategoriaCatalogo.set('TODAS')"
+              >
+                Todas
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaCatalogo() === 'REDONDA'"
+                (click)="filtroCategoriaCatalogo.set('REDONDA')"
+              >
+                Redondas
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaCatalogo() === 'CUADRADA'"
+                (click)="filtroCategoriaCatalogo.set('CUADRADA')"
+              >
+                Cuadradas
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaCatalogo() === 'RECTANGULAR'"
+                (click)="filtroCategoriaCatalogo.set('RECTANGULAR')"
+              >
+                Rectangulares
+              </button>
+            </div>
+
+            <!-- Grid de modelos arrastrables -->
+            <div class="toolbox-items-grid">
+              <div
+                *ngFor="let m of modelosFiltrados()"
+                class="toolbox-item-card"
+                draggable="true"
+                (dragstart)="onDragStartFromCatalog($event, m)"
+                (click)="crearMesaDirecta(m)"
+                [title]="'Arrastre al lienzo o haga clic para agregar: ' + m.nombre"
+              >
+                <div class="toolbox-item-preview">
+                  <app-mesa-svg
+                    [forma]="m.forma"
+                    [capacidad]="m.capacidad"
+                    [disposicion]="m.disposicion"
+                    [tamanoPx]="60"
+                  />
+                </div>
+                <div class="toolbox-item-label">
+                  <span class="toolbox-item-title">{{ m.nombre }}</span>
+                  <span class="toolbox-item-badge">{{ m.capacidad }} personas</span>
+                </div>
               </div>
             </div>
-          </div>
+          </ng-container>
+
+          <!-- PESTAÑA 2: CATÁLOGO DE ESPACIOS Y PUNTOS DE INTERÉS DEL LOCAL -->
+          <ng-container *ngIf="tabHerramientas() === 'espacios'">
+            <div class="toolbox-header">
+              <h4 style="margin: 0 0 0.25rem 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem;">
+                Espacios & Puntos de Interés
+              </h4>
+              <p class="toolbox-hint">Arrastre cualquier espacio al lienzo o haga clic para posicionarlo.</p>
+            </div>
+
+            <!-- Filtros de categoría de espacios -->
+            <div class="toolbox-category-tabs" style="grid-template-columns: repeat(3, 1fr);">
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'TODOS'"
+                (click)="filtroCategoriaEspacios.set('TODOS')"
+              >
+                Todos
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'ATENCION'"
+                (click)="filtroCategoriaEspacios.set('ATENCION')"
+              >
+                Caja & Bar
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'ACCESOS'"
+                (click)="filtroCategoriaEspacios.set('ACCESOS')"
+              >
+                Accesos
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'SERVICIOS'"
+                (click)="filtroCategoriaEspacios.set('SERVICIOS')"
+              >
+                Servicios
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'ENTRETENIMIENTO'"
+                (click)="filtroCategoriaEspacios.set('ENTRETENIMIENTO')"
+              >
+                Juegos & Show
+              </button>
+              <button
+                class="toolbox-cat-btn"
+                [class.active]="filtroCategoriaEspacios() === 'PERSONALIZADO'"
+                (click)="filtroCategoriaEspacios.set('PERSONALIZADO')"
+                title="Espacio libre configurable y redimensionable a placer"
+              >
+                ✨ A Medida
+              </button>
+            </div>
+
+            <!-- Grid de espacios arrastrables -->
+            <div class="toolbox-items-grid">
+              <div
+                *ngFor="let e of espaciosFiltrados()"
+                class="toolbox-item-card toolbox-espacio-card"
+                draggable="true"
+                (dragstart)="onDragStartEspacioFromCatalog($event, e)"
+                (click)="crearEspacioDirecto(e)"
+                [title]="'Arrastre al plano o haga clic para agregar: ' + e.nombre"
+              >
+                <div class="toolbox-espacio-preview" style="width: 100%;">
+                  <app-espacio-svg
+                    [tipo]="e.tipo"
+                    [nombre]="e.nombre"
+                    [mostrarSubtitulo]="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </ng-container>
         </aside>
 
         <!-- ÁREA PRINCIPAL: LIENZO 2D INTERACTIVO -->
@@ -258,20 +358,64 @@
                 <button class="comb-badge-close" title="Descombinar estas mesas">&times;</button>
               </div>
 
-              <!-- Mensaje cuando el área no tiene mesas -->
+              <!-- Mensaje cuando el área no tiene mesas ni espacios -->
               <div
-                *ngIf="mesas().length === 0"
+                *ngIf="mesas().length === 0 && espacios().length === 0"
                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); z-index: 1;"
               >
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;"><app-icon name="ruler" class="app-icon-inline"></app-icon></div>
-                <h4 style="margin-bottom: 0.25rem;">Esta área aún no tiene mesas</h4>
+                <h4 style="margin-bottom: 0.25rem;">Esta área aún no tiene mesas ni espacios</h4>
                 <p style="font-size: 0.85rem; margin-bottom: 1rem;">
-                  Arrastre una mesa desde el catálogo de la izquierda o genere una distribución automática.
+                  Arrastre una mesa o un espacio desde el catálogo de la izquierda, o genere una distribución automática.
                 </p>
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
                   <button class="btn btn-primary btn-sm" (click)="abrirModalGenerar()">
                     <app-icon name="zap" class="app-icon-inline"></app-icon> Generar Cuadrícula
                   </button>
+                </div>
+              </div>
+
+              <!-- Espacios y Puntos de Interés Físicos del Restaurante -->
+              <div
+                *ngFor="let esp of espacios()"
+                class="espacio-item-canvas-wrapper"
+                [class.selected]="espacioSeleccionado()?.id === esp.id"
+                [class.dragging]="espacioEnArrastre === esp"
+                [style.left]="(esp.posicion_x * 100) + '%'"
+                [style.top]="(esp.posicion_y * 100) + '%'"
+                [style.width]="(esp.ancho ? esp.ancho * 100 : 13) + '%'"
+                [style.height]="(esp.alto ? esp.alto * 100 : 8.5) + '%'"
+                [style.transform]="'translate(-50%, -50%) rotate(' + (esp.rotacion || 0) + 'deg)'"
+                (pointerdown)="onEspacioPointerDown($event, esp)"
+                (click)="seleccionarEspacio(esp, $event)"
+                [title]="esp.nombre + ' (' + esp.tipo + '). Arrastre para mover por el plano.'"
+              >
+                <app-espacio-svg
+                  [tipo]="esp.tipo"
+                  [nombre]="esp.nombre"
+                  [mostrarSubtitulo]="false"
+                />
+                <!-- Controles de acción rápida en espacio seleccionado -->
+                <div *ngIf="espacioSeleccionado()?.id === esp.id" class="espacio-quick-actions" [style.transform]="'rotate(-' + (esp.rotacion || 0) + 'deg)'">
+                  <button class="espacio-action-btn" (click)="rotarEspacio(esp); $event.stopPropagation();" title="Rotar 90°">
+                    ↻
+                  </button>
+                  <button class="espacio-action-btn" (click)="renombrarEspacio(esp); $event.stopPropagation();" title="Renombrar">
+                    ✏️
+                  </button>
+                  <button class="espacio-action-btn btn-del" (click)="eliminarEspacio(esp); $event.stopPropagation();" title="Eliminar espacio">
+                    &times;
+                  </button>
+                </div>
+
+                <!-- Tirador interactivo de redimensionamiento libre en esquina inferior derecha -->
+                <div
+                  *ngIf="espacioSeleccionado()?.id === esp.id"
+                  class="espacio-resize-handle"
+                  (pointerdown)="onEspacioResizePointerDown($event, esp)"
+                  title="Arrastra para cambiar el tamaño (ancho y alto) a placer"
+                >
+                  <span class="resize-icon">⤡</span>
                 </div>
               </div>
 
@@ -367,6 +511,53 @@
           </button>
           <button class="btn btn-danger btn-sm" (click)="desactivarMesa(selMesa)">
             <app-icon name="trash" class="app-icon-inline"></app-icon> Eliminar
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Inspector / Espacio Seleccionado -->
+      <div *ngIf="espacioSeleccionado() as selEsp" class="inspector-bar espacio-inspector-bar">
+        <div class="inspector-info">
+          <div>
+            <strong>Espacio: {{ selEsp.nombre }}</strong>
+            <span style="color: var(--text-muted); font-size: 0.85rem;"> ({{ selEsp.tipo }})</span>
+          </div>
+          <div>
+            <span class="badge" style="background: var(--surface); border: 1px solid var(--border);">
+              X: {{ (selEsp.posicion_x * 100) | number:'1.0-1' }}%, Y: {{ (selEsp.posicion_y * 100) | number:'1.0-1' }}%
+            </span>
+          </div>
+          <div>
+            <span class="badge" style="background: var(--surface); border: 1px solid var(--border);">
+              Rotación: {{ selEsp.rotacion || 0 }}°
+            </span>
+          </div>
+          <!-- Controles de redimensionamiento libre (ancho y alto) a placer -->
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span class="badge" style="background: #eef2ff; color: #3730a3; font-weight: 600;">
+              ↔ Ancho: {{ ((selEsp.ancho || 0.14) * 100) | number:'1.0-0' }}%
+            </span>
+            <button class="btn btn-outline btn-sm" style="padding: 1px 7px; font-weight: bold; font-size: 0.85rem;" (click)="ajustarDimensionEspacio(selEsp, -0.02, 0)" title="Reducir ancho">-</button>
+            <button class="btn btn-outline btn-sm" style="padding: 1px 7px; font-weight: bold; font-size: 0.85rem;" (click)="ajustarDimensionEspacio(selEsp, 0.02, 0)" title="Aumentar ancho">+</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span class="badge" style="background: #eef2ff; color: #3730a3; font-weight: 600;">
+              ↕ Alto: {{ ((selEsp.alto || 0.08) * 100) | number:'1.0-0' }}%
+            </span>
+            <button class="btn btn-outline btn-sm" style="padding: 1px 7px; font-weight: bold; font-size: 0.85rem;" (click)="ajustarDimensionEspacio(selEsp, 0, -0.02)" title="Reducir alto">-</button>
+            <button class="btn btn-outline btn-sm" style="padding: 1px 7px; font-weight: bold; font-size: 0.85rem;" (click)="ajustarDimensionEspacio(selEsp, 0, 0.02)" title="Aumentar alto">+</button>
+          </div>
+        </div>
+
+        <div class="inspector-actions">
+          <button class="btn btn-outline btn-sm" (click)="rotarEspacio(selEsp)" title="Rotar 90 grados">
+            <app-icon name="refresh" class="app-icon-inline"></app-icon> Rotar 90°
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="renombrarEspacio(selEsp)" title="Cambiar etiqueta del espacio">
+            <app-icon name="edit" class="app-icon-inline"></app-icon> Renombrar
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="eliminarEspacio(selEsp)" title="Retirar este espacio del plano">
+            <app-icon name="trash" class="app-icon-inline"></app-icon> Retirar
           </button>
         </div>
       </div>

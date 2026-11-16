@@ -33,9 +33,9 @@ class Settings(BaseSettings):
 
     # Configuración de Asistencia con IA (CU26)
     AI_ENABLED: bool = True
-    AI_PROVIDER: str = "mock"  # "mock", "gemini", "openai"
+    AI_PROVIDER: str = "groq"  # "groq", "gemini", "mock"
     AI_API_KEY: Optional[str] = None
-    AI_MODEL: str = "gemini-1.5-flash"
+    AI_MODEL: str = "openai/gpt-oss-120b"
     AI_TIMEOUT_SECONDS: int = 15
 
     model_config = SettingsConfigDict(

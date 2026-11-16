@@ -1,4 +1,5 @@
 # CASO DE USO: CU20 - Consultar disponibilidad de mesas
+import json
 from datetime import datetime, date, time
 from typing import List, Dict, Any, Set, Optional
 from fastapi import HTTPException, status
@@ -223,6 +224,14 @@ class DisponibilidadMesasService:
             key=lambda c: (0 if c.seleccionable else 1, abs(c.capacidad_total - cantidad_personas))
         )
 
+        elementos_raw = getattr(area, "elementos", None)
+        elementos_lista = []
+        if elementos_raw:
+            try:
+                elementos_lista = json.loads(elementos_raw) if isinstance(elementos_raw, str) else elementos_raw
+            except Exception:
+                elementos_lista = []
+
         return DisponibilidadRespuesta(
             id_area=area.id_area,
             nombre_area=area.nombre,
@@ -232,5 +241,6 @@ class DisponibilidadMesasService:
             cantidad_personas=cantidad_personas,
             mesas=mesas_resultado,
             mesas_disponibles=[m for m in mesas_resultado if m.seleccionable],
-            combinaciones=combinaciones_resultado
+            combinaciones=combinaciones_resultado,
+            elementos=elementos_lista
         )

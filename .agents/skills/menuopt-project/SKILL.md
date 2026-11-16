@@ -18,7 +18,7 @@ The delivered product is a responsive web application. A mobile directory exists
 The repository documents 26 use cases (CU01-CU26), implemented primarily in the web application and API:
 
 - **CU01-CU04 — Accounts and access:** customer registration, JWT login, profile/password management, and administrator user management.
-- **CU05-CU08, CU10 — Restaurant catalog:** restaurant registration and management, categories, dishes, dish preferences, and availability (CU09 Gestionar Ingredientes fue eliminado permanentemente a solicitud del usuario).
+- **CU05-CU10 — Restaurant catalog:** restaurant management, physical area management, categories, dishes, dish preferences, ingredient recipes, and availability.
 - **CU11-CU16 — Planning and recommendations:** meal plans, user preferences, recommendations, comparison of restaurant versus home preparation, ingredient requirements, and places to buy ingredients.
 - **CU17-CU19 — Restaurant layout:** 2D restaurant areas, normalized-coordinate layouts, table management, and validated symmetric table combinations within an area.
 - **CU20-CU22 — Availability and reservations:** date/time/capacity-aware table availability, customer booking and cancellation, and restaurant reservation management.

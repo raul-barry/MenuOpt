@@ -125,6 +125,29 @@
             </ul>
           </div>
 
+          <!-- Tarjeta de Opción Recomendada Calculada en Catálogo Real -->
+          <div *ngIf="interp.opcion_recomendada as rec" style="margin-bottom: 1rem; padding: 0.85rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;">
+            <div style="font-weight: 600; font-size: 0.85rem; color: #c2410c; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem;">
+              <app-icon name="sparkles" class="app-icon-inline"></app-icon> MEJOR OPCIÓN RECOMENDADA
+            </div>
+            <div style="font-size: 1rem; font-weight: 700; color: #1e293b;">{{ rec.nombre_restaurante }}</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem;">
+              {{ rec.direccion || rec.zona || 'Ubicación central' }}
+            </div>
+            <div style="border-top: 1px dashed #fdba74; padding-top: 0.4rem; margin-top: 0.4rem;">
+              <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem; color: #475569;">Platos dentro de tu presupuesto:</div>
+              <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.82rem; color: #334155;">
+                <li *ngFor="let p of rec.platos">
+                  {{ p.cantidad }}x {{ p.nombre }} (Bs {{ p.subtotal | number:'1.2-2' }})
+                </li>
+              </ul>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem; padding-top: 0.4rem; border-top: 1px solid #fed7aa; font-size: 0.85rem;">
+              <span>Total: <strong style="color: #ea580c;">Bs {{ rec.costo_total | number:'1.2-2' }}</strong></span>
+              <span style="color: #16a34a; font-weight: 600;">Ahorro: Bs {{ rec.ahorro | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
           <!-- Campos Editables -->
           <div class="formulario-revision">
             <div class="form-group">

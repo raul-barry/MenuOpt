@@ -22,6 +22,7 @@ from app.schemas.pedido import (
     PedidoResumen,
     DetallePedidoRespuesta
 )
+from app.services.bitacora_service import BitacoraService
 
 
 class PedidoService:
@@ -259,6 +260,21 @@ class PedidoService:
         pedido_creado = PedidoRepository.crear_pedido(db, nuevo_pedido, detalles_modelo)
         db.commit()
 
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CREAR_PEDIDO",
+            modulo="PEDIDOS",
+            descripcion=f"Pedido #{pedido_creado.id_pedido} registrado por monto total ${total_acumulado:.2f}",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={
+                "id_pedido": pedido_creado.id_pedido,
+                "id_restaurante": datos.id_restaurante,
+                "id_reserva": datos.id_reserva,
+                "total": float(total_acumulado),
+                "cantidad_items": len(detalles_modelo)
+            }
+        )
+
         # Recargar con relaciones completas
         pedido_cargado = PedidoRepository.obtener_por_id(db, pedido_creado.id_pedido)
         return cls._mapear_respuesta(pedido_cargado)
@@ -329,6 +345,14 @@ class PedidoService:
             )
 
         pedido_actualizado = PedidoRepository.actualizar_estado(db, pedido, "CANCELADO")
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CANCELAR_PEDIDO",
+            modulo="PEDIDOS",
+            descripcion=f"Pedido #{pedido.id_pedido} cancelado por el cliente",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_pedido": pedido.id_pedido, "id_restaurante": pedido.id_restaurante}
+        )
         return cls._mapear_respuesta(pedido_actualizado)
 
     @classmethod
@@ -403,4 +427,12 @@ class PedidoService:
             )
 
         pedido_actualizado = PedidoRepository.actualizar_estado(db, pedido, nuevo_upper)
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CAMBIO_ESTADO_PEDIDO",
+            modulo="PEDIDOS",
+            descripcion=f"Pedido #{pedido.id_pedido} cambió de '{estado_actual}' a '{nuevo_upper}'",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_pedido": pedido.id_pedido, "estado_anterior": estado_actual, "estado_nuevo": nuevo_upper}
+        )
         return cls._mapear_respuesta(pedido_actualizado)

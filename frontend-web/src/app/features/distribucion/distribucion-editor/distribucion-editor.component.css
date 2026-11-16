@@ -853,4 +853,156 @@
   }
 }
 
+/* =========================================================================
+   PESTAÑAS PRINCIPALES DE HERRAMIENTAS: MESAS VS ESPACIOS
+   ========================================================================= */
+.toolbox-main-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.toolbox-main-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbox-main-tab-btn:hover {
+  color: #0f172a;
+}
+
+.toolbox-main-tab-btn.active {
+  background: #ffffff;
+  color: var(--primary, #ff6f00);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.toolbox-espacio-card {
+  padding: 0.25rem !important;
+}
+
+/* =========================================================================
+   ELEMENTOS / ESPACIOS SOBRE EL LIENZO 2D
+   ========================================================================= */
+.espacio-item-canvas-wrapper {
+  position: absolute;
+  z-index: 8;
+  cursor: grab;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.espacio-item-canvas-wrapper:hover {
+  z-index: 25;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+}
+
+.espacio-item-canvas-wrapper.selected {
+  z-index: 30;
+  filter: drop-shadow(0 0 10px rgba(255, 111, 0, 0.65));
+  outline: 2px solid var(--primary, #ff6f00);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.espacio-item-canvas-wrapper.dragging {
+  cursor: grabbing !important;
+  z-index: 50 !important;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1.03) !important;
+}
+
+.espacio-quick-actions {
+  position: absolute;
+  top: -18px;
+  right: -10px;
+  display: flex;
+  gap: 4px;
+  background: #1e293b;
+  padding: 3px 6px;
+  border-radius: 999px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  z-index: 35;
+}
+
+.espacio-action-btn {
+  background: #334155;
+  border: none;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.espacio-action-btn:hover {
+  background: var(--primary, #ff6f00);
+}
+
+.espacio-action-btn.btn-del:hover {
+  background: #ef4444;
+}
+
+.espacio-inspector-bar {
+  border-left: 4px solid #059669 !important;
+  background: #f8fafc;
+}
+
+.espacio-resize-handle {
+  position: absolute;
+  bottom: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  background: #4f46e5;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: se-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 45;
+  touch-action: none;
+  user-select: none;
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.espacio-resize-handle:hover {
+  transform: scale(1.25);
+  background: #3730a3;
+}
+
+.espacio-resize-handle .resize-icon {
+  pointer-events: none;
+  display: block;
+}
+
+
 

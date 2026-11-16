@@ -1,5 +1,6 @@
 // CASO DE USO: CU17 - Plano 2D y Distribución de mesas
 import { Mesa, MesaPosicionActualizar } from './mesa.model';
+import { EspacioPlano } from './area-restaurante.model';
 
 export interface GenerarDistribucionRequest {
   total_mesas?: number | null;
@@ -10,6 +11,7 @@ export interface GenerarDistribucionRequest {
 export interface GuardarDistribucionRequest {
   mesas?: MesaPosicionActualizar[];
   posiciones?: MesaPosicionActualizar[];
+  elementos?: EspacioPlano[];
 }
 
 export interface DistribucionRespuesta {
@@ -19,5 +21,6 @@ export interface DistribucionRespuesta {
   alto_mapa: number;
   total_mesas: number;
   mesas: Mesa[];
+  elementos?: EspacioPlano[];
   mensaje: string;
 }

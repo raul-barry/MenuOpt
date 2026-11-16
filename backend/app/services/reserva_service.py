@@ -22,6 +22,7 @@ from app.schemas.reserva import (
     MesaResumenReserva
 )
 from app.services.disponibilidad_mesas_service import DisponibilidadMesasService
+from app.services.bitacora_service import BitacoraService
 
 
 class ReservaService:
@@ -245,6 +246,21 @@ class ReservaService:
         reserva_creada = ReservaRepository.crear_reserva(db, nueva_reserva, mesas_ordenadas)
         db.commit()
 
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CREAR_RESERVA",
+            modulo="RESERVAS",
+            descripcion=f"Reserva #{reserva_creada.id_reserva} creada para {datos.cantidad_personas} personas en restaurante #{datos.id_restaurante}",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={
+                "id_reserva": reserva_creada.id_reserva,
+                "id_restaurante": datos.id_restaurante,
+                "fecha": str(datos.fecha_reserva),
+                "hora_inicio": str(datos.hora_inicio),
+                "cantidad_personas": datos.cantidad_personas,
+            }
+        )
+
         # Recargar con relaciones
         reserva_completa = ReservaRepository.obtener_por_id(db, reserva_creada.id_reserva)
         return cls._mapear_respuesta(reserva_completa)
@@ -317,6 +333,16 @@ class ReservaService:
         reserva.estado = "CANCELADA"
         db.commit()
         db.refresh(reserva)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CANCELAR_RESERVA",
+            modulo="RESERVAS",
+            descripcion=f"Reserva #{reserva.id_reserva} cancelada por el usuario",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_reserva": reserva.id_reserva, "id_restaurante": reserva.id_restaurante}
+        )
+
         return cls._mapear_respuesta(reserva)
 
     @classmethod
@@ -393,4 +419,14 @@ class ReservaService:
         reserva.estado = nuevo_upper
         db.commit()
         db.refresh(reserva)
+
+        BitacoraService.registrar_evento(
+            db=db,
+            accion="CAMBIO_ESTADO_RESERVA",
+            modulo="RESERVAS",
+            descripcion=f"Reserva #{reserva.id_reserva} cambió de '{estado_actual}' a '{nuevo_upper}'",
+            id_usuario=usuario_actual.id_usuario,
+            detalles={"id_reserva": reserva.id_reserva, "estado_anterior": estado_actual, "estado_nuevo": nuevo_upper}
+        )
+
         return cls._mapear_respuesta(reserva)
