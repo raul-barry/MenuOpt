@@ -29,7 +29,7 @@ class RecomendacionRepository:
             db.query(Plato)
             .join(Restaurante, Plato.id_restaurante == Restaurante.id_restaurante)
             .options(
-                joinedload(Plato.restaurante),
+                joinedload(Plato.restaurante).joinedload(Restaurante.ubicacion),
                 joinedload(Plato.preferencias)
             )
             .filter(
@@ -111,7 +111,7 @@ class RecomendacionRepository:
         query = (
             db.query(Recomendacion)
             .options(
-                joinedload(Recomendacion.restaurante),
+                joinedload(Recomendacion.restaurante).joinedload(Restaurante.ubicacion),
                 joinedload(Recomendacion.recomendacion_platos).joinedload(RecomendacionPlato.plato),
                 joinedload(Recomendacion.preparacion_propia)
                 .joinedload(PreparacionPropia.ingredientes)
@@ -143,7 +143,7 @@ class RecomendacionRepository:
         return (
             db.query(Recomendacion)
             .options(
-                joinedload(Recomendacion.restaurante),
+                joinedload(Recomendacion.restaurante).joinedload(Restaurante.ubicacion),
                 joinedload(Recomendacion.recomendacion_platos).joinedload(RecomendacionPlato.plato),
                 joinedload(Recomendacion.planificacion),
                 joinedload(Recomendacion.preparacion_propia)

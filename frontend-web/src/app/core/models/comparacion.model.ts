@@ -16,6 +16,8 @@ export interface AlternativaComparacion {
   // Restaurante
   id_restaurante?: number | null;
   nombre_restaurante?: string | null;
+  zona_restaurante?: string | null;
+  direccion_restaurante?: string | null;
   platos: RecomendacionPlatoItem[];
 
   // Preparacion propia

@@ -68,6 +68,7 @@ import { Recomendacion } from '../../../core/models/recomendacion.model';
             <div>
               <h3>Detalle de Platos a Consumir</h3>
               <span class="badge badge-secondary" *ngIf="rec.nombre_restaurante">{{ rec.nombre_restaurante }}</span>
+              <span class="badge" style="margin-left: 0.5rem; background: #e0f2fe; color: #0369a1; font-weight: 500;" *ngIf="rec.zona_restaurante">📍 {{ rec.zona_restaurante }}</span>
             </div>
             <a
               *ngIf="rec.id_restaurante"

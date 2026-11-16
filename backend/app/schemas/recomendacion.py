@@ -29,6 +29,8 @@ class RecomendacionRespuestaSchema(BaseModel):
     distancia_estimada: Optional[Decimal] = None
     id_restaurante: Optional[int] = None
     nombre_restaurante: Optional[str] = None
+    zona_restaurante: Optional[str] = None
+    direccion_restaurante: Optional[str] = None
     id_preparacion_propia: Optional[int] = None
     nombre_preparacion: Optional[str] = None
     fecha_generacion: datetime

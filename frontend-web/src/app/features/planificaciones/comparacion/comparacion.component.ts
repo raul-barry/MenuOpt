@@ -57,7 +57,12 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
             <div class="highlight-card cost-card" *ngIf="comp.mejor_opcion_costo">
               <div class="hl-badge"><app-icon name="money" class="app-icon-inline"></app-icon> MENOR COSTO</div>
               <h4>{{ comp.mejor_opcion_costo.nombre }}</h4>
-              <p class="hl-sub">{{ comp.mejor_opcion_costo.tipo_recomendacion }}</p>
+              <p class="hl-sub">
+                {{ comp.mejor_opcion_costo.tipo_recomendacion }}
+                <span *ngIf="comp.mejor_opcion_costo.zona_restaurante" style="margin-left: 0.35rem; color: #0284c7;">
+                  📍 {{ comp.mejor_opcion_costo.zona_restaurante }}
+                </span>
+              </p>
               <div class="hl-row">
                 <span>Costo: <strong>Bs {{ comp.mejor_opcion_costo.costo_total | number:'1.2-2' }}</strong></span>
                 <span>Ahorro: <strong class="text-success">Bs {{ comp.mejor_opcion_costo.ahorro_respecto_presupuesto | number:'1.2-2' }}</strong></span>
@@ -67,7 +72,12 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
             <div class="highlight-card score-card" *ngIf="comp.mejor_opcion_puntuacion">
               <div class="hl-badge score"><app-icon name="star" class="app-icon-inline"></app-icon> MEJOR PUNTUADA</div>
               <h4>{{ comp.mejor_opcion_puntuacion.nombre }}</h4>
-              <p class="hl-sub">{{ comp.mejor_opcion_puntuacion.tipo_recomendacion }}</p>
+              <p class="hl-sub">
+                {{ comp.mejor_opcion_puntuacion.tipo_recomendacion }}
+                <span *ngIf="comp.mejor_opcion_puntuacion.zona_restaurante" style="margin-left: 0.35rem; color: #0284c7;">
+                  📍 {{ comp.mejor_opcion_puntuacion.zona_restaurante }}
+                </span>
+              </p>
               <div class="hl-row">
                 <span>Afinidad: <strong>{{ comp.mejor_opcion_puntuacion.puntuacion | number:'1.0-0' }} / 100</strong></span>
                 <span>Costo: <strong>Bs {{ comp.mejor_opcion_puntuacion.costo_total | number:'1.2-2' }}</strong></span>
@@ -130,6 +140,13 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
                   [ngClass]="alt.tipo_recomendacion === 'RESTAURANTE' ? 'badge-restaurante' : 'badge-preparacion'"
                 >
                   {{ alt.tipo_recomendacion === 'RESTAURANTE' ? 'RESTAURANTE' : 'PREPARACIÓN PROPIA' }}
+                </span>
+                <span 
+                  *ngIf="alt.zona_restaurante" 
+                  class="badge" 
+                  style="margin-left: 0.5rem; background: #e0f2fe; color: #0369a1; font-weight: 500;"
+                >
+                  📍 {{ alt.zona_restaurante }}
                 </span>
                 <span 
                   *ngIf="alt.puntuacion === comp.mejor_opcion_puntuacion?.puntuacion" 

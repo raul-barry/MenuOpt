@@ -23,6 +23,8 @@ export interface Recomendacion {
   distancia_estimada?: number | string | null;
   id_restaurante?: number | null;
   nombre_restaurante?: string | null;
+  zona_restaurante?: string | null;
+  direccion_restaurante?: string | null;
   id_preparacion_propia?: number | null;
   nombre_preparacion?: string | null;
   fecha_generacion: string;

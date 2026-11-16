@@ -20,6 +20,8 @@ class AlternativaComparacionSchema(BaseModel):
     # Detalles para alternativa de RESTAURANTE
     id_restaurante: Optional[int] = None
     nombre_restaurante: Optional[str] = None
+    zona_restaurante: Optional[str] = None
+    direccion_restaurante: Optional[str] = None
     platos: List[RecomendacionPlatoItemSchema] = []
 
     # Detalles para alternativa de PREPARACION_PROPIA

@@ -91,6 +91,13 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
               >
                 {{ rec.tipo_recomendacion === 'RESTAURANTE' ? ' RESTAURANTE' : ' PREPARACIÓN PROPIA' }}
               </span>
+              <span 
+                *ngIf="rec.zona_restaurante" 
+                class="badge" 
+                style="margin-left: 0.5rem; background: #e0f2fe; color: #0369a1; font-weight: 500;"
+              >
+                📍 {{ rec.zona_restaurante }}
+              </span>
               <h3 class="rec-title">{{ rec.nombre }}</h3>
             </div>
             <div class="score-badge" title="Puntuación de afinidad calculada por el sistema">

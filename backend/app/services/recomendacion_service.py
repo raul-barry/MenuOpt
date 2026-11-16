@@ -71,6 +71,8 @@ class RecomendacionService:
             )
 
         preferencias_plan = {p.id_preferencia for p in planificacion.preferencias}
+        ub_ref = (planificacion.ubicacion_referencia or "").strip().lower()
+        palabras_ref = [p.strip() for p in ub_ref.replace(",", " ").split() if len(p.strip()) >= 3]
 
         # ---------------------------------------------------------------------
         # 1. GENERACIÓN DE CANDIDATOS: RESTAURANTE
@@ -104,20 +106,53 @@ class RecomendacionService:
                 costo_total=costo_total,
                 cantidad_personas=planificacion.cantidad_personas
             )
-            puntuacion = calcular_puntuacion(
+            puntuacion_base = calcular_puntuacion(
                 presupuesto=planificacion.presupuesto,
                 costo_total=costo_total
             )
+
+            # Evaluar coincidencia con la zona o ubicación de referencia solicitada
+            rest = plato.restaurante
+            ubic = rest.ubicacion if rest else None
+            zona = (ubic.zona or "").strip().lower() if ubic and ubic.zona else ""
+            direccion = (ubic.direccion or "").strip().lower() if ubic and ubic.direccion else ""
+            referencia = (ubic.referencia or "").strip().lower() if ubic and ubic.referencia else ""
+
+            coincide_zona = False
+            distancia_estimada = None
+
+            if ub_ref:
+                coincide_zona = (
+                    (ub_ref in zona) or (zona and zona in ub_ref) or
+                    (ub_ref in direccion) or (ub_ref in referencia) or
+                    any(p in zona or p in direccion or p in referencia for p in palabras_ref)
+                )
+                if coincide_zona:
+                    distancia_estimada = Decimal("0.8")
+                    # Bonificación de cercanía para asegurar que los restaurantes en la zona solicitada
+                    # sean priorizados y recomendados en los primeros lugares
+                    puntuacion = min(Decimal("100.00"), puntuacion_base + Decimal("10.00"))
+                else:
+                    distancia_estimada = Decimal("6.5")
+                    # Penalización por lejanía respecto a la zona explícitamente pedida
+                    puntuacion = max(Decimal("10.00"), puntuacion_base - Decimal("30.00"))
+            else:
+                puntuacion = puntuacion_base
 
             candidatos_restaurante.append({
                 "plato": plato,
                 "cantidad": cantidad,
                 "costo_total": costo_total,
                 "costo_pp": costo_pp,
-                "puntuacion": puntuacion
+                "puntuacion": puntuacion,
+                "coincide_zona": coincide_zona,
+                "distancia_estimada": distancia_estimada
             })
 
-        candidatos_restaurante.sort(key=lambda x: (-x["puntuacion"], x["costo_total"]))
+        candidatos_restaurante.sort(
+            key=lambda x: (1 if x["coincide_zona"] else 0, x["puntuacion"], -x["costo_total"]),
+            reverse=True
+        )
         top_restaurantes = candidatos_restaurante[:20]
 
         # ---------------------------------------------------------------------
@@ -164,14 +199,16 @@ class RecomendacionService:
         # Instanciar entidades de Restaurante
         for cand in top_restaurantes:
             plato = cand["plato"]
+            ubic = plato.restaurante.ubicacion if plato.restaurante else None
+            zona_str = f" ({ubic.zona})" if ubic and ubic.zona else ""
             rec = Recomendacion(
                 id_planificacion=id_planificacion,
                 tipo_recomendacion="RESTAURANTE",
-                descripcion=f"Menú en restaurante: {plato.nombre}",
+                descripcion=f"Menú en {plato.restaurante.nombre}{zona_str}: {plato.nombre}",
                 costo_estimado=cand["costo_total"],
                 costo_por_persona=cand["costo_pp"],
                 puntuacion=cand["puntuacion"],
-                distancia_estimada=None,
+                distancia_estimada=cand["distancia_estimada"],
                 id_restaurante=plato.id_restaurante
             )
             item_plato = RecomendacionPlato(
@@ -302,14 +339,17 @@ class RecomendacionService:
 
             if r.tipo_recomendacion == "RESTAURANTE":
                 nombre_rest = r.restaurante.nombre if r.restaurante else "Restaurante"
+                zona_rest = r.restaurante.ubicacion.zona if r.restaurante and r.restaurante.ubicacion else None
+                dir_rest = r.restaurante.ubicacion.direccion if r.restaurante and r.restaurante.ubicacion else None
                 platos_info = []
                 for item in r.recomendacion_platos:
                     platos_info.append(
                         f"{item.cantidad}x '{item.plato.nombre if item.plato else 'Plato'}'"
                     )
                 resumen_platos = ", ".join(platos_info) if platos_info else "Sin platos registrados"
+                zona_desc = f" [{zona_rest}]" if zona_rest else ""
                 resumen = (
-                    f"Opción en restaurante {nombre_rest} ({resumen_platos}) para {planificacion.cantidad_personas} personas. "
+                    f"Opción en restaurante {nombre_rest}{zona_desc} ({resumen_platos}) para {planificacion.cantidad_personas} personas. "
                     f"Costo: {r.costo_estimado} Bs (Ahorro: {ahorro} Bs, {porcentaje}% del presupuesto)."
                 )
 
@@ -326,6 +366,8 @@ class RecomendacionService:
                     resumen=resumen,
                     id_restaurante=r.id_restaurante,
                     nombre_restaurante=nombre_rest,
+                    zona_restaurante=zona_rest,
+                    direccion_restaurante=dir_rest,
                     platos=[RecomendacionService._mapear_item_plato(p) for p in r.recomendacion_platos]
                 ))
 
@@ -365,7 +407,17 @@ class RecomendacionService:
                     lugares_compra_resumen=lugares_resumen
                 ))
 
-        mejor_costo = min(alternativas, key=lambda x: x.costo_total) if alternativas else None
+        # Si la planificación tiene ubicación de referencia y existen opciones en la zona, priorizarlas para mejor costo
+        candidatos_para_costo = alternativas
+        if planificacion.ubicacion_referencia:
+            candidatos_zona = [
+                a for a in alternativas
+                if a.tipo_recomendacion == "PREPARACION_PROPIA" or (a.distancia_estimada is not None and a.distancia_estimada <= Decimal("2.0"))
+            ]
+            if candidatos_zona:
+                candidatos_para_costo = candidatos_zona
+
+        mejor_costo = min(candidatos_para_costo, key=lambda x: x.costo_total) if candidatos_para_costo else None
         mejor_puntuacion = max(alternativas, key=lambda x: x.puntuacion) if alternativas else None
 
         return ComparacionPlanificacionRespuestaSchema(
@@ -398,9 +450,14 @@ class RecomendacionService:
         nombre = None
         id_prep = None
         nom_prep = None
+        zona_rest = None
+        dir_rest = None
 
         if rec.tipo_recomendacion == "RESTAURANTE":
             nombre = rec.restaurante.nombre if rec.restaurante else "Restaurante"
+            if rec.restaurante and rec.restaurante.ubicacion:
+                zona_rest = rec.restaurante.ubicacion.zona
+                dir_rest = rec.restaurante.ubicacion.direccion
         elif rec.tipo_recomendacion == "PREPARACION_PROPIA" and rec.preparacion_propia:
             nombre = rec.preparacion_propia.nombre
             id_prep = rec.preparacion_propia.id_preparacion_propia
@@ -418,6 +475,8 @@ class RecomendacionService:
             distancia_estimada=rec.distancia_estimada,
             id_restaurante=rec.id_restaurante,
             nombre_restaurante=rec.restaurante.nombre if rec.restaurante else None,
+            zona_restaurante=zona_rest,
+            direccion_restaurante=dir_rest,
             id_preparacion_propia=id_prep,
             nombre_preparacion=nom_prep,
             fecha_generacion=rec.fecha_generacion,
