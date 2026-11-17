@@ -215,43 +215,43 @@ Este documento constituye la guía exhaustiva y metódica para verificar manualm
 
 ---
 
-### 🧪 CU14: Comparar alternativas (Restaurante vs Preparación Propia)
-- **Objetivo:** Contrastar opciones comerciales contra elaboración en casa mediante matriz de ahorro y score.
+### 🧪 CU14: Comparar alternativas gastronómicas
+- **Objetivo:** Contrastar analíticamente opciones gastronómicas de restaurantes mediante matriz de ahorro, costo y puntuación.
 - **Rol:** `CLIENTE`.
 - **Ruta:** `/planificaciones/:id/comparacion`
 - **Pasos:**
   1. Desde la pantalla de recomendaciones, haz clic en **📊 Comparar Alternativas**.
-  2. Observa la matriz analítica con dos secciones o tarjetas destacadas:
+  2. Observa la matriz analítica con las tarjetas destacadas:
      - **Opción Menor Costo**
-     - **Opción Mejor Puntuación**
-  3. Comprueba que aparecen opciones de tipo `RESTAURANTE` y de tipo `PREPARACION_PROPIA`.
+     - **Opción Mejor Puntuada**
+  3. Comprueba el filtro por tipo (**Todas**, **Solo Restaurantes**) y la ordenación por costo o score.
   4. Haz clic en el botón superior **🤖 Explicar Comparación**.
-- **Resultado Esperado:** Resumen comparativo con los puntos clave de ahorro financiero y esfuerzo de preparación.
+- **Resultado Esperado:** Resumen comparativo claro con los puntos clave de ahorro financiero y satisfacción de comensales.
 
 ---
 
-### 🧪 CU15: Consultar ingredientes para preparación propia
-- **Objetivo:** Ver la lista de compras exacta con cantidades escaladas según el número de personas planificado.
-- **Rol:** `CLIENTE`.
-- **Ruta:** En la tarjeta de preparación propia $\rightarrow$ botón **🥗 Ingredientes**.
+### 🧪 CU15: Biblioteca de recetas gastronómicas (Gestión, Consulta y Asistente IA)
+- **Objetivo:** Disponer de una biblioteca autónoma de recetas caseras con fotografías, escalado y un Asistente Culinario IA para consultar qué cocinar con ingredientes disponibles en casa.
+- **Roles:** `CLIENTE` (Consulta y Asistente IA) / `ADMINISTRADOR` (Gestión, creación con foto y eliminación).
+- **Ruta:** `/recetas` (vía enlace **Biblioteca de Recetas** en el menú lateral).
 - **Pasos:**
-  1. En la comparativa, ubica una alternativa de preparación propia y haz clic en **Ingredientes**.
-  2. Verifica la tabla de compras:
-     - Muestra las cantidades escaladas (ej. si la receta para 1 persona usa 0.2 kg de carne, para 10 personas muestra 2.0 kg).
-     - Muestra el costo estimado por insumo y el total en Bs.
-- **Resultado Esperado:** Cálculo matemático exacto de insumos para el grupo completo de comensales.
+  1. Entra a `/recetas` y prueba el **Asistente Culinario IA**: escribe *"Tengo pechuga de pollo, arroz, tomate y cebolla. ¿Qué puedo preparar y para cuántas personas?"* (o pulsa un chip rápido) y haz clic en **🤖 Consultar con IA**.
+  2. Verifica que la IA indica: plato sugerido con foto, cálculo de porciones y establecimientos de Santa Cruz donde conseguir lo faltante al mejor precio.
+  3. Explora la cuadrícula de **16 recetas completas** con imágenes en alta resolución y filtra por Almuerzo, Cena o Desayuno.
+  4. Haz clic en **Ver Ficha e Ingredientes** para abrir el modal con el detalle completo y preparación paso a paso.
+  5. Inicia sesión como `admin@menuopt.com` $\rightarrow$ pulsa **+ Añadir Receta (Admin)** y comprueba que puedes registrar nuevas recetas con URL de imagen.
+- **Resultado Esperado:** Catálogo visual atractivo, consulta IA precisa e interactiva, y control de permisos exclusivo para administración.
 
 ---
 
 ### 🧪 CU16: Consultar lugares de compra
-- **Objetivo:** Identificar dónde adquirir los ingredientes al precio más bajo agrupados por mercado/supermercado.
-- **Rol:** `CLIENTE`.
-- **Ruta:** En la tarjeta de preparación propia $\rightarrow$ botón **🏪 Lugares de Compra**.
-- **Pasos:**
-  1. Haz clic en **Lugares de Compra**.
-  2. Verifica que los ingredientes se agrupan por establecimiento (ej. *Mercado Mutualista*, *Hipermaxi*).
-  3. Comprueba que el sistema seleccionó el precio unitario más económico registrado.
-- **Resultado Esperado:** Agrupación clara por comercio para facilitar la logística de compra.
+- **Objetivo:** Identificar comercios y mercados de Santa Cruz para adquirir insumos al precio más conveniente.
+- **Roles:** `CLIENTE`, `ADMINISTRADOR`, `ADMINISTRADOR_TIENDA`.
+- **Rutas de acceso:**
+  - **En la Biblioteca de Recetas (`/recetas`):** La IA sugiere los establecimientos con precios más bajos para los insumos faltantes.
+  - **En la recomendación:** `/recomendaciones/:id/lugares-compra` mostrando la lista de compras agrupada por establecimiento (ej. *Mercado Central*, *Mercado Abasto*, *Hipermaxi*).
+  - **En el catálogo de tiendas (`/proveedores`):** Lista general de comercios, direcciones y precios vigentes.
+- **Resultado Esperado:** Agrupación clara por comercio con cálculo de precios y totales para optimizar la logística de compra.
 
 ---
 
