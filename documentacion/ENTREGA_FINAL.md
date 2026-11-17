@@ -41,8 +41,8 @@ El sistema implementa una arquitectura modular multicapa con alta cohesión y ba
 | **CU11** | Registrar planificación gastronómica | CLIENTE / ADMIN | COMPLETO | Presupuesto > 0, comensales > 0, preferencias y titularidad |
 | **CU12** | Definir preferencias | Autenticado / ADMIN | COMPLETO | Catálogo de preferencias (vegetariano, sin gluten, etc.) y asignación |
 | **CU13** | Generar recomendación | CLIENTE / ADMIN | COMPLETO | Algoritmo determinístico de cobertura y presupuesto para restaurantes |
-| **CU14** | Comparar alternativas | CLIENTE / ADMIN | COMPLETO | Matriz comparativa multidimensional (Restaurante vs Preparación Propia) |
-| **CU15** | Consultar ingredientes para preparación propia | CLIENTE / ADMIN | COMPLETO | Escalado matemático de ingredientes y costos según número de personas |
+| **CU14** | Comparar alternativas gastronómicas | CLIENTE / ADMIN | COMPLETO | Matriz analítica de costo, score y ahorro en restaurantes |
+| **CU15** | Biblioteca de recetas gastronómicas | CLIENTE / ADMIN | COMPLETO | Catálogo autónomo de recetas con fotos, Asistente Culinario IA con escalado y gestión administrativa de recetas |
 | **CU16** | Consultar lugares de compra | Autenticado / ADMIN | COMPLETO | Búsqueda del menor precio disponible y agrupación por establecimiento |
 | **CU17** | Crear plano 2D del restaurante | RESTAURANTE / ADMIN | COMPLETO | Editor de distribución con coordenadas relativas [0, 1] y rotación |
 | **CU18** | Gestionar mesas | RESTAURANTE / ADMIN | COMPLETO | Formas geométricas (cuadrada, redonda, rectangular), capacidades y fijas |

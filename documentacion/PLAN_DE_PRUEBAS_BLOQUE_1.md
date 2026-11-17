@@ -288,7 +288,7 @@ Usa esta tabla para anotar los resultados de tus pruebas personales:
 | **CU12: Definir preferencias** | `[ ] Aprobado` | |
 | **CU13: Generar recomendaciones** | `[ ] Aprobado` | |
 | **CU14: Comparar alternativas** | `[ ] Aprobado` | |
-| **CU15: Consultar ingredientes** | `[ ] Aprobado` | |
+| **CU15: Biblioteca de recetas e IA** | `[ ] Aprobado` | |
 | **CU16: Consultar lugares de compra**| `[ ] Aprobado` | |
 | **CU25: Consultar bitácora** | `[ ] Aprobado` | |
 | **CU26: Asistente de IA** | `[ ] Aprobado` | |
