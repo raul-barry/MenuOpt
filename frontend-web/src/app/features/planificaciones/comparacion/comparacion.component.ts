@@ -95,7 +95,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
               [ngClass]="filtroTipo() === 'TODAS' ? 'btn-primary' : 'btn-outline'"
               (click)="filtroTipo.set('TODAS')"
             >
-              Todas ({{ comp.alternativas.length }})
+              Todas ({{ totalRestaurantes() }})
             </button>
             <button 
               class="btn btn-sm" 
@@ -103,13 +103,6 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
               (click)="filtroTipo.set('RESTAURANTE')"
             >
               Solo Restaurantes
-            </button>
-            <button 
-              class="btn btn-sm" 
-              [ngClass]="filtroTipo() === 'PREPARACION_PROPIA' ? 'btn-primary' : 'btn-outline'"
-              (click)="filtroTipo.set('PREPARACION_PROPIA')"
-            >
-              Solo Preparación Propia
             </button>
           </div>
 
@@ -494,20 +487,21 @@ export class ComparacionComponent implements OnInit {
   cargandoExplicacion = signal<boolean>(false);
   explicacionActual = signal<ExplicacionRespuesta | null>(null);
 
-  filtroTipo = signal<'TODAS' | 'RESTAURANTE' | 'PREPARACION_PROPIA'>('TODAS');
+  filtroTipo = signal<'TODAS' | 'RESTAURANTE'>('TODAS');
   criterioOrden = signal<'OFICIAL' | 'COSTO_ASC' | 'SCORE_DESC' | 'AHORRO_DESC'>('OFICIAL');
+
+  totalRestaurantes = computed(() => {
+    const comp = this.comparacion();
+    if (!comp) return 0;
+    return comp.alternativas.filter(a => a.tipo_recomendacion === 'RESTAURANTE').length;
+  });
 
   alternativasFiltradas = computed(() => {
     const comp = this.comparacion();
     if (!comp) return [];
 
-    let list = [...comp.alternativas];
-
-    // Filtro por tipo
-    const tipo = this.filtroTipo();
-    if (tipo !== 'TODAS') {
-      list = list.filter(a => a.tipo_recomendacion === tipo);
-    }
+    // Excluir preparación propia ya que CU15 ahora es la Biblioteca de Recetas
+    let list = comp.alternativas.filter(a => a.tipo_recomendacion === 'RESTAURANTE');
 
     // Ordenamiento en frontend
     const orden = this.criterioOrden();
