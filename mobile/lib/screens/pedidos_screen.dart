@@ -481,7 +481,7 @@ class _NuevoPedidoSheetState extends State<_NuevoPedidoSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Hacer Pedido Gastronómico (CU23)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Text('Hacer Pedido Gastronómico', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),

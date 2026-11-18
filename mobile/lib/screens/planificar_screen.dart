@@ -228,7 +228,7 @@ class _PlanificarScreenState extends State<PlanificarScreen> {
               children: [
                 // Título y Subtítulo exactos de la versión Web
                 const Text(
-                  'Registrar Planificación Gastronómica (CU11)',
+                  'Registrar Planificación Gastronómica',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -238,7 +238,7 @@ class _PlanificarScreenState extends State<PlanificarScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Indica los parámetros de tu comida o evento. El optimizador calculará opciones de restaurantes y de preparación casera adaptadas a tu presupuesto.',
+                  'Indica los parámetros de tu comida o evento. El motor de recomendaciones calculará opciones de restaurantes adaptadas a tu presupuesto.',
                   style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.textMuted,

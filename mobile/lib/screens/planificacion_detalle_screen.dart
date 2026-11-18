@@ -374,7 +374,7 @@ class _PlanificacionDetalleScreenState extends State<PlanificacionDetalleScreen>
                                   ),
                                   onPressed: _compararAlternativas,
                                   icon: const Icon(Icons.tune, size: 16),
-                                  label: const Text('Comparar Alternativas (CU14)'),
+                                  label: const Text('Comparar Alternativas'),
                                 ),
                                 if (plan['estado'] == 'ACTIVA') ...[
                                   OutlinedButton.icon(

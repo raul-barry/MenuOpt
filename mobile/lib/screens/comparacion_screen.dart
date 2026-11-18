@@ -105,7 +105,7 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
               ),
               const SizedBox(width: 8),
               const Expanded(
-                child: Text('Explicación Asistente IA (CU26)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('Explicación Asistente IA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -197,7 +197,7 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Comparar Alternativas (CU14)'),
+        title: const Text('Comparar Alternativas'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Volver',
@@ -260,7 +260,7 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
-                                    'ANÁLISIS COMPARATIVO (CU14)',
+                                    'ANÁLISIS COMPARATIVO',
                                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569), letterSpacing: 0.4),
                                   ),
                                 ),
@@ -298,7 +298,7 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
                               ),
                               onPressed: _explicarComparacion,
                               icon: const Icon(Icons.smart_toy_outlined, size: 16, color: Color(0xFF0284C7)),
-                              label: const Text('Explicar Comparación con IA (CU26)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                              label: const Text('Explicar Comparación con IA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
                             ),
 
                             // Destacados Responsivos: Menor Costo & Mejor Puntuada

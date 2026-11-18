@@ -568,7 +568,7 @@ class _InicioTabState extends State<_InicioTab> {
                       icon: const Icon(Icons.bolt, size: 18),
                       label: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text('Planificar Comida Ahora (CU11)'),
+                        child: Text('Planificar Comida Ahora'),
                       ),
                     ),
                   ),

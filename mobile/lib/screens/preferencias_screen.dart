@@ -121,7 +121,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Mis Preferencias Gastronómicas (CU12)',
+                                  'Mis Preferencias Gastronómicas',
                                   style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppTheme.textMain),
                                 ),
                                 SizedBox(height: 4),

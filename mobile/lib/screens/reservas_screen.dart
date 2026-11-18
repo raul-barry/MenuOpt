@@ -685,7 +685,7 @@ class _NuevaReservaSheetState extends State<_NuevaReservaSheet> {
               icon: _isCheckingAvailability
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
                   : const Icon(Icons.search, size: 18),
-              label: Text(_isCheckingAvailability ? 'Consultando mesas...' : 'Consultar Disponibilidad de Mesas (CU20)'),
+              label: Text(_isCheckingAvailability ? 'Consultando mesas...' : 'Consultar Disponibilidad de Mesas'),
             ),
             const SizedBox(height: 12),
 
@@ -748,7 +748,7 @@ class _NuevaReservaSheetState extends State<_NuevaReservaSheet> {
 
             ElevatedButton(
               onPressed: _isSaving ? null : _confirmarReserva,
-              child: Text(_isSaving ? 'Guardando Reserva...' : 'Confirmar Reserva (CU21)'),
+              child: Text(_isSaving ? 'Guardando Reserva...' : 'Confirmar Reserva'),
             ),
           ],
         ),

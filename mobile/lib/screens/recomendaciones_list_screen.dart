@@ -238,7 +238,7 @@ class _RecomendacionesListScreenState extends State<RecomendacionesListScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Recomendaciones (CU13)'),
+        title: const Text('Recomendaciones Gastronómicas'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Volver a la Planificación',
@@ -247,7 +247,7 @@ class _RecomendacionesListScreenState extends State<RecomendacionesListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.tune),
-            tooltip: 'Comparar Alternativas (CU14)',
+            tooltip: 'Comparar Alternativas',
             onPressed: _abrirComparacion,
           ),
         ],
@@ -308,7 +308,7 @@ class _RecomendacionesListScreenState extends State<RecomendacionesListScreen> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Alternativas Gastronómicas Recomendadas (CU13)',
+                                'Alternativas Gastronómicas Recomendadas',
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textMain),
                               ),
                               const SizedBox(height: 4),
@@ -330,7 +330,7 @@ class _RecomendacionesListScreenState extends State<RecomendacionesListScreen> {
                                     ),
                                     onPressed: _abrirComparacion,
                                     icon: const Icon(Icons.tune, size: 16),
-                                    label: const Text('Comparar Alternativas (CU14)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                    label: const Text('Comparar Alternativas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                   ),
                                   if (plan['estado'] == 'ACTIVA')
                                     OutlinedButton.icon(
