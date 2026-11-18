@@ -13,6 +13,7 @@ import 'reservas_screen.dart';
 import 'pedidos_screen.dart';
 import 'perfil_screen.dart';
 import 'asistente_screen.dart';
+import 'recetas_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Índice actual de la vista
   // 0: Inicio, 1: Planificar comida, 2: Mis planificaciones, 3: Mis preferencias,
-  // 4: Mis Reservas, 5: Mis Pedidos, 6: Mi Perfil, 7: Asistente IA
+  // 4: Mis Reservas, 5: Mis Pedidos, 6: Mi Perfil, 7: Asistente IA, 8: Biblioteca de Recetas
   int _currentSection = 0;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -122,6 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return const PerfilScreen();
       case 7:
         return const AsistenteScreen();
+      case 8:
+        return const RecetasScreen();
       default:
         return _InicioTab(onNavigate: _navigateToSection);
     }
@@ -319,6 +322,12 @@ class _WebStyleDrawer extends StatelessWidget {
                     title: 'Mis preferencias',
                     icon: Icons.tune_outlined,
                     activeIcon: Icons.tune,
+                  ),
+                  _buildDrawerItem(
+                    index: 8,
+                    title: 'Biblioteca de Recetas',
+                    icon: Icons.menu_book_outlined,
+                    activeIcon: Icons.menu_book,
                   ),
 
                   const SizedBox(height: 12),
@@ -670,6 +679,21 @@ class _InicioTabState extends State<_InicioTab> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                Expanded(
+                  child: _ModuleCard(
+                    title: 'Biblioteca de Recetas',
+                    desc: '16 recetas y Asistente Culinario IA',
+                    icon: Icons.menu_book,
+                    color: const Color(0xFFEA580C),
+                    onTap: () => widget.onNavigate(8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
                 Expanded(
                   child: _ModuleCard(
                     title: 'Mi Perfil',

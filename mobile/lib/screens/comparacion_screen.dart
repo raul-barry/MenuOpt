@@ -25,7 +25,7 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
   bool _isGenerating = false;
   Map<String, dynamic>? _comparacion;
   String? _error;
-  String _filtroTipo = 'TODAS'; // 'TODAS', 'RESTAURANTE', 'PREPARACION_PROPIA'
+  String _filtroTipo = 'TODAS'; // 'TODAS', 'RESTAURANTE'
 
   @override
   void initState() {
@@ -183,7 +183,9 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
   @override
   Widget build(BuildContext context) {
     final comp = _comparacion;
-    final List<dynamic> todasAlt = (comp?['alternativas'] as List<dynamic>?) ?? [];
+    final List<dynamic> todasAlt = ((comp?['alternativas'] as List<dynamic>?) ?? [])
+        .where((a) => a['tipo_recomendacion'] == 'RESTAURANTE')
+        .toList();
     final List<dynamic> alternativas = todasAlt.where((a) {
       if (_filtroTipo == 'TODAS') return true;
       return a['tipo_recomendacion'] == _filtroTipo;
@@ -405,8 +407,6 @@ class _ComparacionScreenState extends State<ComparacionScreen> {
                             _buildFilterChip('Todas (${todasAlt.length})', 'TODAS'),
                             const SizedBox(width: 6),
                             _buildFilterChip('Restaurantes', 'RESTAURANTE'),
-                            const SizedBox(width: 6),
-                            _buildFilterChip('Casera', 'PREPARACION_PROPIA'),
                           ],
                         ),
                       ),
