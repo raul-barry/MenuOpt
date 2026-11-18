@@ -1,5 +1,6 @@
 # CASO DE USO: CU15 - Biblioteca de Recetas
 import re
+import unicodedata
 from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Optional, Dict, Any
 from fastapi import HTTPException, status
@@ -9,9 +10,10 @@ from sqlalchemy import func
 from app.models.receta import Receta, RecetaIngrediente
 from app.models.usuario import Usuario
 from app.models.ingrediente import Ingrediente
-from app.models.lugar_compra import LugarCompra
-from app.models.ingrediente_lugar_compra import IngredienteLugarCompra
 from app.repositories.ingrediente_lugar_compra_repository import IngredienteLugarCompraRepository
+from app.services.recomendacion_algoritmo import son_unidades_compatibles
+from app.ai.proveedor import obtener_proveedor_ia
+from app.ai.proveedor import MockProveedorIA
 from app.schemas.receta import (
     RecetaCrearSchema,
     RecetaRespuestaSchema,
@@ -20,6 +22,11 @@ from app.schemas.receta import (
     RecetaIngredienteFaltanteSchema,
     RecetaTiendaRecomendadaSchema
 )
+
+
+def _normalizar_texto(texto: str) -> str:
+    texto = unicodedata.normalize("NFKD", texto.casefold())
+    return "".join(caracter for caracter in texto if not unicodedata.combining(caracter))
 
 
 class RecetaService:
@@ -216,26 +223,29 @@ class RecetaService:
             joinedload(Receta.ingredientes).joinedload(RecetaIngrediente.ingrediente)
         ).all()
 
+        def ingrediente_mencionado(item: RecetaIngrediente) -> bool:
+            if item.id_ingrediente is not None and item.id_ingrediente in ids_detectados:
+                return True
+            nombre_item = _normalizar_texto(item.nombre_ingrediente)
+            return any(
+                nombre_item in _normalizar_texto(detectado.nombre)
+                or _normalizar_texto(detectado.nombre) in nombre_item
+                for detectado in ingredientes_detectados
+            )
+
         ranking = []
-        for r in todas_recetas:
-            ids_receta = {ri.id_ingrediente for ri in r.ingredientes if ri.id_ingrediente is not None}
-            nombres_receta = [ri.nombre_ingrediente.lower() for ri in r.ingredientes]
+        for receta in todas_recetas:
+            total = sum(1 for item in receta.ingredientes if ingrediente_mencionado(item))
+            faltan = max(len(receta.ingredientes) - total, 0)
+            cobertura = total / len(receta.ingredientes) if receta.ingredientes else 0
+            ranking.append((receta, total, cobertura, faltan))
 
-            coincidencias_id = ids_receta.intersection(ids_detectados)
-            coincidencias_texto = set()
-            for kw in palabras_clave:
-                if re.search(r"\b" + re.escape(kw) + r"\b", msg_lower):
-                    for nom_r in nombres_receta:
-                        if kw in nom_r:
-                            coincidencias_texto.add(nom_r)
+        ranking.sort(
+            key=lambda item: (item[1], item[2], -item[3], -item[0].tiempo_minutos),
+            reverse=True,
+        )
 
-            total_coincidencias = len(coincidencias_id) + len(coincidencias_texto)
-            porcentaje = (total_coincidencias / len(r.ingredientes)) if len(r.ingredientes) > 0 else 0
-            ranking.append((r, total_coincidencias, porcentaje))
-
-        ranking.sort(key=lambda x: (x[1], x[2]), reverse=True)
-
-        mejores = [item[0] for item in ranking[:3]] if ranking else []
+        mejores = [item[0] for item in ranking if item[1] > 0][:3]
         receta_principal = mejores[0] if mejores else None
 
         # 4. Calcular ingredientes faltantes y mejores tiendas para la receta principal
@@ -244,100 +254,130 @@ class RecetaService:
 
         if receta_principal:
             factor_escala = (Decimal(str(personas)) / Decimal(str(receta_principal.porciones))) if receta_principal.porciones > 0 else Decimal("1.00")
+            faltantes_receta = [
+                item for item in receta_principal.ingredientes
+                if not ingrediente_mencionado(item)
+            ]
+            precios_disponibles = IngredienteLugarCompraRepository.listar_precios_disponibles(
+                db,
+                [item.id_ingrediente for item in faltantes_receta if item.id_ingrediente is not None],
+            )
 
-            for ri in receta_principal.ingredientes:
-                es_coincidente = False
-                if ri.id_ingrediente and ri.id_ingrediente in ids_detectados:
-                    es_coincidente = True
-                else:
-                    for d in ingredientes_detectados:
-                        if d.nombre.lower() in ri.nombre_ingrediente.lower() or ri.nombre_ingrediente.lower() in d.nombre.lower():
-                            es_coincidente = True
-                            break
+            for item in faltantes_receta:
+                cantidad = (item.cantidad * factor_escala).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                nombre = item.ingrediente.nombre if item.ingrediente else item.nombre_ingrediente
+                precios_compatibles = [
+                    precio for precio in precios_disponibles.get(item.id_ingrediente, [])
+                    if item.id_ingrediente
+                    and son_unidades_compatibles(item.unidad_medida, precio.unidad_medida)
+                    and precio.cantidad_referencia > 0
+                ]
+                mejor_precio = min(
+                    precios_compatibles,
+                    key=lambda precio: precio.precio / precio.cantidad_referencia,
+                    default=None,
+                )
 
-                if not es_coincidente:
-                    cant_requerida = (ri.cantidad * factor_escala).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                    tienda_nom = None
-                    precio_ref = None
+                tienda = mejor_precio.lugar_compra if mejor_precio else None
+                if tienda:
+                    ubicacion = tienda.ubicacion
+                    direccion = ", ".join(
+                        valor for valor in (
+                            ubicacion.zona if ubicacion else None,
+                            ubicacion.direccion if ubicacion else None,
+                            ubicacion.ciudad if ubicacion else None,
+                        ) if valor
+                    ) or None
+                    if tienda.nombre not in tiendas_map:
+                        tiendas_map[tienda.nombre] = {
+                            "tipo": tienda.tipo,
+                            "ubicacion": direccion,
+                            "insumos": [],
+                            "costo": Decimal("0.00"),
+                        }
+                    tiendas_map[tienda.nombre]["insumos"].append(nombre)
+                    subtotal = (
+                        (cantidad / mejor_precio.cantidad_referencia) * mejor_precio.precio
+                    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    tiendas_map[tienda.nombre]["costo"] += subtotal
 
-                    if ri.id_ingrediente:
-                        mejor_ilc = db.query(IngredienteLugarCompra).options(
-                            joinedload(IngredienteLugarCompra.lugar_compra)
-                        ).filter(
-                            IngredienteLugarCompra.id_ingrediente == ri.id_ingrediente,
-                            IngredienteLugarCompra.disponible == True
-                        ).order_by(IngredienteLugarCompra.precio.asc()).first()
-
-                        if mejor_ilc:
-                            tienda_nom = mejor_ilc.lugar_compra.nombre
-                            precio_ref = mejor_ilc.precio
-                            t_key = mejor_ilc.lugar_compra.nombre
-                            if t_key not in tiendas_map:
-                                tiendas_map[t_key] = {
-                                    "tipo": mejor_ilc.lugar_compra.tipo,
-                                    "insumos": [],
-                                    "costo": Decimal("0.00")
-                                }
-                            tiendas_map[t_key]["insumos"].append(ri.nombre_ingrediente)
-                            costo_item = ((cant_requerida / mejor_ilc.cantidad_referencia) * mejor_ilc.precio).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                            tiendas_map[t_key]["costo"] += costo_item
-
-                    ingredientes_faltantes.append(RecetaIngredienteFaltanteSchema(
-                        nombre=ri.nombre_ingrediente,
-                        cantidad_requerida=cant_requerida,
-                        unidad_medida=ri.unidad_medida,
-                        tienda_sugerida=tienda_nom or "Mercado Abasto Mayorista",
-                        precio_referencial=precio_ref
-                    ))
+                ingredientes_faltantes.append(RecetaIngredienteFaltanteSchema(
+                    nombre=nombre,
+                    cantidad_requerida=cantidad,
+                    unidad_medida=item.unidad_medida,
+                    tienda_sugerida=tienda.nombre if tienda else None,
+                    precio_referencial=mejor_precio.precio if mejor_precio else None,
+                ))
 
         tiendas_recomendadas = [
             RecetaTiendaRecomendadaSchema(
                 nombre_tienda=k,
                 tipo=v["tipo"],
+                ubicacion=v["ubicacion"],
                 insumos_disponibles=v["insumos"],
                 costo_estimado=v["costo"]
             )
-            for k, v in tiendas_map.items()
+            for k, v in sorted(tiendas_map.items(), key=lambda item: item[1]["costo"])
         ]
 
-        # 5. Generar respuesta comprensible y estructurada
-        nombres_detectados_str = ", ".join([ing.nombre for ing in ingredientes_detectados]) if ingredientes_detectados else "los insumos disponibles"
-        nombre_plato = receta_principal.nombre if receta_principal else "Plato Casero Familiar"
-        tiempo_plato = receta_principal.tiempo_minutos if receta_principal else 35
+        receta_contexto = None
+        if receta_principal:
+            factor_contexto = (
+                Decimal(str(personas)) / Decimal(str(receta_principal.porciones))
+                if receta_principal.porciones > 0 else Decimal("1.00")
+            )
+            receta_contexto = {
+                "nombre": receta_principal.nombre,
+                "tipo_comida": receta_principal.tipo_comida,
+                "dificultad": receta_principal.dificultad,
+                "tiempo_minutos": receta_principal.tiempo_minutos,
+                "instrucciones": receta_principal.instrucciones,
+                "ingredientes": [
+                    {
+                        "nombre": item.ingrediente.nombre if item.ingrediente else item.nombre_ingrediente,
+                        "cantidad": str((item.cantidad * factor_contexto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                        "unidad": item.unidad_medida,
+                        "disponible": ingrediente_mencionado(item),
+                    }
+                    for item in receta_principal.ingredientes
+                ],
+            }
 
-        lineas_resp = []
-        lineas_resp.append("### 👨‍🍳 Sugerencia del Asistente Culinario IA")
-        lineas_resp.append(f"Con los ingredientes que tienes a mano (**{nombres_detectados_str}**), la mejor opción culinaria para preparar es:")
-        lineas_resp.append(f"👉 **{nombre_plato}** ({receta_principal.tipo_comida if receta_principal else 'ALMUERZO'} - {receta_principal.dificultad if receta_principal else 'FÁCIL'}, ~{tiempo_plato} min).")
-        lineas_resp.append("")
-        lineas_resp.append("#### 👥 ¿Para cuántas personas?")
-        lineas_resp.append(f"Con las proporciones calculadas, esta preparación te alcanza perfectamente para **{personas} persona{'s' if personas > 1 else ''}**.")
-        lineas_resp.append("")
-
-        if ingredientes_faltantes:
-            lineas_resp.append("#### 🛒 ¿Dónde conseguir lo que falta y a qué precio?")
-            lineas_resp.append("Para completar tu plato de forma óptima, te recomendamos los siguientes establecimientos en Santa Cruz:")
-            for faltante in ingredientes_faltantes:
-                pr_str = f" a aprox. **Bs {faltante.precio_referencial:.2f}**" if faltante.precio_referencial else ""
-                lineas_resp.append(f"• **{faltante.nombre}** ({faltante.cantidad_requerida} {faltante.unidad_medida}): Puedes adquirirlo en **{faltante.tienda_sugerida}**{pr_str}.")
-            if tiendas_recomendadas:
-                mejor_tienda = tiendas_recomendadas[0]
-                lineas_resp.append("")
-                lineas_resp.append(f"💡 **Recomendación de compra:** Visitar **{mejor_tienda.nombre_tienda}** ({mejor_tienda.tipo}) te permitirá concentrar insumos con un estimado de **Bs {mejor_tienda.costo_estimado:.2f}**.")
+        datos_verificados = {
+            "comensales": personas,
+            "ingredientes_disponibles": [item.nombre for item in ingredientes_detectados],
+            "receta": receta_contexto,
+            "ingredientes_faltantes": [
+                {
+                    "nombre": item.nombre,
+                    "cantidad": str(item.cantidad_requerida),
+                    "unidad": item.unidad_medida,
+                    "tienda": item.tienda_sugerida,
+                    "precio": str(item.precio_referencial) if item.precio_referencial is not None else None,
+                }
+                for item in ingredientes_faltantes
+            ],
+            "tiendas_recomendadas": [
+                {
+                    "nombre": item.nombre_tienda,
+                    "tipo": item.tipo,
+                    "ubicacion": item.ubicacion,
+                    "insumos": item.insumos_disponibles,
+                    "costo_estimado": str(item.costo_estimado) if item.costo_estimado is not None else None,
+                }
+                for item in tiendas_recomendadas
+            ],
+        }
+        if receta_principal:
+            respuesta_ia = obtener_proveedor_ia().orientar_sobre_receta(mensaje, datos_verificados)
         else:
-            lineas_resp.append("#### 🛒 ¿Dónde comprar?")
-            lineas_resp.append("¡Buenas noticias! Tienes prácticamente todos los insumos necesarios en tu cocina para preparar este plato sin necesidad de hacer compras adicionales.")
-
-        if receta_principal and receta_principal.instrucciones:
-            lineas_resp.append("")
-            lineas_resp.append("#### 📝 Paso a paso de preparación:")
-            lineas_resp.append(receta_principal.instrucciones)
+            respuesta_ia = MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
 
         platos_schemas = [cls._mapear_receta_a_schema(db, r) for r in mejores]
 
         return RecetaConsultaIARespuestaSchema(
             mensaje_usuario=mensaje,
-            respuesta_ia="\n".join(lineas_resp),
+            respuesta_ia=respuesta_ia,
             porciones_sugeridas=personas,
             platos_sugeridos=platos_schemas,
             ingredientes_faltantes=ingredientes_faltantes,
@@ -348,7 +388,7 @@ class RecetaService:
     @classmethod
     def _mapear_receta_a_schema(cls, db: Session, receta: Receta) -> RecetaRespuestaSchema:
         ids_ing = [ri.id_ingrediente for ri in receta.ingredientes if ri.id_ingrediente is not None]
-        mejores_precios = IngredienteLugarCompraRepository.buscar_mejores_precios(db, ids_ing) if ids_ing else {}
+        precios_por_ingrediente = IngredienteLugarCompraRepository.listar_precios_disponibles(db, ids_ing) if ids_ing else {}
 
         items_resp: List[RecetaIngredienteRespuestaSchema] = []
         costo_total = Decimal("0.00")
@@ -357,8 +397,14 @@ class RecetaService:
             precio_ref = None
             costo_sub = None
 
-            if ri.id_ingrediente and ri.id_ingrediente in mejores_precios:
-                rel = mejores_precios[ri.id_ingrediente]
+            precios_compatibles = [
+                precio for precio in precios_por_ingrediente.get(ri.id_ingrediente, [])
+                if ri.id_ingrediente
+                and son_unidades_compatibles(ri.unidad_medida, precio.unidad_medida)
+                and precio.cantidad_referencia > 0
+            ]
+            if precios_compatibles:
+                rel = min(precios_compatibles, key=lambda precio: precio.precio / precio.cantidad_referencia)
                 precio_ref = rel.precio
                 # Subtotal = (cantidad / cantidad_referencia) * precio
                 cant_ref = rel.cantidad_referencia if rel.cantidad_referencia > 0 else Decimal("1.00")
@@ -369,7 +415,7 @@ class RecetaService:
                 id_receta_ingrediente=ri.id_receta_ingrediente,
                 id_receta=ri.id_receta,
                 id_ingrediente=ri.id_ingrediente,
-                nombre_ingrediente=ri.nombre_ingrediente,
+                nombre_ingrediente=ri.ingrediente.nombre if ri.ingrediente else ri.nombre_ingrediente,
                 cantidad=ri.cantidad,
                 unidad_medida=ri.unidad_medida,
                 precio_referencial=precio_ref,

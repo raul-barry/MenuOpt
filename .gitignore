@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 *.env
+/backend/.local/b2-demo-credentials.txt
 
 # Entornos virtuales de Python
 .venv/

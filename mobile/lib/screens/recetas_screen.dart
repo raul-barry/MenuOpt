@@ -368,11 +368,14 @@ class _RecetasScreenState extends State<RecetasScreen> {
 
   Widget _buildResultadoIACard() {
     final res = _resultadoIA!;
-    final mensaje = res['mensaje'] as String? ?? '';
-    final receta = res['receta_sugerida'] as Map<String, dynamic>?;
+    final mensaje = res['respuesta_ia'] as String? ?? res['mensaje'] as String? ?? '';
+    final platos = (res['platos_sugeridos'] as List<dynamic>?) ?? [];
+    final receta = platos.isNotEmpty
+        ? platos.first as Map<String, dynamic>
+        : res['receta_sugerida'] as Map<String, dynamic>?;
     final faltantes = (res['ingredientes_faltantes'] as List<dynamic>?) ?? [];
     final tiendas = (res['tiendas_recomendadas'] as List<dynamic>?) ?? [];
-    final comensalesCalculados = res['personas_estimadas'] ?? _comensalesIA;
+    final comensalesCalculados = res['porciones_sugeridas'] ?? res['personas_estimadas'] ?? _comensalesIA;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -443,7 +446,7 @@ class _RecetasScreenState extends State<RecetasScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${receta['tiempo_preparacion_min'] ?? 0} min • ${receta['tipo_comida'] ?? 'PLATO'}',
+                          '${receta['tiempo_minutos'] ?? receta['tiempo_preparacion_min'] ?? 0} min • ${receta['tipo_comida'] ?? 'PLATO'}',
                           style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                         ),
                       ],
@@ -470,8 +473,8 @@ class _RecetasScreenState extends State<RecetasScreen> {
               spacing: 6,
               runSpacing: 4,
               children: faltantes.map((f) {
-                final nombre = f['ingrediente'] ?? '';
-                final cant = f['cantidad'] ?? '';
+                final nombre = f['nombre'] ?? f['ingrediente'] ?? 'Ingrediente';
+                final cant = f['cantidad_requerida'] ?? f['cantidad'] ?? '';
                 final unidad = f['unidad_medida'] ?? '';
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -489,7 +492,7 @@ class _RecetasScreenState extends State<RecetasScreen> {
             ),
           ],
 
-          // Tiendas recomendadas en Santa Cruz (CU16)
+          // Tiendas con precios verificados en la base de datos.
           if (tiendas.isNotEmpty) ...[
             const SizedBox(height: 14),
             Row(
@@ -497,19 +500,21 @@ class _RecetasScreenState extends State<RecetasScreen> {
                 Icon(Icons.storefront, size: 16, color: AppTheme.primary),
                 SizedBox(width: 6),
                 Text(
-                  'Dónde comprar al mejor precio (Santa Cruz):',
+                  'Tiendas con mejores precios registrados:',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.secondary),
                 ),
               ],
             ),
             const SizedBox(height: 6),
             ...tiendas.map((t) {
-              final nombreTienda = t['lugar_nombre'] ?? '';
-              final direccion = t['direccion'] ?? 'Santa Cruz';
-              final ingrediente = t['ingrediente'] ?? '';
-              final precio = t['precio_unitario'];
-              final unidad = t['unidad_medida'] ?? 'ud';
-              final precioTexto = precio != null ? 'Bs. $precio / $unidad' : '';
+              final nombreTienda = t['nombre_tienda'] ?? t['lugar_nombre'] ?? 'Tienda';
+              final direccion = t['ubicacion'] ?? t['direccion'] ?? 'Ubicación no registrada';
+              final tipoTienda = t['tipo'] ?? '';
+              final insumos = ((t['insumos_disponibles'] as List<dynamic>?) ?? const <dynamic>[])
+                  .map((item) => item.toString())
+                  .join(', ');
+              final costo = t['costo_estimado'];
+              final costoTexto = costo != null ? 'Bs. $costo' : '';
 
               return Container(
                 margin: const EdgeInsets.only(top: 4),
@@ -530,15 +535,20 @@ class _RecetasScreenState extends State<RecetasScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF166534)),
                           ),
                           Text(
-                            '$ingrediente • $direccion',
+                            [tipoTienda, direccion].where((parte) => parte.toString().isNotEmpty).join(' • '),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
                           ),
+                          if (insumos.isNotEmpty)
+                            Text(
+                              'Mejor precio para: $insumos',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
+                            ),
                         ],
                       ),
                     ),
-                    if (precioTexto.isNotEmpty)
+                    if (costoTexto.isNotEmpty)
                       Text(
-                        precioTexto,
+                        costoTexto,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF166534)),
                       ),
                   ],
@@ -686,8 +696,8 @@ class _RecetasScreenState extends State<RecetasScreen> {
     final nombre = receta['nombre'] ?? '';
     final descripcion = receta['descripcion'] ?? '';
     final tipoComida = receta['tipo_comida'] ?? 'ALMUERZO';
-    final porciones = receta['porciones_base'] ?? 2;
-    final tiempo = receta['tiempo_preparacion_min'] ?? 30;
+    final porciones = receta['porciones'] ?? receta['porciones_base'] ?? 2;
+    final tiempo = receta['tiempo_minutos'] ?? receta['tiempo_preparacion_min'] ?? 30;
     final dificultad = receta['dificultad'] ?? 'MEDIO';
     final imagenUrl = receta['imagen_url'] as String?;
 
@@ -842,8 +852,8 @@ class _DetalleRecetaModal extends StatelessWidget {
     final nombre = receta['nombre'] ?? '';
     final descripcion = receta['descripcion'] ?? '';
     final tipoComida = receta['tipo_comida'] ?? 'ALMUERZO';
-    final porciones = receta['porciones_base'] ?? 2;
-    final tiempo = receta['tiempo_preparacion_min'] ?? 30;
+    final porciones = receta['porciones'] ?? receta['porciones_base'] ?? 2;
+    final tiempo = receta['tiempo_minutos'] ?? receta['tiempo_preparacion_min'] ?? 30;
     final dificultad = receta['dificultad'] ?? 'MEDIO';
     final imagenUrl = receta['imagen_url'] as String?;
     final ingredientes = (receta['ingredientes'] as List<dynamic>?) ?? [];
@@ -955,9 +965,9 @@ class _DetalleRecetaModal extends StatelessWidget {
                     ...ingredientes.map((ing) {
                       final item = ing as Map<String, dynamic>;
                       final ingObj = item['ingrediente'] as Map<String, dynamic>?;
-                      final nombreIng = ingObj?['nombre'] ?? item['nombre'] ?? 'Ingrediente';
-                      final cant = item['cantidad_base'] ?? item['cantidad'] ?? '';
-                      final unidad = ingObj?['unidad_medida'] ?? item['unidad_medida'] ?? '';
+                      final nombreIng = item['nombre_ingrediente'] ?? ingObj?['nombre'] ?? item['nombre'] ?? 'Ingrediente';
+                      final cant = item['cantidad'] ?? item['cantidad_base'] ?? '';
+                      final unidad = item['unidad_medida'] ?? ingObj?['unidad_medida'] ?? '';
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),

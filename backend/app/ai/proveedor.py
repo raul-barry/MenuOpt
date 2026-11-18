@@ -11,7 +11,8 @@ from app.config.settings import settings
 from app.ai.prompts import (
     SYSTEM_PROMPT_INTERPRETAR,
     SYSTEM_PROMPT_EXPLICAR_RECOMENDACION,
-    SYSTEM_PROMPT_EXPLICAR_COMPARACION
+    SYSTEM_PROMPT_EXPLICAR_COMPARACION,
+    SYSTEM_PROMPT_RECETA_COTIZADA,
 )
 from app.ai.parser import ParserIA
 
@@ -45,6 +46,12 @@ class ProveedorIA(ABC):
         datos_comparacion: Dict[str, Any]
     ) -> str:
         """Genera una explicación concisa y objetiva de la comparativa CU14."""
+        pass
+
+
+    @abstractmethod
+    def orientar_sobre_receta(self, mensaje: str, datos_verificados: Dict[str, Any]) -> str:
+        """Redacta una orientaciÃ³n culinaria basada en receta y precios verificados."""
         pass
 
 
@@ -297,6 +304,42 @@ class MockProveedorIA(ProveedorIA):
         return "La comparativa analiza los costos calculados entre las alternativas disponibles."
 
 
+    def orientar_sobre_receta(self, mensaje: str, datos_verificados: Dict[str, Any]) -> str:
+        receta = datos_verificados.get("receta")
+        if not receta:
+            return (
+                "No encontrÃ© una receta de la biblioteca que coincida con esos ingredientes. "
+                "Prueba indicando ingredientes del catÃ¡logo, por ejemplo arroz, tomate, cebolla o pollo."
+            )
+
+        personas = datos_verificados.get("comensales", 2)
+        partes = [f"## {receta.get('nombre', 'Sugerencia culinaria')}",
+                  f"Receta de {receta.get('tipo_comida', 'comida').lower()} para {personas} persona(s)."]
+        disponibles = datos_verificados.get("ingredientes_disponibles", [])
+        if disponibles:
+            partes.append("**Tienes:** " + ", ".join(disponibles) + ".")
+
+        faltantes = datos_verificados.get("ingredientes_faltantes", [])
+        if faltantes:
+            partes.append("**Te falta comprar:**")
+            for item in faltantes:
+                linea = f"- {item['nombre']}: {item['cantidad']} {item['unidad']}"
+                if item.get("tienda"):
+                    linea += f" en {item['tienda']}"
+                if item.get("precio") is not None:
+                    linea += f" (precio registrado: Bs {item['precio']})"
+                elif not item.get("tienda"):
+                    linea += " (sin precio de tienda registrado)"
+                partes.append(linea + ".")
+        else:
+            partes.append("Con los ingredientes indicados tienes lo necesario para esta receta.")
+
+        instrucciones = receta.get("instrucciones")
+        if instrucciones:
+            partes.extend(["**PreparaciÃ³n:**", instrucciones])
+        return "\n\n".join(partes)
+
+
 class GeminiProveedorIA(ProveedorIA):
     """
     Proveedor real para Google Gemini API (v1beta) usando HTTP estándar (urllib) con timeout controlado.
@@ -376,6 +419,19 @@ class GeminiProveedorIA(ProveedorIA):
             return MockProveedorIA().explicar_comparacion(datos_comparacion)
 
 
+    def orientar_sobre_receta(self, mensaje: str, datos_verificados: Dict[str, Any]) -> str:
+        prompt = json.dumps(
+            {"consulta_usuario": mensaje, "datos_verificados": datos_verificados},
+            default=str,
+            ensure_ascii=False,
+        )
+        try:
+            texto = self._invocar_gemini(SYSTEM_PROMPT_RECETA_COTIZADA, prompt).strip()
+            return texto or MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
+        except Exception:
+            return MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
+
+
 class GroqProveedorIA(ProveedorIA):
     """
     Proveedor real de ultra-alta velocidad para Groq Cloud API (OpenAI-compatible) usando HTTP estándar (urllib).
@@ -442,7 +498,7 @@ class GroqProveedorIA(ProveedorIA):
                 raise RuntimeError(f"Error al comunicar con la API de Groq: HTTP {e.code} {e.reason}")
             except Exception as e:
                 ultimo_error = e
-                continue
+                raise RuntimeError(f"Error al comunicar con la API de Groq: {str(e)}")
 
         raise RuntimeError(f"Error al comunicar con la API de Groq: {str(ultimo_error)}")
 
@@ -488,6 +544,19 @@ class GroqProveedorIA(ProveedorIA):
             return texto.strip() if texto.strip() else MockProveedorIA().explicar_comparacion(datos_comparacion)
         except Exception:
             return MockProveedorIA().explicar_comparacion(datos_comparacion)
+
+
+    def orientar_sobre_receta(self, mensaje: str, datos_verificados: Dict[str, Any]) -> str:
+        prompt = json.dumps(
+            {"consulta_usuario": mensaje, "datos_verificados": datos_verificados},
+            default=str,
+            ensure_ascii=False,
+        )
+        try:
+            texto = self._invocar_groq(SYSTEM_PROMPT_RECETA_COTIZADA, prompt).strip()
+            return texto or MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
+        except Exception:
+            return MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
 
 
 def obtener_proveedor_ia() -> ProveedorIA:

@@ -4,7 +4,7 @@ services:
     container_name: menuopt_postgres
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-menuopt_db}
+      POSTGRES_DB: ${POSTGRES_DB:-menuopt}
       POSTGRES_USER: ${POSTGRES_USER:-menuopt}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-menuopt_dev_password_2026}
     ports:
@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-menuopt} -d ${POSTGRES_DB:-menuopt_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-menuopt} -d ${POSTGRES_DB:-menuopt}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,22 +27,17 @@ services:
     container_name: menuopt_backend
     restart: always
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-menuopt_db}
+      POSTGRES_DB: ${POSTGRES_DB:-menuopt}
       POSTGRES_USER: ${POSTGRES_USER:-menuopt}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-menuopt_dev_password_2026}
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-menuopt}:${POSTGRES_PASSWORD:-menuopt_dev_password_2026}@postgres:5432/${POSTGRES_DB:-menuopt_db}}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-menuopt}:${POSTGRES_PASSWORD:-menuopt_dev_password_2026}@postgres:5432/${POSTGRES_DB:-menuopt}}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-menuopt_jwt_secret_key_development_only_2026_super_secure_random}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
-      AI_ENABLED: ${AI_ENABLED:-true}
-      AI_PROVIDER: ${AI_PROVIDER:-groq}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-openai/gpt-oss-120b}
-      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-15}
     depends_on:
       postgres:
         condition: service_healthy

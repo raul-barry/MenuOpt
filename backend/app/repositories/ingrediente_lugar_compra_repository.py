@@ -131,3 +131,32 @@ class IngredienteLugarCompraRepository:
                 mejores[r.id_ingrediente] = r
 
         return mejores
+
+    @staticmethod
+    def listar_precios_disponibles(
+        db: Session,
+        ids_ingredientes: List[int]
+    ) -> Dict[int, List[IngredienteLugarCompra]]:
+        """Retorna todos los precios vigentes por ingrediente, con tienda y ubicación."""
+        if not ids_ingredientes:
+            return {}
+
+        relaciones = (
+            db.query(IngredienteLugarCompra)
+            .join(LugarCompra, IngredienteLugarCompra.id_lugar_compra == LugarCompra.id_lugar_compra)
+            .options(
+                joinedload(IngredienteLugarCompra.lugar_compra).joinedload(LugarCompra.ubicacion),
+                joinedload(IngredienteLugarCompra.ingrediente)
+            )
+            .filter(
+                IngredienteLugarCompra.id_ingrediente.in_(ids_ingredientes),
+                IngredienteLugarCompra.disponible.is_(True),
+                LugarCompra.estado == "ACTIVO"
+            )
+            .all()
+        )
+
+        precios: Dict[int, List[IngredienteLugarCompra]] = {}
+        for relacion in relaciones:
+            precios.setdefault(relacion.id_ingrediente, []).append(relacion)
+        return precios

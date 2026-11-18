@@ -121,3 +121,7 @@ Este comando crea las cinco cuentas de la tabla siguiente. También restaura sus
 - **Documentación Backend (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Documentación Backend (ReDoc):** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 - **API Health Check:** [http://localhost:8000/salud/base-datos](http://localhost:8000/salud/base-datos)
+
+## Datos de prueba del Bloque 2
+
+El seeder separado para CU05-CU24, sus cuentas de prueba, inventario, ejecución y limpieza están documentados en [documentacion/SEEDER_BLOQUE2.md](documentacion/SEEDER_BLOQUE2.md). Para ejecutarlo: `docker compose exec -it -e APP_ENV=development backend python -m app.database.seed_bloque2`. Para limpiar únicamente esos datos: `docker compose exec -it -e APP_ENV=development backend python -m app.database.seed_bloque2 --clean`.

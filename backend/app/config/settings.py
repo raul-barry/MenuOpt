@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     Configuración centralizada de la aplicación y variables de entorno usando Pydantic Settings.
     """
     # Configuración de base de datos PostgreSQL
-    POSTGRES_DB: str = "menuopt_db"
+    POSTGRES_DB: str = "menuopt"
     POSTGRES_USER: str = "menuopt"
     POSTGRES_PASSWORD: str = "menuopt_dev_password_2026"
     POSTGRES_HOST: str = "postgres"

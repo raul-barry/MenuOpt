@@ -75,6 +75,7 @@ class RecetaIngredienteFaltanteSchema(BaseModel):
 class RecetaTiendaRecomendadaSchema(BaseModel):
     nombre_tienda: str
     tipo: Optional[str] = None
+    ubicacion: Optional[str] = None
     insumos_disponibles: List[str] = []
     costo_estimado: Optional[Decimal] = None
 
