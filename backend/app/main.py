@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -29,6 +31,15 @@ app = FastAPI(
     version=settings.PROJECT_VERSION,
     description="API backend del proyecto MenuOpt - Ingeniería de Software 1"
 )
+
+
+@app.on_event("startup")
+def bootstrap_demo_accounts_if_enabled():
+    """El bootstrap solo corre si se activa explícitamente en el entorno."""
+    if os.getenv("BOOTSTRAP_DEMO_ACCOUNTS", "").strip().lower() == "true":
+        from app.database.bootstrap_demo_accounts import bootstrap_demo_accounts
+
+        bootstrap_demo_accounts()
 
 # Configuración de CORS controlada para Angular
 origins = [
