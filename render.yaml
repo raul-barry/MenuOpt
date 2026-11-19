@@ -36,9 +36,13 @@ services:
       - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"
       - key: AI_ENABLED
-        value: "false"
+        value: "true"
       - key: AI_PROVIDER
-        value: mock
+        value: grok
+      - key: AI_MODEL
+        value: grok-4.7
+      - key: AI_TIMEOUT_SECONDS
+        value: "60"
       - key: CORS_ORIGIN_REGEX
         value: '^https://menuopt-frontend(?:-[a-z0-9]+)?\.onrender\.com$'
 

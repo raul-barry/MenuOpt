@@ -559,11 +559,54 @@ class GroqProveedorIA(ProveedorIA):
             return MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
 
 
+class GrokProveedorIA(GroqProveedorIA):
+    """Proveedor para xAI Grok mediante su endpoint compatible con OpenAI."""
+
+    MODELOS_CANDIDATOS = []
+
+    def __init__(self, api_key: str, model: str = "grok-4.7", timeout: int = 30):
+        super().__init__(api_key=api_key, model=model or "grok-4.7", timeout=timeout)
+        self.endpoint = "https://api.x.ai/v1/chat/completions"
+
+    def _invocar_groq(self, prompt_sistema: str, prompt_usuario: str) -> str:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": prompt_sistema},
+                {"role": "user", "content": prompt_usuario},
+            ],
+            "temperature": 0.1,
+            "max_tokens": 1600,
+        }
+        request = urllib.request.Request(
+            self.endpoint,
+            data=json.dumps(payload, default=str).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+                "User-Agent": "MenuOpt/1.0",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                resultado = json.loads(response.read().decode("utf-8"))
+            choices = resultado.get("choices", [])
+            if choices and "message" in choices[0]:
+                return choices[0]["message"].get("content", "")
+            return ""
+        except urllib.error.HTTPError as error:
+            raise RuntimeError(f"Error al comunicar con la API de xAI: HTTP {error.code} {error.reason}")
+        except Exception as error:
+            raise RuntimeError(f"Error al comunicar con la API de xAI: {str(error)}")
+
+
 def obtener_proveedor_ia() -> ProveedorIA:
     """
     Fábrica de proveedor IA según la configuración de variables de entorno.
     Soporta:
     - 'groq': Groq Cloud API (Llama 3.3 70B Versatile, Llama 3.1 8B, etc.)
+    - 'grok' o 'xai': xAI Grok API
     - 'gemini' o 'google': Google Gemini API (Gemini 1.5 Flash, etc.)
     - 'mock': Simulador autónomo determinista
 
@@ -577,6 +620,13 @@ def obtener_proveedor_ia() -> ProveedorIA:
 
     if not api_key_limpia or proveedor == "mock_forced":
         return MockProveedorIA()
+
+    if proveedor in ("grok", "xai", "x.ai"):
+        return GrokProveedorIA(
+            api_key=api_key_limpia,
+            model=settings.AI_MODEL or "grok-4.7",
+            timeout=settings.AI_TIMEOUT_SECONDS,
+        )
 
     # 1. Detección o selección de Groq (clave inicia típicamente con 'gsk_')
     if proveedor in ("groq", "llama") or api_key_limpia.startswith("gsk_"):
