@@ -21,5 +21,5 @@ COPY . .
 # Exponer el puerto de la aplicación
 EXPOSE 8000
 
-# Ejecutar la aplicación con Uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Aplicar migraciones y luego iniciar Uvicorn en el puerto asignado por Render.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
