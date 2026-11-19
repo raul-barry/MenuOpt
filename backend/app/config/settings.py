@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "MenuOpt API"
     PROJECT_VERSION: str = "1.0.0"
     API_V1_PREFIX: str = "/api/v1"
+    CORS_ORIGIN_REGEX: Optional[str] = None
 
     # Configuración de Seguridad y JWT
     JWT_SECRET_KEY: str = "menuopt_jwt_secret_key_development_only_2026_super_secure_random"

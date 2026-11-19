@@ -18,8 +18,9 @@ RUN npm run build
 # =======================================================
 FROM nginx:alpine
 
-# Copiar configuración personalizada de Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# La configuración se procesa al iniciar para conectar con la API privada de Render.
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+ENV NGINX_ENVSUBST_FILTER="^(API_HOST|API_PORT)$"
 
 # Limpiar directorio html por defecto
 RUN rm -rf /usr/share/nginx/html/*
@@ -27,7 +28,7 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copiar archivos compilados de Angular
 COPY --from=builder /app/dist/menuopt-frontend/browser/ /usr/share/nginx/html/
 
-# Puerto estándar para el frontend de MenuOpt
-EXPOSE 4200
+# Puerto HTTP esperado por Render
+EXPOSE 10000
 
 CMD ["nginx", "-g", "daemon off;"]

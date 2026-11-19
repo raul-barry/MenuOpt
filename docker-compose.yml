@@ -54,7 +54,10 @@ services:
     container_name: menuopt_frontend
     restart: always
     ports:
-      - "4200:4200"
+      - "4200:10000"
+    environment:
+      API_HOST: backend
+      API_PORT: 8000
     depends_on:
       - backend
     networks:

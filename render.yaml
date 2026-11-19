@@ -1,0 +1,70 @@
+# MenuOpt: Angular estático + FastAPI + Render Postgres, todos en plan gratuito.
+services:
+  - type: web
+    name: menuopt-api
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000"
+    healthCheckPath: /salud/base-datos
+    envVars:
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: menuopt-db
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: menuopt-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: menuopt-db
+          property: password
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: menuopt-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: menuopt-db
+          property: port
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: AI_ENABLED
+        value: "false"
+      - key: AI_PROVIDER
+        value: mock
+      - key: CORS_ORIGIN_REGEX
+        value: '^https://menuopt-frontend(?:-[a-z0-9]+)?\.onrender\.com$'
+
+  - type: web
+    name: menuopt-frontend
+    runtime: static
+    rootDir: frontend-web
+    buildCommand: npm ci && npm run build:render
+    staticPublishPath: dist/menuopt-frontend/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: API_URL
+        fromService:
+          name: menuopt-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: menuopt-db
+    databaseName: menuopt_db
+    user: menuopt
+    region: oregon
+    plan: free
+    postgresMajorVersion: "16"
+    ipAllowList: []
