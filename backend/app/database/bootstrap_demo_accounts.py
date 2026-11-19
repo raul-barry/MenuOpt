@@ -1,4 +1,4 @@
-"""Crea o restaura solo las dos cuentas demo necesarias para el primer acceso."""
+"""Crea o restaura las cuatro cuentas demo principales del proyecto."""
 from app.database.conexion import SessionLocal
 from app.models.rol import Rol
 from app.models.usuario import Usuario
@@ -8,6 +8,8 @@ from app.security.contrasenas import generar_hash_contrasena
 CUENTAS = (
     ("ADMINISTRADOR", "Administrador", "Principal", "admin@menuopt.com", "Admin1234*", "70000000"),
     ("RESTAURANTE", "Carlos", "Chef", "restaurante@menuopt.com", "Resto1234*", "71112233"),
+    ("ADMINISTRADOR_TIENDA", "Tienda", "Central", "tienda@menuopt.com", "Tienda1234*", "78889900"),
+    ("CLIENTE", "Cliente", "Uno", "cliente1@menuopt.com", "Cliente1234*", "73334455"),
 )
 
 
@@ -37,7 +39,7 @@ def bootstrap_demo_accounts() -> None:
             usuario.contrasena_hash = generar_hash_contrasena(contrasena)
 
         db.commit()
-        print("[OK] Cuentas demo de administrador y restaurante listas.")
+        print("[OK] Cuentas demo de administrador, restaurante, tienda y cliente listas.")
     except Exception:
         db.rollback()
         raise
