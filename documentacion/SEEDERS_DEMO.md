@@ -80,8 +80,9 @@ python -m app.database.seed_imagenes_demo
 python -m app.database.seed_imagenes_demo --apply --allow-production
 ```
 
-Las imágenes se guardan como URLs de Unsplash. Restaurantes y platos admiten
-URLs de imagen editables desde sus formularios; recetas ya tenían ese campo.
+Las imágenes se guardan como URLs de Unsplash o de páginas culinarias con fotos
+coincidentes. Restaurantes y platos admiten URLs editables desde sus formularios;
+recetas ya tenían ese campo.
 
 No ejecutar `seed_bloque2.py` para esta carga: ese conjunto crea cuentas de
 usuario adicionales y está protegido para desarrollo/pruebas. Tampoco ejecutar

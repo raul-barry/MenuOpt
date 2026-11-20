@@ -54,6 +54,18 @@ _FOTOS_POR_PLATO = {
     "cunape": "photo-1608897013039-887f21d8c804",
 }
 
+# Fotos verificadas para las recetas que aparecían con una imagen equivocada.
+# Las URLs apuntan directamente al archivo publicado por cada fuente culinaria.
+_FOTOS_URL_POR_PLATO = {
+    "empanadas de queso": "https://img-global.cpcdn.com/recipes/1096bf5d37dde0cd/400x400cq80/photo.jpg",
+    "galletas de avena y banana": "https://images.getrecipekit.com/v1619707297_Breakfast_Cookies_with_Bananas_and_Oatmeal_ovutvj.jpg?aspect_ratio=4%3A3&quality=90",
+    "crema de zapallo y zanahoria": "https://assets.heartfoundation.org.nz/images/all-shared-sections/blogs/pumpkin-carrot-soup.webp?mtime=1669000867",
+    "ensalada de quinua y palta": "https://www.hola.com/horizon/original_aspect_ratio/bf3f8d1f5b90-ensaladaquinoaguac.jpg",
+    "tallarines con salsa de tomate": "https://d3s8tbcesxr4jm.cloudfront.net/recipe-images/v0/fusilli-pasta-with-fresh-tomato-sauce_large.jpg",
+    "tofu salteado con verduras": "https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/recipe_pics_v2/medium/stir-fried_tofu_with_vegetables.jpg",
+    "risotto de champinones": "https://www.kabi.es/sites/default/files/2022-05/risotto-de-champinones.jpg",
+}
+
 
 def _url(photo_id: str) -> str:
     return f"https://images.unsplash.com/{photo_id}?w=1000&auto=format&fit=crop&q=80"
@@ -61,6 +73,9 @@ def _url(photo_id: str) -> str:
 
 def imagen_receta(indice: int, nombre: str | None = None) -> str:
     normalizado = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().lower()
+    url = next((foto for palabra, foto in _FOTOS_URL_POR_PLATO.items() if palabra in normalizado), None)
+    if url:
+        return url
     photo_id = next((foto for palabra, foto in _FOTOS_POR_PLATO.items() if palabra in normalizado), None)
     return _url(photo_id or _FOTOS_RECETAS[indice % len(_FOTOS_RECETAS)])
 
@@ -77,7 +92,7 @@ def sembrar(db: Session) -> dict[str, int]:
     recetas = db.scalars(
         select(Receta).where(Receta.nombre.like("DEMO | %")).order_by(Receta.id_receta)
     ).all()
-    asignadas_restaurantes = asignadas_platos = asignadas_recetas = 0
+    asignadas_restaurantes = asignadas_platos = asignadas_recetas = recetas_corregidas = 0
 
     for restaurante in restaurantes:
         tipo = "TIPICA"
@@ -99,14 +114,21 @@ def sembrar(db: Session) -> dict[str, int]:
                 asignadas_platos += 1
 
     for indice, receta in enumerate(recetas):
-        if not receta.imagen_url:
-            receta.imagen_url = imagen_receta(indice, receta.nombre.removeprefix("DEMO | "))
+        imagen_correcta = imagen_receta(indice, receta.nombre.removeprefix("DEMO | "))
+        nombre_normalizado = unicodedata.normalize("NFKD", receta.nombre).encode("ascii", "ignore").decode().lower()
+        necesita_correccion = any(palabra in nombre_normalizado for palabra in _FOTOS_URL_POR_PLATO)
+        if necesita_correccion and receta.imagen_url != imagen_correcta:
+            receta.imagen_url = imagen_correcta
+            recetas_corregidas += 1
+        elif not receta.imagen_url:
+            receta.imagen_url = imagen_correcta
             asignadas_recetas += 1
 
     return {
         "restaurantes_con_imagen": asignadas_restaurantes,
         "platos_con_imagen": asignadas_platos,
         "recetas_con_imagen": asignadas_recetas,
+        "recetas_corregidas": recetas_corregidas,
     }
 
 
