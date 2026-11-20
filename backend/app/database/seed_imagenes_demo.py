@@ -94,6 +94,13 @@ _FOTOS_URL_POR_PLATO = {
     "locro de gallina": "https://pxcdn.reduno.com.bo/reduno/082019/1565710717667.jpg",
     "keperi al horno": "https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&auto=format&fit=crop&q=80",
     "pacumutu": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=1000&auto=format&fit=crop&q=80",
+    "picante de lengua": "https://recetasbolivia.com/wp-content/uploads/Picante-de-Lengua-Boliviana.webp",
+    "picante de pollo": "https://recetasbolivia.com/wp-content/uploads/picante-de-pollo.jpg",
+    "sopa de mani": "https://upload.wikimedia.org/wikipedia/commons/9/91/Sopa_de_Man%C3%AD_de_Bolivia.jpg",
+    "pique macho": "https://comabien.es/images/recetas/mundo/pique-macho-banner.jpg",
+    "silpancho cochabambino": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Silpancho_cochabambino.jpg",
+    "majadito de pollo": "https://1.bp.blogspot.com/-BAH0o3wvM0M/V0YRdCq4J5I/AAAAAAAAzes/um98-vSHvpoR68sHGXQhJUeMTkSh-R_5gCLcB/s640/IMG_6411%2B%2528640x427%2529.jpg",
+    "majadito de charque": "https://cdn.tasteatlas.com/images/dishrestaurants/4c92d274fb5a427380ec331a2b3e651f.jpg",
 }
 
 
