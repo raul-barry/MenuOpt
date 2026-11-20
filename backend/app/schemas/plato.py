@@ -8,6 +8,7 @@ from app.schemas.categoria import CategoriaRespuestaSchema
 
 class CrearPlatoSchema(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=150, description="Nombre del plato")
+    imagen_url: Optional[str] = Field(None, max_length=500)
     descripcion: Optional[str] = Field(None, description="Descripción gastronómica del plato")
     precio: Decimal = Field(..., ge=0, description="Precio del plato (no negativo)")
     tipo_comida: Optional[str] = Field(None, max_length=50, description="Tipo de comida (ej. Desayuno, Almuerzo, Cena)")
@@ -18,6 +19,7 @@ class CrearPlatoSchema(BaseModel):
 
 class ActualizarPlatoSchema(BaseModel):
     nombre: Optional[str] = Field(None, min_length=2, max_length=150)
+    imagen_url: Optional[str] = Field(None, max_length=500)
     descripcion: Optional[str] = None
     precio: Optional[Decimal] = Field(None, ge=0)
     tipo_comida: Optional[str] = Field(None, max_length=50)
@@ -37,6 +39,7 @@ class CambiarDisponibilidadPlatoSchema(BaseModel):
 class PlatoRespuestaSchema(BaseModel):
     id_plato: int
     nombre: str
+    imagen_url: Optional[str] = None
     descripcion: Optional[str] = None
     precio: Decimal
     tipo_comida: Optional[str] = None

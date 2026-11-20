@@ -20,6 +20,7 @@ class Restaurante(Base):
     id_restaurante: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     nit: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
     telefono: Mapped[str | None] = mapped_column(String(20), nullable=True)
     correo: Mapped[str | None] = mapped_column(String(150), nullable=True)

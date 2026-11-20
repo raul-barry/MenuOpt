@@ -5,6 +5,7 @@ export interface RecomendacionPlatoItem {
   id_recomendacion_plato: number;
   id_plato: number;
   nombre_plato: string;
+  imagen_url?: string | null;
   personas_cubiertas: number;
   cantidad: number;
   precio_unitario: number | string;
@@ -23,6 +24,7 @@ export interface Recomendacion {
   distancia_estimada?: number | string | null;
   id_restaurante?: number | null;
   nombre_restaurante?: string | null;
+  imagen_url_restaurante?: string | null;
   zona_restaurante?: string | null;
   direccion_restaurante?: string | null;
   id_preparacion_propia?: number | null;

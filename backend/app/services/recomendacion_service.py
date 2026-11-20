@@ -304,6 +304,7 @@ class RecomendacionService:
                     resumen=resumen,
                     id_restaurante=r.id_restaurante,
                     nombre_restaurante=nombre_rest,
+                    imagen_url_restaurante=r.restaurante.imagen_url if r.restaurante else None,
                     zona_restaurante=zona_rest,
                     direccion_restaurante=dir_rest,
                     platos=[RecomendacionService._mapear_item_plato(p) for p in r.recomendacion_platos]
@@ -377,6 +378,7 @@ class RecomendacionService:
             id_recomendacion_plato=item.id_recomendacion_plato,
             id_plato=item.id_plato,
             nombre_plato=item.plato.nombre if item.plato else None,
+            imagen_url=item.plato.imagen_url if item.plato else None,
             personas_cubiertas=item.plato.personas_cubiertas if item.plato else None,
             cantidad=item.cantidad,
             precio_unitario=precio_unit,
@@ -413,6 +415,7 @@ class RecomendacionService:
             distancia_estimada=rec.distancia_estimada,
             id_restaurante=rec.id_restaurante,
             nombre_restaurante=rec.restaurante.nombre if rec.restaurante else None,
+            imagen_url_restaurante=rec.restaurante.imagen_url if rec.restaurante else None,
             zona_restaurante=zona_rest,
             direccion_restaurante=dir_rest,
             id_preparacion_propia=id_prep,

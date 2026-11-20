@@ -45,6 +45,8 @@ las faltantes; `preview_restaurants` y
 `apply_other` manejan recetas, planes y experiencia en ese orden. Dejar la
 variable en `off` al terminar cada carga.
 
+Para completar únicamente las imágenes faltantes de los registros `DEMO |`, usa `preview_images` y luego `apply_images`. Este modo es idempotente y conserva las imágenes ya personalizadas.
+
 ## Contenido previsto
 
 - **Base:** 15 tiendas demostrativas en tres ciudades; 81 ingredientes y el
@@ -68,11 +70,18 @@ usa un restaurante distinto y una mesa con capacidad adecuada.
 
 ## Imágenes
 
-La biblioteca de recetas ya dispone de `imagen_url`. El modelo/API de platos
-todavía no ofrece un campo de imagen, por lo que este paquete no asigna fotos a
-los platos del menú. Para mostrar imágenes de platos en la web y móvil primero
-hay que añadir ese campo al modelo, migración, API y pantallas, y luego alojar
-imágenes demostrativas con permiso de uso.
+Los seeders de restaurantes y recetas asignan imágenes de demostración cuando
+crean registros y rellenan las imágenes faltantes sin reemplazar imágenes ya
+personalizadas. `seed_imagenes_demo` permite aplicar esa actualización a los
+registros `DEMO |` existentes, con vista previa y aplicación explícita:
+
+```sh
+python -m app.database.seed_imagenes_demo
+python -m app.database.seed_imagenes_demo --apply --allow-production
+```
+
+Las imágenes se guardan como URLs de Unsplash. Restaurantes y platos admiten
+URLs de imagen editables desde sus formularios; recetas ya tenían ese campo.
 
 No ejecutar `seed_bloque2.py` para esta carga: ese conjunto crea cuentas de
 usuario adicionales y está protegido para desarrollo/pruebas. Tampoco ejecutar

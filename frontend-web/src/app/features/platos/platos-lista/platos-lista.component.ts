@@ -87,6 +87,7 @@ import { Categoria } from '../../../core/models/categoria.model';
             <thead>
               <tr>
                 <th style="width: 60px;">ID</th>
+                <th>Imagen</th>
                 <th>Nombre del Plato</th>
                 <th>Categoría</th>
                 <th>Tipo</th>
@@ -100,6 +101,7 @@ import { Categoria } from '../../../core/models/categoria.model';
             <tbody>
               <tr *ngFor="let plato of platosFiltrados()">
                 <td><strong>#{{ plato.id_plato }}</strong></td>
+                <td><img *ngIf="plato.imagen_url" [src]="plato.imagen_url" [alt]="plato.nombre" style="width:64px;height:48px;object-fit:cover;border-radius:0.35rem" /></td>
                 <td>
                   <div style="font-weight: 600;">{{ plato.nombre }}</div>
                   <small style="color: var(--text-muted);">{{ plato.descripcion || 'Sin descripción' }}</small>
@@ -147,7 +149,7 @@ import { Categoria } from '../../../core/models/categoria.model';
                 </td>
               </tr>
               <tr *ngIf="platosFiltrados().length === 0">
-                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                   No hay platos registrados con los criterios seleccionados.
                 </td>
               </tr>

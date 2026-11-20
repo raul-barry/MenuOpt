@@ -80,6 +80,12 @@ import { Ingrediente, PlatoIngredienteDetalle } from '../../../core/models/ingre
               ></textarea>
             </div>
 
+            <div class="form-group">
+              <label class="form-label" for="imagen_url">URL de imagen</label>
+              <input id="imagen_url" type="url" class="form-control" formControlName="imagen_url" placeholder="https://..." />
+              <img *ngIf="formPlato.get('imagen_url')?.value" [src]="formPlato.get('imagen_url')?.value" alt="Vista previa del plato" style="display:block;max-width:260px;max-height:150px;object-fit:cover;border-radius:0.5rem;margin-top:0.75rem" />
+            </div>
+
             <div class="form-row">
               <div class="form-group col-4">
                 <label class="form-label" for="id_categoria">Categoría *</label>
@@ -287,6 +293,7 @@ export class PlatoFormComponent implements OnInit {
   formPlato: FormGroup = this.fb.group({
     nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
     descripcion: [''],
+    imagen_url: [''],
     precio: [null, [Validators.required, Validators.min(0)]],
     tipo_comida: [''],
     personas_cubiertas: [1, [Validators.required, Validators.min(1)]],
@@ -343,6 +350,7 @@ export class PlatoFormComponent implements OnInit {
         this.formPlato.patchValue({
           nombre: plato.nombre,
           descripcion: plato.descripcion || '',
+          imagen_url: plato.imagen_url || '',
           precio: plato.precio,
           tipo_comida: plato.tipo_comida || '',
           personas_cubiertas: plato.personas_cubiertas,
@@ -491,6 +499,7 @@ export class PlatoFormComponent implements OnInit {
       const updateData: ActualizarPlatoRequest = {
         nombre: val.nombre,
         descripcion: val.descripcion || undefined,
+        imagen_url: val.imagen_url || null,
         precio: Number(val.precio),
         tipo_comida: val.tipo_comida || undefined,
         personas_cubiertas: Number(val.personas_cubiertas),
@@ -513,6 +522,7 @@ export class PlatoFormComponent implements OnInit {
       const createData: CrearPlatoRequest = {
         nombre: val.nombre,
         descripcion: val.descripcion || undefined,
+        imagen_url: val.imagen_url || undefined,
         precio: Number(val.precio),
         tipo_comida: val.tipo_comida || undefined,
         personas_cubiertas: Number(val.personas_cubiertas),

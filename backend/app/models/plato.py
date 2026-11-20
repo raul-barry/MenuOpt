@@ -26,6 +26,7 @@ class Plato(Base):
     id_plato: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     precio: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     tipo_comida: Mapped[str | None] = mapped_column(String(50), nullable=True)
     personas_cubiertas: Mapped[int] = mapped_column(Integer, default=1, nullable=False)

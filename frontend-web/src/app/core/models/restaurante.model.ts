@@ -12,6 +12,7 @@ export interface Restaurante {
   id_restaurante: number;
   nombre: string;
   descripcion?: string;
+  imagen_url?: string | null;
   nit?: string;
   telefono?: string;
   correo?: string;
@@ -28,6 +29,7 @@ export interface Restaurante {
 export interface RegistrarRestauranteRequest {
   nombre: string;
   descripcion?: string;
+  imagen_url?: string | null;
   nit?: string;
   telefono?: string;
   correo?: string;
@@ -39,6 +41,7 @@ export interface RegistrarRestauranteRequest {
 export interface ActualizarRestauranteRequest {
   nombre?: string | null;
   descripcion?: string | null;
+  imagen_url?: string | null;
   nit?: string | null;
   telefono?: string | null;
   correo?: string | null;

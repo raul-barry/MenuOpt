@@ -11,6 +11,7 @@ from app.schemas.ubicacion import (
 
 class RegistrarRestauranteSchema(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=150, description="Nombre comercial del restaurante")
+    imagen_url: Optional[str] = Field(None, max_length=500)
     descripcion: Optional[str] = Field(None, description="Descripción del concepto gastronómico")
     nit: Optional[str] = Field(None, max_length=30, description="Número de identificación tributaria (único)")
     telefono: Optional[str] = Field(None, max_length=20, description="Teléfono de contacto del restaurante")
@@ -22,6 +23,7 @@ class RegistrarRestauranteSchema(BaseModel):
 
 class ActualizarRestauranteSchema(BaseModel):
     nombre: Optional[str] = Field(None, min_length=2, max_length=150)
+    imagen_url: Optional[str] = Field(None, max_length=500)
     descripcion: Optional[str] = None
     nit: Optional[str] = Field(None, max_length=30)
     telefono: Optional[str] = Field(None, max_length=20)
@@ -38,6 +40,7 @@ class CambiarEstadoRestauranteSchema(BaseModel):
 class RestauranteRespuestaSchema(BaseModel):
     id_restaurante: int
     nombre: str
+    imagen_url: Optional[str] = None
     descripcion: Optional[str] = None
     nit: Optional[str] = None
     telefono: Optional[str] = None

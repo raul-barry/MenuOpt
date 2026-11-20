@@ -107,6 +107,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
             [class.alt-restaurante]="alt.tipo_recomendacion === 'RESTAURANTE'"
             [class.alt-preparacion]="alt.tipo_recomendacion === 'PREPARACION_PROPIA'"
           >
+            <img *ngIf="alt.imagen_url_restaurante" [src]="alt.imagen_url_restaurante" [alt]="alt.nombre" style="width:100%;height:190px;object-fit:cover;border-radius:0.65rem;margin-bottom:1rem" />
             <!-- Badge y Título -->
             <div class="alt-header">
               <div>

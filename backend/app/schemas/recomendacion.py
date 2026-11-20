@@ -9,6 +9,7 @@ class RecomendacionPlatoItemSchema(BaseModel):
     id_recomendacion_plato: int
     id_plato: int
     nombre_plato: Optional[str] = None
+    imagen_url: Optional[str] = None
     personas_cubiertas: Optional[int] = None
     cantidad: int
     precio_unitario: Decimal
@@ -29,6 +30,7 @@ class RecomendacionRespuestaSchema(BaseModel):
     distancia_estimada: Optional[Decimal] = None
     id_restaurante: Optional[int] = None
     nombre_restaurante: Optional[str] = None
+    imagen_url_restaurante: Optional[str] = None
     zona_restaurante: Optional[str] = None
     direccion_restaurante: Optional[str] = None
     id_preparacion_propia: Optional[int] = None

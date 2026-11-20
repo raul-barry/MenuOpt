@@ -42,6 +42,7 @@
 
       <div class="platos-grid" *ngIf="platosFiltrados().length > 0; else noPlatos">
         <div class="plato-card" *ngFor="let p of platosFiltrados()">
+          <img *ngIf="p.imagen_url" [src]="p.imagen_url" [alt]="p.nombre" style="width:100%;height:150px;object-fit:cover;border-radius:0.6rem;margin-bottom:0.75rem" />
           <div class="plato-info">
             <div class="plato-header">
               <h3 class="plato-nombre">{{ p.nombre }}</h3>

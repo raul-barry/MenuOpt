@@ -85,6 +85,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           [class.restaurante]="rec.tipo_recomendacion === 'RESTAURANTE'"
           [class.preparacion]="rec.tipo_recomendacion === 'PREPARACION_PROPIA'"
         >
+          <img *ngIf="rec.imagen_url_restaurante" [src]="rec.imagen_url_restaurante" [alt]="rec.nombre" style="width:100%;height:190px;object-fit:cover;border-radius:0.65rem;margin-bottom:1rem" />
           <!-- Encabezado de la Tarjeta -->
           <div class="rec-header">
             <div>
@@ -115,7 +116,10 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           <div *ngIf="rec.tipo_recomendacion === 'RESTAURANTE' && rec.platos.length > 0" class="platos-summary">
             <div class="platos-summary-title">Menú sugerido:</div>
             <div *ngFor="let p of rec.platos" class="plato-item">
-              <span>{{ p.cantidad }}x {{ p.nombre_plato }} ({{ p.personas_cubiertas }} pers/plato)</span>
+              <span style="display:flex;align-items:center;gap:0.6rem">
+                <img *ngIf="p.imagen_url" [src]="p.imagen_url" [alt]="p.nombre_plato" style="width:52px;height:42px;object-fit:cover;border-radius:0.35rem" />
+                {{ p.cantidad }}x {{ p.nombre_plato }} ({{ p.personas_cubiertas }} pers/plato)
+              </span>
               <strong>Bs {{ p.subtotal | number:'1.2-2' }}</strong>
             </div>
           </div>

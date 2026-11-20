@@ -57,6 +57,7 @@ class RestauranteService:
         # Crear entidad Restaurante asignando responsable autenticado
         nuevo_restaurante = Restaurante(
             nombre=datos.nombre.strip(),
+            imagen_url=datos.imagen_url.strip() if datos.imagen_url else None,
             descripcion=datos.descripcion.strip() if datos.descripcion else None,
             nit=datos.nit.strip() if datos.nit else None,
             telefono=datos.telefono.strip() if datos.telefono else None,
@@ -144,6 +145,8 @@ class RestauranteService:
 
         if datos.nombre is not None:
             restaurante.nombre = datos.nombre.strip()
+        if "imagen_url" in datos.model_fields_set:
+            restaurante.imagen_url = datos.imagen_url.strip() if datos.imagen_url else None
         if datos.descripcion is not None:
             restaurante.descripcion = datos.descripcion.strip() if datos.descripcion else None
         if datos.telefono is not None:

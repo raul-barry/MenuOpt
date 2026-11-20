@@ -4,6 +4,7 @@ export interface Plato {
   id_plato: number;
   nombre: string;
   descripcion?: string;
+  imagen_url?: string | null;
   precio: number;
   tipo_comida?: string;
   personas_cubiertas: number;
@@ -19,6 +20,7 @@ export interface Plato {
 export interface CrearPlatoRequest {
   nombre: string;
   descripcion?: string;
+  imagen_url?: string | null;
   precio: number;
   tipo_comida?: string;
   personas_cubiertas: number;
@@ -29,6 +31,7 @@ export interface CrearPlatoRequest {
 export interface ActualizarPlatoRequest {
   nombre?: string;
   descripcion?: string;
+  imagen_url?: string | null;
   precio?: number;
   tipo_comida?: string;
   personas_cubiertas?: number;

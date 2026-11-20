@@ -34,6 +34,7 @@ import { Restaurante } from '../../../core/models/restaurante.model';
       <!-- Grid de Restaurantes -->
       <div class="grid-2" *ngIf="restaurantes()?.length">
         <div class="card" *ngFor="let r of restaurantes()">
+          <img *ngIf="r.imagen_url" [src]="r.imagen_url" [alt]="r.nombre" style="width:100%;height:190px;object-fit:cover;border-radius:0.65rem;margin-bottom:1rem" />
           <div class="card-header">
             <div>
               <h3>{{ r.nombre }}</h3>

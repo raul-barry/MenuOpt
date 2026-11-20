@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.seed_demo_util import ejecutar_comando
+from app.database.seed_imagenes_demo import imagen_receta
 from app.models.ingrediente import Ingrediente
 from app.models.receta import Receta, RecetaIngrediente
 
@@ -82,7 +83,8 @@ def sembrar(db: Session) -> dict[str, int]:
         raise RuntimeError("Ejecuta primero el seeder base; faltan ingredientes: " + ", ".join(sorted(faltantes)))
 
     creadas = vinculos_nuevos = 0
-    for datos in RECETAS:
+    imagenes_asignadas = 0
+    for indice_receta, datos in enumerate(RECETAS):
         receta = db.scalar(select(Receta).where(Receta.nombre == datos["nombre"]))
         if receta is None:
             receta = Receta(
@@ -94,12 +96,16 @@ def sembrar(db: Session) -> dict[str, int]:
                 tiempo_minutos=datos["minutos"],
                 dificultad=datos["dificultad"],
                 origen=datos["origen"],
-                imagen_url=None,
+                imagen_url=imagen_receta(indice_receta, datos["nombre"]),
                 id_usuario_creador=None,
             )
             db.add(receta)
             db.flush()
             creadas += 1
+            imagenes_asignadas += 1
+        elif not receta.imagen_url:
+            receta.imagen_url = imagen_receta(indice_receta, datos["nombre"])
+            imagenes_asignadas += 1
 
         for nombre_ingrediente, cantidad, unidad in datos["ingredientes"]:
             ingrediente = ingredientes[nombre_ingrediente]
@@ -116,7 +122,7 @@ def sembrar(db: Session) -> dict[str, int]:
                     unidad_medida=unidad,
                 ))
                 vinculos_nuevos += 1
-    return {"recetas_nuevas": creadas, "ingredientes_vinculados_nuevos": vinculos_nuevos}
+    return {"recetas_nuevas": creadas, "imagenes_asignadas": imagenes_asignadas, "ingredientes_vinculados_nuevos": vinculos_nuevos}
 
 
 if __name__ == "__main__":

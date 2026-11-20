@@ -121,6 +121,7 @@ class PlatoService:
 
         nuevo_plato = Plato(
             nombre=datos.nombre.strip(),
+            imagen_url=datos.imagen_url.strip() if datos.imagen_url else None,
             descripcion=datos.descripcion.strip() if datos.descripcion else None,
             precio=datos.precio,
             tipo_comida=datos.tipo_comida.strip() if datos.tipo_comida else None,
@@ -166,6 +167,8 @@ class PlatoService:
 
         if datos.nombre is not None:
             plato.nombre = datos.nombre.strip()
+        if "imagen_url" in datos.model_fields_set:
+            plato.imagen_url = datos.imagen_url.strip() if datos.imagen_url else None
         if datos.descripcion is not None:
             plato.descripcion = datos.descripcion.strip() if datos.descripcion else None
         if datos.precio is not None:

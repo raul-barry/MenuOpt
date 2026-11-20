@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.seed_demo_util import ejecutar_comando
+from app.database.seed_imagenes_demo import imagen_por_tipo
 from app.models.area_restaurante import AreaRestaurante
 from app.models.categoria import Categoria
 from app.models.ingrediente import Ingrediente
@@ -169,7 +170,7 @@ def sembrar(db: Session) -> dict[str, int]:
     if faltan_ingredientes:
         raise RuntimeError("Ejecuta primero el seeder base; faltan: " + ", ".join(sorted(faltan_ingredientes)))
 
-    restaurantes_creados = platos_creados = relaciones_creadas = mesas_creadas = 0
+    restaurantes_creados = platos_creados = relaciones_creadas = mesas_creadas = imagenes_asignadas = 0
     preferencia_vegetariana = db.scalar(select(Preferencia).where(Preferencia.nombre == "Vegetariano"))
     if preferencia_vegetariana is None:
         preferencia_vegetariana = Preferencia(
@@ -194,6 +195,7 @@ def sembrar(db: Session) -> dict[str, int]:
             db.flush()
             restaurante = Restaurante(
                 nombre=nombre_demo,
+                imagen_url=imagen_por_tipo(tipo),
                 descripcion=f"Establecimiento ficticio de demostración especializado en {tipo.lower()}; carta de ejemplo, sin dirección comercial real.",
                 nit=None,
                 telefono=None,
@@ -207,6 +209,10 @@ def sembrar(db: Session) -> dict[str, int]:
             db.add(restaurante)
             db.flush()
             restaurantes_creados += 1
+            imagenes_asignadas += 1
+        elif not restaurante.imagen_url:
+            restaurante.imagen_url = imagen_por_tipo(tipo)
+            imagenes_asignadas += 1
 
         for indice_plato, (nombre_plato, descripcion, precio, receta_ingredientes) in enumerate(menu):
             plato = db.scalar(select(Plato).where(
@@ -216,6 +222,7 @@ def sembrar(db: Session) -> dict[str, int]:
             if plato is None:
                 plato = Plato(
                     nombre=nombre_plato,
+                    imagen_url=imagen_por_tipo(tipo, indice_plato),
                     descripcion=descripcion,
                     precio=Decimal(precio),
                     tipo_comida="ALMUERZO" if indice_plato < len(menu) // 2 else "CENA",
@@ -228,6 +235,10 @@ def sembrar(db: Session) -> dict[str, int]:
                 db.add(plato)
                 db.flush()
                 platos_creados += 1
+                imagenes_asignadas += 1
+            elif not plato.imagen_url:
+                plato.imagen_url = imagen_por_tipo(tipo, indice_plato)
+                imagenes_asignadas += 1
 
             for nombre_ingrediente, cantidad, unidad in receta_ingredientes:
                 ingrediente = ingredientes[nombre_ingrediente]
@@ -262,6 +273,7 @@ def sembrar(db: Session) -> dict[str, int]:
         "platos_nuevos": platos_creados,
         "recetas_de_plato_nuevas": relaciones_creadas,
         "mesas_nuevas": mesas_creadas,
+        "imagenes_asignadas": imagenes_asignadas,
     }
 
 

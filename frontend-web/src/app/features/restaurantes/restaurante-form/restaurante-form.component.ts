@@ -74,6 +74,12 @@ import { RegistrarRestauranteRequest, ActualizarRestauranteRequest } from '../..
             ></textarea>
           </div>
 
+          <div class="form-group">
+            <label class="form-label" for="imagen_url">URL de imagen del restaurante</label>
+            <input id="imagen_url" type="url" class="form-control" formControlName="imagen_url" placeholder="https://..." />
+            <img *ngIf="form.get('imagen_url')?.value" [src]="form.get('imagen_url')?.value" alt="Vista previa del restaurante" style="display:block;max-width:320px;max-height:170px;object-fit:cover;border-radius:0.5rem;margin-top:0.75rem" />
+          </div>
+
           <div class="form-row">
             <div class="form-group col-6">
               <label class="form-label" for="telefono">Teléfono / Celular</label>
@@ -245,6 +251,7 @@ export class RestauranteFormComponent implements OnInit {
   form: FormGroup = this.fb.group({
     nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
     descripcion: [''],
+    imagen_url: [''],
     nit: [''],
     telefono: [''],
     correo: ['', [Validators.email]],
@@ -280,6 +287,7 @@ export class RestauranteFormComponent implements OnInit {
         this.form.patchValue({
           nombre: resto.nombre,
           descripcion: resto.descripcion || '',
+          imagen_url: resto.imagen_url || '',
           nit: resto.nit || '',
           telefono: resto.telefono || '',
           correo: resto.correo || '',
@@ -333,6 +341,7 @@ export class RestauranteFormComponent implements OnInit {
       const updateData: ActualizarRestauranteRequest = {
         nombre: val.nombre,
         descripcion: val.descripcion || null,
+        imagen_url: val.imagen_url || null,
         nit: val.nit || null,
         telefono: val.telefono || null,
         correo: val.correo || null,
@@ -359,6 +368,7 @@ export class RestauranteFormComponent implements OnInit {
       const createData: RegistrarRestauranteRequest = {
         nombre: val.nombre,
         descripcion: val.descripcion || undefined,
+        imagen_url: val.imagen_url || undefined,
         nit: val.nit || undefined,
         telefono: val.telefono || undefined,
         correo: val.correo || undefined,
