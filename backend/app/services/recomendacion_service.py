@@ -1,5 +1,5 @@
 # CASO DE USO: CU13 - Generar recomendación
-# CASO DE USO: CU14 - Comparar alternativas (RESTAURANTE vs PREPARACION_PROPIA)
+# CASO DE USO: CU14 - Comparar restaurantes
 from decimal import Decimal
 from typing import List, Optional
 from fastapi import HTTPException, status
@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
 from app.models.recomendacion import Recomendacion
 from app.models.recomendacion_plato import RecomendacionPlato
-from app.models.preparacion_propia import PreparacionPropia
-from app.models.preparacion_ingrediente import PreparacionIngrediente
 from app.repositories.planificacion_repository import PlanificacionRepository
 from app.repositories.recomendacion_repository import RecomendacionRepository
 from app.security.propiedad import verificar_propiedad_planificacion
@@ -20,7 +18,6 @@ from app.services.recomendacion_algoritmo import (
     calcular_puntuacion,
     cumple_todas_las_preferencias,
 )
-from app.services.preparacion_service import PreparacionService
 from app.schemas.recomendacion import (
     RecomendacionRespuestaSchema,
     RecomendacionPlatoItemSchema,
@@ -33,12 +30,12 @@ from app.schemas.comparacion import (
 
 class RecomendacionService:
     """
-    Servicio de orquestación de recomendaciones gastronómicas (CU13)
-    y comparación analítica de alternativas (CU14) entre RESTAURANTE y PREPARACION_PROPIA.
+    Servicio de recomendaciones de restaurantes para planificaciones (CU13)
+    y comparación de sus alternativas (CU14).
     """
 
     # =========================================================================
-    # CASO DE USO: CU13 - GENERAR RECOMENDACIÓN (RESTAURANTE Y PREPARACIÓN PROPIA)
+    # CASO DE USO: CU13 - GENERAR RECOMENDACIONES DE RESTAURANTES
     # =========================================================================
     @staticmethod
     def generar_recomendaciones(
@@ -48,12 +45,8 @@ class RecomendacionService:
     ) -> List[RecomendacionRespuestaSchema]:
         """
         LÓGICA CU13 - Generar Recomendación:
-        Genera en un único flujo determinista y transaccional:
-        1. Alternativas de RESTAURANTE basadas en platos ofertados comercialmente.
-        2. Alternativas de PREPARACION_PROPIA basadas en el costo de los ingredientes
-           calculados a partir de los precios de mercado en lugares de compra activos.
-        3. Realiza el reemplazo transaccional de recomendaciones anteriores.
-        4. Retorna el catálogo consolidado ordenado por puntuación DESC y costo total ASC.
+        Genera alternativas de restaurantes según los platos ofertados, el presupuesto,
+        la zona, los comensales y las preferencias de la planificación.
         """
         planificacion = PlanificacionRepository.buscar_por_id(db, id_planificacion)
         if not planificacion:
@@ -156,33 +149,6 @@ class RecomendacionService:
         top_restaurantes = candidatos_restaurante[:20]
 
         # ---------------------------------------------------------------------
-        # 2. GENERACIÓN DE CANDIDATOS: PREPARACIÓN PROPIA (Parte 7)
-        # ---------------------------------------------------------------------
-        platos_con_receta = RecomendacionRepository.buscar_platos_para_preparacion(
-            db=db,
-            tipo_comida=planificacion.tipo_comida
-        )
-
-        candidatos_preparacion = []
-        for plato in platos_con_receta:
-            preferencias_plato = {p.id_preferencia for p in plato.preferencias}
-
-            if not cumple_todas_las_preferencias(preferencias_plan, preferencias_plato):
-                continue
-
-            eval_prep = PreparacionService.evaluar_plato_para_preparacion(
-                db=db,
-                plato=plato,
-                planificacion=planificacion
-            )
-
-            if eval_prep is not None:
-                candidatos_preparacion.append(eval_prep)
-
-        candidatos_preparacion.sort(key=lambda x: (-x["puntuacion"], x["costo_total"]))
-        top_preparaciones = candidatos_preparacion[:20]
-
-        # ---------------------------------------------------------------------
         # 3. REEMPLAZO TRANSACCIONAL DE RECOMENDACIONES PREVIAS
         # ---------------------------------------------------------------------
         RecomendacionRepository.eliminar_recomendaciones_anteriores(
@@ -190,7 +156,7 @@ class RecomendacionService:
             id_planificacion=id_planificacion
         )
 
-        if not top_restaurantes and not top_preparaciones:
+        if not top_restaurantes:
             db.commit()
             return []
 
@@ -219,36 +185,6 @@ class RecomendacionService:
             rec.recomendacion_platos.append(item_plato)
             nuevas_entidades.append(rec)
 
-        # Instanciar entidades de Preparación Propia
-        for cand in top_preparaciones:
-            rec = Recomendacion(
-                id_planificacion=id_planificacion,
-                tipo_recomendacion="PREPARACION_PROPIA",
-                descripcion=cand["descripcion"],
-                costo_estimado=cand["costo_total"],
-                costo_por_persona=cand["costo_pp"],
-                puntuacion=cand["puntuacion"],
-                distancia_estimada=None,
-                id_restaurante=None
-            )
-            prep = PreparacionPropia(
-                nombre=cand["nombre"],
-                descripcion=cand["descripcion"],
-                costo_estimado=cand["costo_total"],
-                cantidad_personas=cand["cantidad_personas"]
-            )
-            for ing in cand["ingredientes"]:
-                prep.ingredientes.append(PreparacionIngrediente(
-                    id_ingrediente=ing["id_ingrediente"],
-                    cantidad=ing["cantidad"],
-                    unidad_medida=ing["unidad_medida"],
-                    precio_unitario_usado=ing["precio_unitario_usado"],
-                    costo_estimado=ing["costo_estimado"],
-                    id_lugar_compra=ing["id_lugar_compra"]
-                ))
-            rec.preparacion_propia = prep
-            nuevas_entidades.append(rec)
-
         guardadas = RecomendacionRepository.guardar_recomendaciones(db, nuevas_entidades)
 
         # Ordenar respuesta general por puntuación DESC y costo total ASC
@@ -273,10 +209,11 @@ class RecomendacionService:
 
         verificar_propiedad_planificacion(planificacion, usuario_actual)
 
+        filtro_tipo = (tipo_recomendacion or "RESTAURANTE").strip().upper() or "RESTAURANTE"
         recomendaciones = RecomendacionRepository.listar_por_planificacion(
             db=db,
             id_planificacion=id_planificacion,
-            tipo_recomendacion=tipo_recomendacion
+            tipo_recomendacion=filtro_tipo
         )
 
         return [RecomendacionService._mapear_a_schema(r) for r in recomendaciones]
@@ -300,7 +237,7 @@ class RecomendacionService:
         return RecomendacionService._mapear_a_schema(rec)
 
     # =========================================================================
-    # CASO DE USO: CU14 - COMPARAR ALTERNATIVAS (RESTAURANTE vs PREPARACION_PROPIA)
+    # CASO DE USO: CU14 - COMPARAR RESTAURANTES
     # =========================================================================
     @staticmethod
     def comparar_alternativas(
@@ -310,7 +247,7 @@ class RecomendacionService:
     ) -> ComparacionPlanificacionRespuestaSchema:
         """
         LÓGICA CU14 - Comparar Alternativas Completo:
-        Compara las opciones de RESTAURANTE y PREPARACION_PROPIA generadas, calculando
+        Compara los restaurantes generados, calculando
         ahorro neto, porcentaje presupuestario ejecutado, resumen de compras/platos
         y señalando las alternativas más eficientes en costo y puntuación.
         """
@@ -325,7 +262,8 @@ class RecomendacionService:
 
         recomendaciones = RecomendacionRepository.listar_por_planificacion(
             db=db,
-            id_planificacion=id_planificacion
+            id_planificacion=id_planificacion,
+            tipo_recomendacion="RESTAURANTE"
         )
 
         alternativas: List[AlternativaComparacionSchema] = []

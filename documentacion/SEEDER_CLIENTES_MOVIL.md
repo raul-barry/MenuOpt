@@ -34,8 +34,9 @@ cualquiera y consultar sus recomendaciones y detalles de preparación.
 - Recetas de preparación propia vinculadas a productos y precios de tiendas.
 - Ingredientes de la biblioteca de recetas enlazados al catálogo cuando hay una
   correspondencia conocida.
-- Recomendaciones de restaurante y preparación propia calculadas por el servicio
-  normal de recomendaciones.
+- Recomendaciones de restaurantes calculadas por el servicio normal de
+  planificaciones. Para cocinar con ingredientes disponibles, el cliente usa
+  por separado la consulta de la Biblioteca de Recetas.
 
 La consulta con IA usa la configuración ya instalada en `backend/.env`; este
 seeder no imprime ni modifica credenciales del proveedor.

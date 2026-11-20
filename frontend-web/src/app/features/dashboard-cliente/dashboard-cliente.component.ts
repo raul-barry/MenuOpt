@@ -71,13 +71,13 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="step-item">
             <div class="step-number">2</div>
             <h4>2. Recomendaciones</h4>
-            <p>El sistema analiza menús de restaurantes y recetas caseras con precios reales de mercado.</p>
+            <p>El sistema analiza menús de restaurantes según tu presupuesto, zona y preferencias.</p>
           </div>
           <div class="step-arrow">&rarr;</div>
           <div class="step-item">
             <div class="step-number">3</div>
             <h4>3. Compara y Elige</h4>
-            <p>Contrasta costos, ahorro e insumos de Restaurante vs Preparación Propia.</p>
+            <p>Compara los restaurantes sugeridos por costo, ahorro, puntuación y cercanía.</p>
           </div>
         </div>
       </div>

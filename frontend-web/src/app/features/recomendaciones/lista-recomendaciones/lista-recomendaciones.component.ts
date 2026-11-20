@@ -26,14 +26,17 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
         <div class="header-main">
           <div>
             <span class="plan-tag">Planificación #{{ plan.id_planificacion }}</span>
-            <h2>Alternativas Gastronómicas Recomendadas (CU13)</h2>
+            <h2>Restaurantes recomendados (CU13)</h2>
             <p style="color: var(--text-muted); margin-top: 0.25rem;">
               Para {{ plan.cantidad_personas }} comensales con presupuesto de <strong>Bs {{ plan.presupuesto | number:'1.2-2' }}</strong> ({{ plan.tipo_comida }}).
             </p>
           </div>
           <div class="header-actions">
+            <a routerLink="/recetas" class="btn btn-outline">
+              <app-icon name="salad" class="app-icon-inline"></app-icon> Cocinar con mis ingredientes
+            </a>
             <a [routerLink]="['/planificaciones', plan.id_planificacion, 'comparacion']" class="btn btn-primary">
-              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Alternativas (CU14)
+              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Restaurantes (CU14)
             </a>
             <button 
               *ngIf="plan.estado === 'ACTIVA'" 
@@ -60,9 +63,9 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
       <!-- Sin resultados -->
       <div *ngIf="!cargando() && recomendaciones().length === 0" class="card empty-card">
         <div style="font-size: 3rem; margin-bottom: 1rem;"><app-icon name="search" class="app-icon-inline"></app-icon></div>
-        <h3>No encontramos alternativas dentro del presupuesto</h3>
+          <h3>No encontramos restaurantes dentro del presupuesto</h3>
         <p style="color: var(--text-muted); max-width: 500px; margin-bottom: 1.5rem;">
-          No se hallaron opciones comerciales o recetas caseras que cumplan estrictamente con tu presupuesto disponible de Bs {{ planificacion()?.presupuesto }} y tus preferencias.
+          No se hallaron restaurantes con platos que cumplan tu presupuesto de Bs {{ planificacion()?.presupuesto }} y tus preferencias.
         </p>
         <div style="display: flex; gap: 1rem;">
           <a [routerLink]="['/planificaciones', idPlanificacion, 'editar']" class="btn btn-primary">
@@ -420,7 +423,7 @@ export class ListaRecomendacionesComponent implements OnInit {
         // Cargar recomendaciones
         this.recomendacionService.listarRecomendaciones(this.idPlanificacion).subscribe({
           next: (recs) => {
-            this.recomendaciones.set(recs);
+            this.recomendaciones.set(recs.filter(rec => rec.tipo_recomendacion === 'RESTAURANTE'));
             this.cargando.set(false);
           },
           error: (err) => {
@@ -454,9 +457,10 @@ export class ListaRecomendacionesComponent implements OnInit {
 
     this.recomendacionService.generarRecomendaciones(this.idPlanificacion).subscribe({
       next: (nuevas) => {
-        this.recomendaciones.set(nuevas);
+        const restaurantes = nuevas.filter(rec => rec.tipo_recomendacion === 'RESTAURANTE');
+        this.recomendaciones.set(restaurantes);
         this.regenerando.set(false);
-        this.mensajeExito.set(`Recomendaciones actualizadas con éxito (${nuevas.length} alternativas generadas).`);
+        this.mensajeExito.set(`Recomendaciones actualizadas (${restaurantes.length} restaurantes sugeridos).`);
         setTimeout(() => this.mensajeExito.set(null), 3000);
       },
       error: (err) => {

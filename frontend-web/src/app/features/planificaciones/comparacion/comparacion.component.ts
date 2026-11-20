@@ -32,7 +32,7 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           <div class="header-main">
             <div>
               <span class="badge badge-secondary">ANÁLISIS COMPARATIVO (CU14)</span>
-              <h2 style="margin-top: 0.5rem;">Comparación de Alternativas Gastronómicas</h2>
+              <h2 style="margin-top: 0.5rem;">Comparación de Restaurantes</h2>
               <p style="color: var(--text-muted); margin-top: 0.25rem;">
                 Evaluación para <strong>{{ comp.cantidad_personas }} comensales</strong> con presupuesto límite de <strong>Bs {{ comp.presupuesto | number:'1.2-2' }}</strong> ({{ comp.tipo_comida }}).
               </p>
@@ -86,26 +86,8 @@ import { ExplicacionRespuesta } from '../../../core/models/asistente-ia.model';
           </div>
         </div>
 
-        <!-- Filtros Visuales -->
+        <!-- Orden de restaurantes -->
         <div class="filter-bar card">
-          <div class="filter-group">
-            <span class="filter-label">Filtrar por tipo:</span>
-            <button 
-              class="btn btn-sm" 
-              [ngClass]="filtroTipo() === 'TODAS' ? 'btn-primary' : 'btn-outline'"
-              (click)="filtroTipo.set('TODAS')"
-            >
-              Todas ({{ totalRestaurantes() }})
-            </button>
-            <button 
-              class="btn btn-sm" 
-              [ngClass]="filtroTipo() === 'RESTAURANTE' ? 'btn-primary' : 'btn-outline'"
-              (click)="filtroTipo.set('RESTAURANTE')"
-            >
-              Solo Restaurantes
-            </button>
-          </div>
-
           <div class="filter-group">
             <span class="filter-label">Ordenar por:</span>
             <select class="form-control form-control-sm" style="width: auto;" (change)="onCambiarOrden($event)">
@@ -487,14 +469,7 @@ export class ComparacionComponent implements OnInit {
   cargandoExplicacion = signal<boolean>(false);
   explicacionActual = signal<ExplicacionRespuesta | null>(null);
 
-  filtroTipo = signal<'TODAS' | 'RESTAURANTE'>('TODAS');
   criterioOrden = signal<'OFICIAL' | 'COSTO_ASC' | 'SCORE_DESC' | 'AHORRO_DESC'>('OFICIAL');
-
-  totalRestaurantes = computed(() => {
-    const comp = this.comparacion();
-    if (!comp) return 0;
-    return comp.alternativas.filter(a => a.tipo_recomendacion === 'RESTAURANTE').length;
-  });
 
   alternativasFiltradas = computed(() => {
     const comp = this.comparacion();

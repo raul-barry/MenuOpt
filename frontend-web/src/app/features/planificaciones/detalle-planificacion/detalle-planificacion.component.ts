@@ -63,7 +63,7 @@ import { Planificacion } from '../../../core/models/planificacion.model';
             </a>
 
             <a [routerLink]="['/planificaciones', plan.id_planificacion, 'comparacion']" class="btn btn-outline">
-              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Alternativas (CU14)
+              <app-icon name="settings" class="app-icon-inline"></app-icon> Comparar Restaurantes (CU14)
             </a>
 
             <a 

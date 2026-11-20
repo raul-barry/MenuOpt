@@ -1,5 +1,5 @@
 # CASO DE USO: CU13 - Generar recomendación
-# CASO DE USO: CU14 - Comparar alternativas (RESTAURANTE vs PREPARACION_PROPIA)
+# CASO DE USO: CU14 - Comparar restaurantes
 # CASO DE USO: CU15 - Consultar ingredientes para preparación propia
 # CASO DE USO: CU16 - Consultar lugares de compra
 from typing import List, Optional
@@ -34,8 +34,8 @@ router = APIRouter(
     "/planificaciones/{id_planificacion}/recomendaciones/generar",
     response_model=List[RecomendacionRespuestaSchema],
     status_code=status.HTTP_200_OK,
-    summary="CU13: Generar recomendaciones (Restaurantes y Preparación Propia)",
-    description="Ejecuta el algoritmo de cálculo y optimización para sugerir restaurantes y alternativas de preparación propia que satisfagan criterios presupuestarios, comensales y preferencias."
+    summary="CU13: Generar recomendaciones de restaurantes",
+    description="Sugiere restaurantes y platos que satisfacen el presupuesto, la cantidad de comensales, la zona y las preferencias de la planificación."
 )
 def generar_recomendaciones(
     id_planificacion: int = Path(..., ge=1, description="ID de la planificación"),
@@ -60,7 +60,7 @@ def generar_recomendaciones(
     response_model=List[RecomendacionRespuestaSchema],
     status_code=status.HTTP_200_OK,
     summary="CU13: Consultar recomendaciones guardadas",
-    description="Retorna el listado de recomendaciones generadas previamente para la planificación (Restaurante o Preparación Propia)."
+    description="Retorna las recomendaciones de restaurantes generadas para la planificación."
 )
 def listar_recomendaciones_planificacion(
     id_planificacion: int = Path(..., ge=1, description="ID de la planificación"),
@@ -163,7 +163,7 @@ def obtener_lugares_compra_recomendacion(
 
 
 # =========================================================================
-# CASO DE USO: CU14 - COMPARAR ALTERNATIVAS (RESTAURANTE vs PREPARACION_PROPIA)
+# CASO DE USO: CU14 - COMPARAR RESTAURANTES
 # =========================================================================
 
 # --- CU14: Comparar alternativas de una planificación ---
@@ -173,8 +173,8 @@ def obtener_lugares_compra_recomendacion(
     "/planificaciones/{id_planificacion}/comparacion",
     response_model=ComparacionPlanificacionRespuestaSchema,
     status_code=status.HTTP_200_OK,
-    summary="CU14: Comparar alternativas (Restaurante vs Preparación Propia)",
-    description="Compara integralmente las opciones generadas para la planificación gastronómica, destacando costos, ahorros netos y puntuaciones de cada alternativa."
+    summary="CU14: Comparar restaurantes",
+    description="Compara los restaurantes recomendados para la planificación según costo, ahorro, puntuación y distancia."
 )
 def comparar_alternativas_planificacion(
     id_planificacion: int = Path(..., ge=1, description="ID de la planificación"),
@@ -182,7 +182,7 @@ def comparar_alternativas_planificacion(
     usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
     """
-    Controlador para la comparación analítica de alternativas (CU14).
+    Controlador para la comparación de restaurantes recomendados (CU14).
     """
     return RecomendacionService.comparar_alternativas(
         db=db,

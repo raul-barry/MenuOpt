@@ -161,10 +161,10 @@ flowchart LR
 * **Objetivo:** Ejecutar el algoritmo que calcula y ranquea opciones dentro del presupuesto respetando la zona solicitada.
 * **Pasos:**
   1. En tu planificación creada (ej: Planificación #3 de `equipetrol`), pulsa **Generar Recomendaciones** (o **Regenerar**).
-  2. Espera a que el sistema procese las alternativas comerciales y caseras.
+  2. Espera a que el sistema procese las alternativas de restaurantes.
   3. Revisa la lista de tarjetas sugeridas.
 * **Resultado Esperado:**
-  - Se listan alternativas viables tanto de tipo **RESTAURANTE** como de **PREPARACIÓN PROPIA**.
+  - Solo se listan alternativas de tipo **RESTAURANTE**; no se generan preparaciones propias automáticamente desde una planificación.
   - Los restaurantes de la zona indicada (`equipetrol`) aparecen al inicio con la etiqueta `📍 Equipetrol`, distancia estimada de `0.80 km` y puntuación alta (ej: *Tacos Güey*, *Sushi Train*, *El Arriero*).
   - Todas las alternativas respetan estrictamente el presupuesto máximo de Bs 200.
 
@@ -179,11 +179,10 @@ flowchart LR
   2. Inspecciona los dos paneles destacados superiores:
      - **MENOR COSTO:** Muestra la opción más económica de la zona.
      - **MEJOR PUNTUADA:** Muestra la opción con mayor afinidad y cercanía en Equipetrol.
-  3. Utiliza los botones de filtro: **Todas**, **Solo Restaurantes**.
-  4. Cambia el orden desplegable a *"Menor costo total"* o *"Mayor puntuación"*.
+  3. Cambia el orden desplegable a *"Menor costo total"* o *"Mayor puntuación"*.
 * **Resultado Esperado:**
   - Se muestra la matriz comparativa con porcentaje de presupuesto consumido, ahorro en bolivianos y desglose cuantitativo.
-  - La opción recomendada y mejor puntuada corresponde a la zona elegida.
+  - La comparativa contiene solo restaurantes sugeridos; la opción mejor puntuada corresponde a la zona elegida.
 
 ---
 
