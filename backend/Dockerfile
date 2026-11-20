@@ -21,5 +21,5 @@ COPY . .
 # Exponer el puerto de la aplicación
 EXPOSE 8000
 
-# Aplicar migraciones y luego iniciar Uvicorn en el puerto asignado por Render.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Aplicar migraciones; permitir una carga demo temporal antes de iniciar la API.
+CMD ["sh", "-c", "alembic upgrade head && case \"${MENUOPT_SEED_BASE_MODE:-off}\" in preview) python -m app.database.seed_datos_base_demo ;; apply) python -m app.database.seed_datos_base_demo --apply --allow-production ;; off) ;; *) echo \"MENUOPT_SEED_BASE_MODE debe ser off, preview o apply\" >&2; exit 1 ;; esac && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
