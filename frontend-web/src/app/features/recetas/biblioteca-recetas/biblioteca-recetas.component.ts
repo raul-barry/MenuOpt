@@ -37,7 +37,7 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
       <!-- Panel Interactivo de Consulta Culinaria con IA -->
       <div class="card ai-consult-card">
         <div class="ai-consult-header">
-          <div class="ai-icon-bubble">✨</div>
+          <div class="ai-icon-bubble">IA</div>
           <div>
             <h3 class="ai-title">Asistente Culinario IA: ¿Qué puedo cocinar hoy?</h3>
             <p class="ai-subtitle">
@@ -73,7 +73,7 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
               (click)="ejecutarConsultaIA()"
               [disabled]="consultandoIA() || !consultaIAMensaje.trim()"
             >
-              <span *ngIf="!consultandoIA()">🤖 Consultar con IA</span>
+              <span *ngIf="!consultandoIA()">Consultar con IA</span>
               <span *ngIf="consultandoIA()">Consultando...</span>
             </button>
           </div>
@@ -82,16 +82,16 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
           <div class="ai-chips-row">
             <span class="ai-chips-label">Prueba rápida:</span>
             <button class="ai-chip" (click)="usarSugerenciaIA('Tengo pechuga de pollo, arroz, tomate y cebolla para 2 personas')">
-              🍗 Pollo, arroz y verduras
+              Pollo, arroz y verduras
             </button>
             <button class="ai-chip" (click)="usarSugerenciaIA('Tengo carne molida, queso chaqueño y huevos para 4 personas')">
-              🍔 Carne molida, queso y huevos
+              Carne molida, queso y huevos
             </button>
             <button class="ai-chip" (click)="usarSugerenciaIA('Tengo papas, cebolla roja, huevos y aceite para 4 personas')">
-              🥔 Tortilla de papas y huevos
+              Tortilla de papas y huevos
             </button>
             <button class="ai-chip" (click)="usarSugerenciaIA('Tengo fideos espagueti, carne molida y queso chaqueño para 3 personas')">
-              🍝 Espagueti a la bolognesa
+              Espagueti a la bolognesa
             </button>
           </div>
         </div>
@@ -101,9 +101,9 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
           <div class="ai-result-header">
             <div class="ai-result-tag">
               <span class="badge badge-primary">RESPUESTA DE IA CULINARIA</span>
-              <span class="badge badge-success">👥 Calculado para {{ respuestaIA()?.porciones_sugeridas }} comensales</span>
+              <span class="badge badge-success">Calculado para {{ respuestaIA()?.porciones_sugeridas }} comensales</span>
             </div>
-            <button class="btn-clear-ai" (click)="limpiarConsultaIA()" title="Cerrar resultado">✕</button>
+            <button class="btn-clear-ai" (click)="limpiarConsultaIA()" title="Cerrar resultado">Cerrar</button>
           </div>
 
           <!-- Platos sugeridos con foto -->
@@ -121,13 +121,13 @@ import { Ingrediente } from '../../../core/models/ingrediente.model';
           <!-- Respuesta Explicada -->
           <div class="ai-text-box">
             <p style="white-space: pre-line; margin: 0; line-height: 1.6; color: #1e293b;">
-              {{ respuestaIA()?.respuesta_ia }}
+              {{ normalizarRespuestaIA(respuestaIA()?.respuesta_ia) }}
             </p>
           </div>
 
           <!-- Tiendas Sugeridas para Faltantes -->
           <div *ngIf="respuestaIA()?.tiendas_recomendadas?.length" class="ai-stores-section">
-            <h4 class="ai-stores-title">🏪 Tiendas y mercados sugeridos en Santa Cruz:</h4>
+            <h4 class="ai-stores-title">Tiendas y mercados sugeridos en Santa Cruz</h4>
             <div class="ai-stores-grid">
               <div *ngFor="let tienda of respuestaIA()?.tiendas_recomendadas" class="ai-store-card">
                 <div class="ai-store-top">
@@ -1026,6 +1026,34 @@ export class BibliotecaRecetasComponent implements OnInit {
   comensalesIA: number = 2;
   consultandoIA = signal<boolean>(false);
   respuestaIA = signal<RecetaConsultaIARespuesta | null>(null);
+
+  normalizarRespuestaIA(texto: string | null | undefined): string {
+    if (!texto) return '';
+
+    let limpio = texto;
+    const correcciones: Record<string, string> = {
+      'ÃƒÂ¡': 'á', 'ÃƒÂ©': 'é', 'ÃƒÂ­': 'í', 'ÃƒÂ³': 'ó', 'ÃƒÂº': 'ú', 'ÃƒÂ±': 'ñ',
+      'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú', 'Ã±': 'ñ', 'Ã¼': 'ü',
+      'Ã': 'Á', 'Ã‰': 'É', 'Ã': 'Í', 'Ã“': 'Ó', 'Ãš': 'Ú', 'Ã‘': 'Ñ',
+      'Â¿': '¿', 'Â¡': '¡', 'Ã‚Â¿': '¿', 'Ã‚Â¡': '¡'
+    };
+    for (const [origen, destino] of Object.entries(correcciones)) {
+      limpio = limpio.split(origen).join(destino);
+    }
+
+    limpio = limpio
+      .replace(/^\s{0,3}#{1,6}\s*/gm, '')
+      .replace(/^\s*[*+]\s+/gm, '- ')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1 ($2)')
+      .replace(/[*_`]/g, '')
+      .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '')
+      .replace(/(?<!\w)(?::|;|=|8|x|X)(?:[-^']?)[)(DPp/\\]|<3(?!\w)/g, '')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/ *\n */g, '\n')
+      .replace(/\n{3,}/g, '\n\n');
+
+    return limpio.trim();
+  }
 
   mensajeExito = signal<string | null>(null);
   mensajeError = signal<string | null>(null);
