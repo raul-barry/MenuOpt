@@ -201,6 +201,12 @@ class NotificacionesPushService {
   Future<void> vincularDispositivoActual() async {
     if (!ApiClient.instance.isAuthenticated || !await inicializar()) return;
     try {
+      final permiso = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (permiso.authorizationStatus == AuthorizationStatus.denied) return;
       final token = _tokenInstalacionFirebase ?? await _esperarTokenFirebase();
       if (token == null || token.isEmpty) return;
       await _enviarTokenAlBackend(token);
