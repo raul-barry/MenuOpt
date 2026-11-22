@@ -5,11 +5,12 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component';
 import { PushNotificationsService } from '../../core/services/push-notifications.service';
+import { AgenteGuiaFlotanteComponent } from '../../shared/agente-guia-flotante/agente-guia-flotante.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [AppIconComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, BrandLogoComponent],
+  imports: [AppIconComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, BrandLogoComponent, AgenteGuiaFlotanteComponent],
   template: `
     <div class="layout-container">
       <!-- Barra Superior -->
@@ -169,6 +170,7 @@ import { PushNotificationsService } from '../../core/services/push-notifications
           <router-outlet></router-outlet>
         </main>
       </div>
+      <app-agente-guia-flotante />
     </div>
   `,
   styles: [`

@@ -13,11 +13,29 @@ from app.ai.schemas import (
     ExplicacionRespuesta
 )
 from app.services.asistente_ia_service import AsistenteIAService
+from app.services.agente_guia_service import AgenteGuiaService
+from app.schemas.agente_guia import MensajeGuia, RespuestaGuia
 
 router = APIRouter(
     prefix="/asistente",
     tags=["Asistente IA"]
 )
+
+
+@router.post(
+    "/guia",
+    response_model=RespuestaGuia,
+    status_code=status.HTTP_200_OK,
+    summary="Orientar al usuario sobre las funciones de MenuOpt según su rol",
+)
+def guiar_usuario(
+    solicitud: MensajeGuia,
+    usuario_actual: Usuario = Depends(requiere_roles(
+        "CLIENTE", "RESTAURANTE", "ADMINISTRADOR", "ADMINISTRADOR_TIENDA"
+    )),
+):
+    rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+    return AgenteGuiaService.responder(solicitud, rol)
 
 
 # =========================================================================

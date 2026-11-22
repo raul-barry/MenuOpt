@@ -15,6 +15,7 @@ import 'pedidos_screen.dart';
 import 'perfil_screen.dart';
 import 'asistente_screen.dart';
 import 'recetas_screen.dart';
+import '../widgets/agente_guia_flotante.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -177,7 +178,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ? ApiClient.instance.userRole
         : 'CLIENTE';
 
-    return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -300,6 +303,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+        Positioned(
+          right: 12,
+          bottom: 92,
+          child: AgenteGuiaFlotante(
+            paginaActual: 'sección $_currentSection',
+            onNavigate: _navigateToSection,
+          ),
+        ),
+      ],
     );
   }
 }

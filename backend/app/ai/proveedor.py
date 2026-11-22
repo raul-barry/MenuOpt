@@ -13,6 +13,7 @@ from app.ai.prompts import (
     SYSTEM_PROMPT_EXPLICAR_RECOMENDACION,
     SYSTEM_PROMPT_EXPLICAR_COMPARACION,
     SYSTEM_PROMPT_RECETA_COTIZADA,
+    SYSTEM_PROMPT_GUIA_PLATAFORMA,
 )
 from app.ai.parser import ParserIA
 
@@ -55,12 +56,26 @@ class ProveedorIA(ABC):
         pass
 
 
+    def responder_guia_plataforma(self, mensaje: str, contexto: Dict[str, Any]) -> str:
+        """Contesta consultas de ayuda usando las capacidades verificadas del rol."""
+        return MockProveedorIA().responder_guia_plataforma(mensaje, contexto)
+
+
 class MockProveedorIA(ProveedorIA):
     """
     Proveedor simulado de alta fidelidad basado en reglas deterministas y regex.
     Permite funcionamiento autónomo sin requerir claves de API externas, con soporte
     completo de pruebas unitarias y cobertura de requerimientos.
     """
+
+    def responder_guia_plataforma(self, mensaje: str, contexto: Dict[str, Any]) -> str:
+        acciones = contexto.get("acciones", [])
+        if not acciones:
+            return "No encuentro funciones disponibles para tu rol en esta sección. Puedes consultar con el administrador."
+        lineas = [f"Como usuario {contexto.get('rol', 'MenuOpt')}, puedes:"]
+        lineas.extend(f"• {accion['nombre']}" for accion in acciones)
+        lineas.append("Selecciona una opción y te indico los pasos para realizarla.")
+        return "\n".join(lineas)
 
     def interpretar_solicitud(
         self,
@@ -432,6 +447,15 @@ class GeminiProveedorIA(ProveedorIA):
             return MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
 
 
+    def responder_guia_plataforma(self, mensaje: str, contexto: Dict[str, Any]) -> str:
+        prompt_usuario = json.dumps({**contexto, "mensaje_actual": mensaje}, ensure_ascii=False)
+        try:
+            texto = self._invocar_gemini(SYSTEM_PROMPT_GUIA_PLATAFORMA, prompt_usuario).strip()
+            return texto or MockProveedorIA().responder_guia_plataforma(mensaje, contexto)
+        except Exception:
+            return MockProveedorIA().responder_guia_plataforma(mensaje, contexto)
+
+
 class GroqProveedorIA(ProveedorIA):
     """
     Proveedor real de ultra-alta velocidad para Groq Cloud API (OpenAI-compatible) usando HTTP estándar (urllib).
@@ -557,6 +581,15 @@ class GroqProveedorIA(ProveedorIA):
             return texto or MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
         except Exception:
             return MockProveedorIA().orientar_sobre_receta(mensaje, datos_verificados)
+
+
+    def responder_guia_plataforma(self, mensaje: str, contexto: Dict[str, Any]) -> str:
+        prompt_usuario = json.dumps({**contexto, "mensaje_actual": mensaje}, ensure_ascii=False)
+        try:
+            texto = self._invocar_groq(SYSTEM_PROMPT_GUIA_PLATAFORMA, prompt_usuario).strip()
+            return texto or MockProveedorIA().responder_guia_plataforma(mensaje, contexto)
+        except Exception:
+            return MockProveedorIA().responder_guia_plataforma(mensaje, contexto)
 
 
 class GrokProveedorIA(GroqProveedorIA):

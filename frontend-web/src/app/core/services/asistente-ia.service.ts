@@ -11,12 +11,37 @@ import {
   ExplicacionRespuesta
 } from '../models/asistente-ia.model';
 
+export interface GuiaAccion {
+  id: string;
+  nombre: string;
+  ruta: string;
+  pasos: string[];
+  seccion_movil?: number | null;
+}
+
+export interface RespuestaGuia {
+  respuesta: string;
+  acciones: GuiaAccion[];
+  destino?: string | null;
+  seccion_movil?: number | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AsistenteIAService {
   private http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
+
+  guiarUsuario(solicitud: {
+    mensaje: string;
+    plataforma?: 'web' | 'mobile';
+    accion_id?: string;
+    pagina_actual?: string;
+    historial?: { emisor: 'user' | 'assistant'; contenido: string }[];
+  }): Observable<RespuestaGuia> {
+    return this.http.post<RespuestaGuia>(`${this.baseUrl}/asistente/guia`, solicitud);
+  }
 
   // CU26: Interpretar lenguaje natural
   interpretar(solicitud: SolicitudInterpretar): Observable<SolicitudInterpretada> {
