@@ -323,20 +323,20 @@ class MockProveedorIA(ProveedorIA):
         receta = datos_verificados.get("receta")
         if not receta:
             return (
-                "No encontrÃ© una receta de la biblioteca que coincida con esos ingredientes. "
-                "Prueba indicando ingredientes del catÃ¡logo, por ejemplo arroz, tomate, cebolla o pollo."
+                "No encontré una receta de la biblioteca que coincida con esos ingredientes. "
+                "Indique ingredientes del catálogo, como arroz, tomate, cebolla o pollo."
             )
 
         personas = datos_verificados.get("comensales", 2)
-        partes = [f"## {receta.get('nombre', 'Sugerencia culinaria')}",
+        partes = [f"{receta.get('nombre', 'Sugerencia culinaria')}",
                   f"Receta de {receta.get('tipo_comida', 'comida').lower()} para {personas} persona(s)."]
         disponibles = datos_verificados.get("ingredientes_disponibles", [])
         if disponibles:
-            partes.append("**Tienes:** " + ", ".join(disponibles) + ".")
+            partes.append("Ingredientes disponibles: " + ", ".join(disponibles) + ".")
 
         faltantes = datos_verificados.get("ingredientes_faltantes", [])
         if faltantes:
-            partes.append("**Te falta comprar:**")
+            partes.append("Ingredientes por comprar:")
             for item in faltantes:
                 linea = f"- {item['nombre']}: {item['cantidad']} {item['unidad']}"
                 if item.get("tienda"):
@@ -347,11 +347,11 @@ class MockProveedorIA(ProveedorIA):
                     linea += " (sin precio de tienda registrado)"
                 partes.append(linea + ".")
         else:
-            partes.append("Con los ingredientes indicados tienes lo necesario para esta receta.")
+            partes.append("Los ingredientes indicados cubren lo necesario para esta receta.")
 
         instrucciones = receta.get("instrucciones")
         if instrucciones:
-            partes.extend(["**PreparaciÃ³n:**", instrucciones])
+            partes.extend(["Preparación:", instrucciones])
         return "\n\n".join(partes)
 
 
