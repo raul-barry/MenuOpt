@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -14,6 +16,7 @@ router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
 
 @router.put("/dispositivos", response_model=DispositivoPushRespuesta, status_code=status.HTTP_200_OK)
 def registrar_dispositivo(
+    tareas: BackgroundTasks,
     datos: DispositivoPushRegistro,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(obtener_usuario_actual),
@@ -42,6 +45,28 @@ def registrar_dispositivo(
             plataforma=datos.plataforma,
         ))
     db.commit()
+
+    # Recupera eventos recientes que se conservaron en la outbox cuando el
+    # usuario todavía no tenía un dispositivo vinculado. No repite envíos:
+    # solo toma eventos SIN_DESTINATARIOS, que nunca llegaron a Firebase.
+    limite_recuperacion = datetime.now(timezone.utc) - timedelta(hours=24)
+    eventos_recuperables = (
+        db.query(NotificacionOutbox)
+        .filter(
+            NotificacionOutbox.id_usuario_destino == usuario.id_usuario,
+            NotificacionOutbox.estado == "SIN_DESTINATARIOS",
+            NotificacionOutbox.fecha_creacion >= limite_recuperacion,
+        )
+        .with_for_update()
+        .all()
+    )
+    for evento in eventos_recuperables:
+        evento.estado = "PENDIENTE"
+        evento.error_envio = None
+    if eventos_recuperables:
+        db.commit()
+        for evento in eventos_recuperables:
+            tareas.add_task(enviar_evento_notificacion, evento.id_notificacion)
     return {"registrado": True}
 
 

@@ -107,6 +107,43 @@ def test_device_token_is_transferred_and_revoked_only_by_current_owner(world):
         assert db.query(DispositivoPush).filter_by(token_fcm=device_token).count() == 0
 
 
+def test_registering_device_recovers_recent_events_without_recipients(world, monkeypatch):
+    sent, _ = _fake_firebase(monkeypatch)
+    api, tokens = world["api"], world["tokens"]
+    table = api.post(f"/areas/{world['area_id']}/mesas", headers=tokens["restaurant"], json={
+        "numero": "PUSH-LATE-DEVICE", "capacidad": 4, "es_fija": False, "combinable": True,
+    })
+    assert table.status_code == 201, table.text
+
+    booking = _create_booking(world, table.json()["id_mesa"], "push-late-device")
+    assert booking.status_code == 201, booking.text
+    reservation_id = booking.json()["id_reserva"]
+    with SessionLocal() as db:
+        confirmed = db.query(NotificacionOutbox).filter_by(
+            clave_evento=f"reservation.confirmed:{reservation_id}"
+        ).one()
+        created = db.query(NotificacionOutbox).filter_by(
+            clave_evento=f"reservation.created:{reservation_id}"
+        ).one()
+        assert confirmed.estado == "SIN_DESTINATARIOS"
+        assert created.estado == "SIN_DESTINATARIOS"
+
+    client_device = "fcm_late_client_device_token_000011"
+    _register(api, tokens["client"], client_device)
+    assert [message.tokens for message in sent] == [[client_device]]
+    with SessionLocal() as db:
+        confirmed = db.query(NotificacionOutbox).filter_by(
+            clave_evento=f"reservation.confirmed:{reservation_id}"
+        ).one()
+        created = db.query(NotificacionOutbox).filter_by(
+            clave_evento=f"reservation.created:{reservation_id}"
+        ).one()
+        assert confirmed.estado == "ENVIADA"
+        assert confirmed.intentos == 1
+        assert confirmed.dispositivos_enviados
+        assert created.estado == "SIN_DESTINATARIOS"
+
+
 def test_five_business_events_are_private_and_idempotent(world, monkeypatch):
     sent, _ = _fake_firebase(monkeypatch)
     api, tokens = world["api"], world["tokens"]
