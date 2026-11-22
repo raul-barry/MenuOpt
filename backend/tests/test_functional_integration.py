@@ -43,6 +43,7 @@ def test_authentication_permissions_restaurant_and_menu(world):
 def test_individual_combined_capacity_and_time_conflicts(world):
     individual = create_table(world, "T1", 4)
     too_large = create_table(world, "T2", 5)
+    too_small = create_table(world, "T0", 1)
     left = create_table(world, "T3", 2)
     right = create_table(world, "T4", 2)
 
@@ -57,9 +58,16 @@ def test_individual_combined_capacity_and_time_conflicts(world):
     too_large_option = next(m for m in availability.json()["mesas"] if m["id_mesa"] == too_large)
     assert too_large_option["estado_disponibilidad"] == "NO_COMPATIBLE"
     assert too_large_option["seleccionable"] is False
+    exact_limit_option = next(m for m in availability.json()["mesas"] if m["id_mesa"] == individual)
+    assert exact_limit_option["estado_disponibilidad"] == "DISPONIBLE"
+    assert exact_limit_option["seleccionable"] is True
+    too_small_option = next(m for m in availability.json()["mesas"] if m["id_mesa"] == too_small)
+    assert too_small_option["estado_disponibilidad"] == "NO_COMPATIBLE"
+    assert too_small_option["seleccionable"] is False
 
     assert create_booking(world, [individual], people=2).status_code == 201
     assert create_booking(world, [too_large], people=2).status_code == 400
+    assert create_booking(world, [too_small], people=2).status_code == 400
 
     combo = world["api"].post(f"/areas/{world['area_id']}/combinaciones", headers=world["tokens"]["restaurant"], json={
         "id_mesa_origen": right, "id_mesa_destino": left, "descripcion": "Adjacent tables",
@@ -67,6 +75,30 @@ def test_individual_combined_capacity_and_time_conflicts(world):
     assert combo.status_code == 201, combo.text
     combined_booking = create_booking(world, [left, right], people=3)
     assert combined_booking.status_code == 201, combined_booking.text
+
+    combo_availability = world["api"].get(
+        f"/restaurantes/{world['restaurant_id']}/mesas-disponibles",
+        headers=world["tokens"]["client"],
+        params={"id_area": world["area_id"], "fecha": date_value,
+                "hora_inicio": "20:00:00", "hora_fin": "21:00:00", "cantidad_personas": 1},
+    )
+    assert combo_availability.status_code == 200, combo_availability.text
+    combination_option = next(c for c in combo_availability.json()["combinaciones"]
+                              if set(c["mesas"]) == {left, right})
+    assert combination_option["disponible"] is True
+    assert combination_option["seleccionable"] is False  # 4 plazas > 1 + exceso máximo (2)
+
+    exact_combo_availability = world["api"].get(
+        f"/restaurantes/{world['restaurant_id']}/mesas-disponibles",
+        headers=world["tokens"]["client"],
+        params={"id_area": world["area_id"], "fecha": date_value,
+                "hora_inicio": "22:00:00", "hora_fin": "23:00:00", "cantidad_personas": 2},
+    )
+    exact_combo = next(c for c in exact_combo_availability.json()["combinaciones"]
+                       if set(c["mesas"]) == {left, right})
+    assert exact_combo["seleccionable"] is True  # 4 plazas == 2 personas + exceso máximo
+    assert create_booking(world, [left, right], people=2, start="22:00:00", end="23:00:00").status_code == 201
+    assert create_booking(world, [left, right], people=5, start="23:00:00", end="23:30:00").status_code == 400
 
     overlap = create_booking(world, [individual], people=2, start="15:00:00", end="17:00:00", token="guest")
     assert overlap.status_code == 409, overlap.text

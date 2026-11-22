@@ -1,0 +1,27 @@
+services:
+  test-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: menuopt_test_db
+      POSTGRES_USER: menuopt_test
+      POSTGRES_PASSWORD: menuopt_test_only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U menuopt_test -d menuopt_test_db"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  backend-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      DATABASE_URL: postgresql+psycopg://menuopt_test:menuopt_test_only@test-db:5432/menuopt_test_db
+      JWT_SECRET_KEY: local-test-only-secret
+      AI_ENABLED: "false"
+    depends_on:
+      test-db:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && pytest -q"

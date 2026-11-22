@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../core/app_theme.dart';
 import '../core/api_client.dart';
 import '../services/usuario_service.dart';
+import '../services/notificaciones_push_service.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -23,6 +25,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
   bool _isLoading = true;
   bool _isSavingPerfil = false;
   bool _isSavingPass = false;
+  bool _isSavingNotificaciones = false;
+  bool _promocionesActivas = false;
 
   String? _perfilSuccess;
   String? _perfilError;
@@ -35,6 +39,35 @@ class _PerfilScreenState extends State<PerfilScreen> {
   void initState() {
     super.initState();
     _loadPerfil();
+    _loadPreferenciaNotificaciones();
+  }
+
+  Future<void> _loadPreferenciaNotificaciones() async {
+    final activas = await NotificacionesPushService.instance
+        .promocionesActivas();
+    if (mounted) setState(() => _promocionesActivas = activas);
+  }
+
+  Future<void> _cambiarNotificaciones(bool activar) async {
+    setState(() => _isSavingNotificaciones = true);
+    final error = await NotificacionesPushService.instance
+        .cambiarSuscripcionPromociones(activar);
+    if (!mounted) return;
+    setState(() {
+      _isSavingNotificaciones = false;
+      if (error == null) _promocionesActivas = activar;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error ??
+              (activar
+                  ? 'Recibirás novedades y promociones de MenuOpt.'
+                  : 'Dejaste de recibir promociones de MenuOpt.'),
+        ),
+        backgroundColor: error == null ? AppTheme.success : AppTheme.danger,
+      ),
+    );
   }
 
   @override
@@ -105,7 +138,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
         _perfilSuccess = 'Datos personales actualizados correctamente.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado con éxito'), backgroundColor: AppTheme.success),
+        const SnackBar(
+          content: Text('Perfil actualizado con éxito'),
+          backgroundColor: AppTheme.success,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -122,17 +158,25 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final conf = _passConfirmCtrl.text;
 
     if (actual.isEmpty || nueva.isEmpty || conf.isEmpty) {
-      setState(() => _passError = 'Todos los campos de contraseña son requeridos.');
+      setState(
+        () => _passError = 'Todos los campos de contraseña son requeridos.',
+      );
       return;
     }
 
     if (nueva != conf) {
-      setState(() => _passError = 'La nueva contraseña y su confirmación no coinciden.');
+      setState(
+        () =>
+            _passError = 'La nueva contraseña y su confirmación no coinciden.',
+      );
       return;
     }
 
     if (nueva.length < 6) {
-      setState(() => _passError = 'La nueva contraseña debe tener al menos 6 caracteres.');
+      setState(
+        () => _passError =
+            'La nueva contraseña debe tener al menos 6 caracteres.',
+      );
       return;
     }
 
@@ -156,7 +200,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
         _passSuccess = 'Contraseña actualizada correctamente.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contraseña modificada con éxito'), backgroundColor: AppTheme.success),
+        const SnackBar(
+          content: Text('Contraseña modificada con éxito'),
+          backgroundColor: AppTheme.success,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -194,7 +241,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
               children: [
                 const Text(
                   'Mi Perfil',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textMain,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -213,7 +264,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Información de Cuenta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Información de Cuenta',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           AppTheme.buildBadge(estado),
                         ],
                       ),
@@ -224,9 +281,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('ID DE USUARIO', style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                                const Text(
+                                  'ID DE USUARIO',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Text('#$idUsuario', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(
+                                  '#$idUsuario',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -234,9 +304,23 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('ROL ASIGNADO', style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                                const Text(
+                                  'ROL ASIGNADO',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Text(rol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primary)),
+                                Text(
+                                  rol,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -247,13 +331,53 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('FECHA DE REGISTRO', style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                            const Text(
+                              'FECHA DE REGISTRO',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textMuted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(fechaReg.toString().split('T').first, style: const TextStyle(fontSize: 13)),
+                            Text(
+                              fechaReg.toString().split('T').first,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ],
                         ),
                       ],
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Container(
+                  decoration: AppTheme.cardDecoration,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: _promocionesActivas,
+                    onChanged: _isSavingNotificaciones
+                        ? null
+                        : _cambiarNotificaciones,
+                    title: const Text(
+                      'Novedades y promociones',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _isSavingNotificaciones ? 'Actualizando suscripción...' : 'Recibe ofertas gastronómicas y novedades de MenuOpt. Puedes desactivarlas cuando quieras.',
+                    ),
+                    secondary: const Icon(
+                      Icons.notifications_active_outlined,
+                      color: AppTheme.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -265,49 +389,85 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Editar Datos Personales', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Editar Datos Personales',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 14),
 
                       if (_perfilSuccess != null)
                         Container(
                           padding: const EdgeInsets.all(10),
                           margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(color: AppTheme.successLight, borderRadius: BorderRadius.circular(8)),
-                          child: Text(_perfilSuccess!, style: const TextStyle(color: AppTheme.success, fontSize: 12)),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _perfilSuccess!,
+                            style: const TextStyle(
+                              color: AppTheme.success,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       if (_perfilError != null)
                         Container(
                           padding: const EdgeInsets.all(10),
                           margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(color: AppTheme.dangerLight, borderRadius: BorderRadius.circular(8)),
-                          child: Text(_perfilError!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dangerLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _perfilError!,
+                            style: const TextStyle(
+                              color: AppTheme.danger,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
 
                       TextField(
                         controller: _nombresCtrl,
-                        decoration: const InputDecoration(labelText: 'Nombres *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nombres *',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _apellidosCtrl,
-                        decoration: const InputDecoration(labelText: 'Apellidos *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Apellidos *',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _correoCtrl,
                         enabled: false,
-                        decoration: const InputDecoration(labelText: 'Correo Electrónico (No modificable)'),
+                        decoration: const InputDecoration(
+                          labelText: 'Correo Electrónico (No modificable)',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _telefonoCtrl,
                         keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(labelText: 'Teléfono'),
+                        decoration: const InputDecoration(
+                          labelText: 'Teléfono',
+                        ),
                       ),
                       const SizedBox(height: 18),
                       ElevatedButton(
                         onPressed: _isSavingPerfil ? null : _actualizarPerfil,
-                        child: Text(_isSavingPerfil ? 'Guardando...' : 'Actualizar Perfil'),
+                        child: Text(
+                          _isSavingPerfil
+                              ? 'Guardando...'
+                              : 'Actualizar Perfil',
+                        ),
                       ),
                     ],
                   ),
@@ -321,46 +481,82 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Seguridad: Cambiar Contraseña', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Seguridad: Cambiar Contraseña',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 14),
 
                       if (_passSuccess != null)
                         Container(
                           padding: const EdgeInsets.all(10),
                           margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(color: AppTheme.successLight, borderRadius: BorderRadius.circular(8)),
-                          child: Text(_passSuccess!, style: const TextStyle(color: AppTheme.success, fontSize: 12)),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _passSuccess!,
+                            style: const TextStyle(
+                              color: AppTheme.success,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       if (_passError != null)
                         Container(
                           padding: const EdgeInsets.all(10),
                           margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(color: AppTheme.dangerLight, borderRadius: BorderRadius.circular(8)),
-                          child: Text(_passError!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dangerLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _passError!,
+                            style: const TextStyle(
+                              color: AppTheme.danger,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
 
                       TextField(
                         controller: _passActualCtrl,
                         obscureText: true,
-                        decoration: const InputDecoration(labelText: 'Contraseña Actual *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Contraseña Actual *',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _passNuevaCtrl,
                         obscureText: true,
-                        decoration: const InputDecoration(labelText: 'Nueva Contraseña *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nueva Contraseña *',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _passConfirmCtrl,
                         obscureText: true,
-                        decoration: const InputDecoration(labelText: 'Confirmar Nueva Contraseña *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Confirmar Nueva Contraseña *',
+                        ),
                       ),
                       const SizedBox(height: 18),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondary),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondary,
+                        ),
                         onPressed: _isSavingPass ? null : _cambiarContrasena,
-                        child: Text(_isSavingPass ? 'Modificando...' : 'Cambiar Contraseña'),
+                        child: Text(
+                          _isSavingPass
+                              ? 'Modificando...'
+                              : 'Cambiar Contraseña',
+                        ),
                       ),
                     ],
                   ),

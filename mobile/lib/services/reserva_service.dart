@@ -12,6 +12,11 @@ class ReservaService {
     return (res as List<dynamic>?) ?? [];
   }
 
+  Future<Map<String, dynamic>> getDetalleReserva(int idReserva) async {
+    final res = await _api.get('/reservas/$idReserva');
+    return res as Map<String, dynamic>;
+  }
+
   // CU20: Consultar disponibilidad de mesas (lista simple)
   Future<List<dynamic>> getMesasDisponibles(
     int idRestaurante,
@@ -80,7 +85,9 @@ class ReservaService {
   // CU21: Cancelar reserva como cliente
   Future<Map<String, dynamic>> cancelarReserva(int idReserva) async {
     final res = await _api.patch('/reservas/$idReserva/cancelar', {});
-    return (res is Map<String, dynamic>) ? res : {'mensaje': 'Reserva cancelada'};
+    return (res is Map<String, dynamic>)
+        ? res
+        : {'mensaje': 'Reserva cancelada'};
   }
 
   // Invitados de la reserva
@@ -89,7 +96,10 @@ class ReservaService {
     return (res as List<dynamic>?) ?? [];
   }
 
-  Future<Map<String, dynamic>> agregarInvitado(int idReserva, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> agregarInvitado(
+    int idReserva,
+    Map<String, dynamic> data,
+  ) async {
     final res = await _api.post('/reservas/$idReserva/invitados', data);
     return res as Map<String, dynamic>;
   }

@@ -27,6 +27,7 @@ from app.models.pedido import Pedido
 from app.models.detalle_pedido import DetallePedido
 from app.models.bitacora import Bitacora
 from app.models.receta import Receta, RecetaIngrediente
+from app.models.dispositivo_push import DispositivoPush, NotificacionOutbox
 
 __all__ = [
     "Rol",
@@ -59,4 +60,6 @@ __all__ = [
     "Bitacora",
     "Receta",
     "RecetaIngrediente",
+    "DispositivoPush",
+    "NotificacionOutbox",
 ]

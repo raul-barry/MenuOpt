@@ -2,7 +2,7 @@
 # CASO DE USO: CU24 - Gestionar pedidos
 from datetime import date
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.conexion import get_db
@@ -14,6 +14,14 @@ from app.schemas.pedido import (
 )
 from app.security.dependencias import obtener_usuario_actual, requiere_roles
 from app.services.pedido_service import PedidoService
+from app.models.dispositivo_push import NotificacionOutbox
+from app.services.notificaciones_eventos_service import enviar_evento_notificacion
+
+
+def _programar_evento(db: Session, tareas: BackgroundTasks, clave: str) -> None:
+    evento = db.query(NotificacionOutbox).filter_by(clave_evento=clave).first()
+    if evento and evento.estado == "PENDIENTE":
+        tareas.add_task(enviar_evento_notificacion, evento.id_notificacion)
 
 router = APIRouter(
     tags=["Pedidos"]
@@ -30,15 +38,18 @@ router = APIRouter(
     summary="CU23: Enviar pedido gastronómico"
 )
 def crear_pedido(
+    tareas: BackgroundTasks,
     datos: PedidoCrear,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(requiere_roles("CLIENTE", "ADMINISTRADOR"))
 ):
-    return PedidoService.crear_pedido(
+    respuesta = PedidoService.crear_pedido(
         db=db,
         datos=datos,
         usuario_actual=usuario_actual
     )
+    _programar_evento(db, tareas, f"order.created:{respuesta.id_pedido}")
+    return respuesta
 
 
 # =========================================================================
@@ -127,14 +138,18 @@ def listar_pedidos_restaurante(
     summary="CU24: Actualizar estado de pedido por el restaurante"
 )
 def actualizar_estado_pedido(
+    tareas: BackgroundTasks,
     id_pedido: int = Path(..., gt=0),
     datos: PedidoEstadoActualizar = ...,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(requiere_roles("RESTAURANTE", "ADMINISTRADOR"))
 ):
-    return PedidoService.actualizar_estado_restaurante(
+    respuesta = PedidoService.actualizar_estado_restaurante(
         db=db,
         id_pedido=id_pedido,
         nuevo_estado=datos.estado,
         usuario_actual=usuario_actual
     )
+    if datos.estado.upper().strip() == "LISTO":
+        _programar_evento(db, tareas, f"order.ready:{respuesta.id_pedido}")
+    return respuesta

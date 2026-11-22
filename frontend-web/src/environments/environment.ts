@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api'
+  apiUrl: "https://menuopt-api.onrender.com",
+  firebase: {"apiKey":"AIzaSyBamilw-DAzbSMULnBRqDZkQakXZPqQ8Iw","authDomain":"menuopt-fcm-2026-11-20.firebaseapp.com","projectId":"menuopt-fcm-2026-11-20","messagingSenderId":"898639495342","appId":"1:898639495342:web:b343e760ed2f4c5d7c6d3f","vapidKey":"BEA2D2jg31mCGNVVfCKDDRyznTq-vbawp4eBYMyVu-ngt4pjjyPj9rC1vg17Rsll2lp9ZK4F-4e18_LVt1X0WAQ"}
 };

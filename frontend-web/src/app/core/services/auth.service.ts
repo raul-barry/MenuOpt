@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, LoginResponse, RegistroRequest, Usuario } from '../models/usuario.model';
+import { PushNotificationsService } from './push-notifications.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { LoginRequest, LoginResponse, RegistroRequest, Usuario } from '../models
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private pushNotifications = inject(PushNotificationsService);
   private readonly apiUrl = `${environment.apiUrl}/autenticacion`;
 
   private readonly TOKEN_KEY = 'menuopt_token';
@@ -18,6 +20,14 @@ export class AuthService {
 
   // Signals reactivos para estado de usuario y sesión
   private currentUserSignal = signal<Usuario | null>(this.getStoredUser());
+
+  constructor() {
+    const usuario = this.currentUserSignal();
+    const token = this.getToken();
+    if (token && usuario?.rol?.nombre?.trim().toUpperCase() === 'RESTAURANTE') {
+      void this.pushNotifications.registrarParaRestaurante(token);
+    }
+  }
 
   currentUser = this.currentUserSignal.asReadonly();
   isAuthenticated = computed(() => !!this.currentUserSignal());
@@ -47,6 +57,9 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credenciales).pipe(
       tap((res) => {
         this.saveSession(res.access_token, res.usuario);
+        if (res.usuario.rol?.nombre?.trim().toUpperCase() === 'RESTAURANTE') {
+          void this.pushNotifications.registrarParaRestaurante(res.access_token);
+        }
         this.redirectAfterLogin(res.usuario.rol?.nombre);
       })
     );
@@ -60,6 +73,11 @@ export class AuthService {
   }
 
   logout(): void {
+    const token = this.getToken();
+    void this.pushNotifications.revocar(token).finally(() => this.finalizarLogout());
+  }
+
+  private finalizarLogout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.currentUserSignal.set(null);

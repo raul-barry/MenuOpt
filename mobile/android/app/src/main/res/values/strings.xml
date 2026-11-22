@@ -1,0 +1,5 @@
+<resources>
+    <string name="notificaciones_menuopt_channel_id">menuopt_promociones_high_v2</string>
+    <string name="notificaciones_menuopt_channel_name">Novedades y promociones</string>
+    <string name="notificaciones_menuopt_channel_description">Ofertas y novedades gastronómicas de MenuOpt.</string>
+</resources>

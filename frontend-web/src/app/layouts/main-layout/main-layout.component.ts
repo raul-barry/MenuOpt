@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component';
+import { PushNotificationsService } from '../../core/services/push-notifications.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -33,6 +34,10 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
             <span class="user-name">{{ user.nombres }} {{ user.apellidos }}</span>
             <span class="badge" [ngClass]="getRoleBadgeClass(user.rol?.nombre)">{{ user.rol?.nombre }}</span>
           </div>
+          <button *ngIf="authService.userRole() === 'RESTAURANTE'" class="btn btn-outline btn-sm" (click)="activarNotificaciones()" title="Activar avisos de reservas y pedidos">
+            <app-icon name="reserve" class="app-icon-inline"></app-icon>
+            <span class="logout-text">Notificaciones</span>
+          </button>
           <button class="btn btn-outline btn-sm btn-logout" (click)="authService.logout()" title="Cerrar Sesión">
             <app-icon name="log-out" class="app-icon-inline"></app-icon>
             <span class="logout-text">Salir</span>
@@ -408,7 +413,13 @@ import { BrandLogoComponent } from '../../shared/brand-logo/brand-logo.component
 })
 export class MainLayoutComponent {
   authService = inject(AuthService);
+  private pushNotifications = inject(PushNotificationsService);
   menuMovilAbierto = signal<boolean>(false);
+
+  activarNotificaciones(): void {
+    const token = this.authService.getToken();
+    if (token) void this.pushNotifications.registrarParaRestaurante(token);
+  }
 
   toggleMenuMovil(): void {
     this.menuMovilAbierto.update(v => !v);

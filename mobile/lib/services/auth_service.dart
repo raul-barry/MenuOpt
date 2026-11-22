@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import 'notificaciones_push_service.dart';
 
 class AuthService {
   static final AuthService instance = AuthService._();
@@ -15,10 +16,12 @@ class AuthService {
     final token = response['access_token'] as String;
     final usuario = response['usuario'] as Map<String, dynamic>;
     _api.setSession(token: token, user: usuario);
+    await NotificacionesPushService.instance.vincularDispositivoActual();
     return usuario;
   }
 
   Future<void> logout() async {
+    await NotificacionesPushService.instance.desvincularDispositivoActual();
     _api.clearSession();
   }
 

@@ -85,7 +85,10 @@ def world(api):
     area_id = area.json()["id_area"]
 
     return {"api": api, "tokens": tokens, "restaurant_id": restaurant_id,
-            "category_id": category_id, "area_id": area_id}
+            "category_id": category_id, "area_id": area_id,
+            # Compatibilidad para suites heredadas que leen tokens por clave directa.
+            "admin": tokens["admin"], "client": tokens["client"],
+            "restaurant": tokens["restaurant"]}
 
 
 def create_table(world, number, capacity, *, fixed=False, combinable=True):

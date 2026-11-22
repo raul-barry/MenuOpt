@@ -23,6 +23,7 @@ from app.schemas.pedido import (
     DetallePedidoRespuesta
 )
 from app.services.bitacora_service import BitacoraService
+from app.services.notificaciones_eventos_service import crear_evento
 
 
 class PedidoService:
@@ -258,6 +259,15 @@ class PedidoService:
         )
 
         pedido_creado = PedidoRepository.crear_pedido(db, nuevo_pedido, detalles_modelo)
+        crear_evento(
+            db,
+            clave=f"order.created:{pedido_creado.id_pedido}",
+            destinatario=resto.id_usuario_responsable,
+            tipo="pedido",
+            recurso_id=pedido_creado.id_pedido,
+            titulo="Nuevo pedido",
+            cuerpo="Tienes un nuevo pedido para revisar.",
+        )
         db.commit()
 
         BitacoraService.registrar_evento(
@@ -426,6 +436,16 @@ class PedidoService:
                 detail=f"Transición de estado no permitida de '{estado_actual}' a '{nuevo_upper}'. Permitidas: {list(permitidas) or 'Ninguna'}"
             )
 
+        if nuevo_upper == "LISTO" and estado_actual != "LISTO":
+            crear_evento(
+                db,
+                clave=f"order.ready:{pedido.id_pedido}",
+                destinatario=pedido.id_usuario,
+                tipo="pedido",
+                recurso_id=pedido.id_pedido,
+                titulo="Pedido listo",
+                cuerpo="Tu pedido está listo en el restaurante.",
+            )
         pedido_actualizado = PedidoRepository.actualizar_estado(db, pedido, nuevo_upper)
         BitacoraService.registrar_evento(
             db=db,

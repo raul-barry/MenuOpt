@@ -3,7 +3,7 @@
 # CASO DE USO: CU22 - Gestionar reservas
 from datetime import date, time
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Path, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database.conexion import get_db
@@ -20,6 +20,14 @@ from app.security.dependencias import obtener_usuario_actual, requiere_roles
 from app.services.disponibilidad_mesas_service import DisponibilidadMesasService
 from app.services.reserva_service import ReservaService
 from app.services.reserva_invitado_service import ReservaInvitadoService
+from app.models.dispositivo_push import NotificacionOutbox
+from app.services.notificaciones_eventos_service import enviar_evento_notificacion
+
+
+def _programar_evento(db: Session, tareas: BackgroundTasks, clave: str) -> None:
+    evento = db.query(NotificacionOutbox).filter_by(clave_evento=clave).first()
+    if evento and evento.estado == "PENDIENTE":
+        tareas.add_task(enviar_evento_notificacion, evento.id_notificacion)
 
 router = APIRouter(
     tags=["Reservas y Disponibilidad"]
@@ -66,15 +74,19 @@ def consultar_mesas_disponibles(
     summary="CU21: Confirmar reserva de mesa individual o combinación"
 )
 def crear_reserva(
+    tareas: BackgroundTasks,
     datos: ReservaCrear,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(requiere_roles("CLIENTE", "ADMINISTRADOR"))
 ):
-    return ReservaService.crear_reserva(
+    respuesta = ReservaService.crear_reserva(
         db=db,
         datos=datos,
         usuario_actual=usuario_actual
     )
+    _programar_evento(db, tareas, f"reservation.created:{respuesta.id_reserva}")
+    _programar_evento(db, tareas, f"reservation.confirmed:{respuesta.id_reserva}")
+    return respuesta
 
 
 @router.get(
@@ -162,15 +174,18 @@ def obtener_detalle_reserva(
     summary="CU21: Cancelar reserva como cliente titular"
 )
 def cancelar_reserva(
+    tareas: BackgroundTasks,
     id_reserva: int = Path(..., gt=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(requiere_roles("CLIENTE", "ADMINISTRADOR"))
 ):
-    return ReservaService.cancelar_reserva_cliente(
+    respuesta = ReservaService.cancelar_reserva_cliente(
         db=db,
         id_reserva=id_reserva,
         usuario_actual=usuario_actual
     )
+    _programar_evento(db, tareas, f"reservation.cancelled:{respuesta.id_reserva}")
+    return respuesta
 
 
 # =========================================================================
@@ -207,14 +222,21 @@ def listar_reservas_restaurante(
     summary="CU22: Actualizar estado de reserva (Restaurante o Administrador)"
 )
 def actualizar_estado_reserva(
+    tareas: BackgroundTasks,
     id_reserva: int = Path(..., gt=0),
     datos: ReservaEstadoActualizar = ...,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(requiere_roles("RESTAURANTE", "ADMINISTRADOR"))
 ):
-    return ReservaService.actualizar_estado_restaurante(
+    respuesta = ReservaService.actualizar_estado_restaurante(
         db=db,
         id_reserva=id_reserva,
         nuevo_estado=datos.estado,
         usuario_actual=usuario_actual
     )
+    estado = datos.estado.upper().strip()
+    if estado == "CONFIRMADA":
+        _programar_evento(db, tareas, f"reservation.confirmed:{respuesta.id_reserva}")
+    elif estado == "CANCELADA":
+        _programar_evento(db, tareas, f"reservation.cancelled:{respuesta.id_reserva}")
+    return respuesta

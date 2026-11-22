@@ -136,22 +136,22 @@ class DisponibilidadMesasService:
         for m in mesas_area:
             esta_ocupada = m.id_mesa in mesas_ocupadas
 
-            # Regla de capacidad:
-            # Cubre al grupo si su capacidad es >= cantidad_personas
+            # La opción debe cubrir al grupo y respetar el exceso configurado,
+            # igual que la validación aplicada al crear la reserva.
             cubre_capacidad = m.capacidad >= cantidad_personas
-            es_optima = cubre_capacidad and m.capacidad <= (cantidad_personas + max_exceso)
+            dentro_del_limite = m.capacidad <= (cantidad_personas + max_exceso)
+            compatible = cubre_capacidad and dentro_del_limite
 
             if esta_ocupada:
                 estado_disp = "NO_DISPONIBLE"
                 seleccionable = False
                 compatible_capacidad = False
-            elif cubre_capacidad:
-                # La mesa cubre holgadamente o de forma exacta al grupo y está libre
+            elif compatible:
                 estado_disp = "DISPONIBLE"
                 seleccionable = True
                 compatible_capacidad = True
             else:
-                # Capacidad insuficiente para albergar al grupo individualmente
+                # Capacidad insuficiente o exceso superior al límite permitido.
                 estado_disp = "NO_COMPATIBLE"
                 seleccionable = False
                 compatible_capacidad = False
@@ -189,7 +189,9 @@ class DisponibilidadMesasService:
                 continue
 
             cap_total = m_origen.capacidad + m_destino.capacidad
-            comb_compatible = cap_total >= cantidad_personas
+            comb_compatible = (
+                cantidad_personas <= cap_total <= cantidad_personas + max_exceso
+            )
 
             # Una combinación está DISPONIBLE únicamente si TODAS sus mesas están libres
             comb_disponible = (

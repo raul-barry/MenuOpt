@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/app_theme.dart';
 import '../core/api_client.dart';
 import '../services/auth_service.dart';
@@ -16,7 +17,16 @@ import 'asistente_screen.dart';
 import 'recetas_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.initialSection = 0,
+    this.initialResourceType,
+    this.initialResourceId,
+  });
+
+  final int initialSection;
+  final String? initialResourceType;
+  final int? initialResourceId;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -26,11 +36,25 @@ class _HomeScreenState extends State<HomeScreen> {
   // Índice actual de la vista
   // 0: Inicio, 1: Planificar comida, 2: Mis planificaciones, 3: Mis preferencias,
   // 4: Mis Reservas, 5: Mis Pedidos, 6: Mi Perfil, 7: Asistente IA, 8: Biblioteca de Recetas
-  int _currentSection = 0;
+  late int _currentSection;
+  late String? _pendingResourceType;
+  late int? _pendingResourceId;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  @override
+  void initState() {
+    super.initState();
+    _currentSection = widget.initialSection.clamp(0, 8).toInt();
+    _pendingResourceType = widget.initialResourceType;
+    _pendingResourceId = widget.initialResourceId;
+  }
+
   void _navigateToSection(int sectionIndex) {
+    if (sectionIndex != _currentSection) {
+      _pendingResourceType = null;
+      _pendingResourceId = null;
+    }
     setState(() => _currentSection = sectionIndex);
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       Navigator.pop(context); // cerrar drawer si estaba abierto
@@ -80,10 +104,16 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cerrar Sesión', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Cerrar Sesión',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text('¿Estás seguro de que deseas salir de tu cuenta?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.danger,
@@ -99,9 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirm == true) {
       await AuthService.instance.logout();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     }
   }
 
@@ -112,13 +142,23 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return PlanificarScreen(onPlanCreated: () => _navigateToSection(2));
       case 2:
-        return PlanificacionesScreen(onNavigateToNueva: () => _navigateToSection(1));
+        return PlanificacionesScreen(
+          onNavigateToNueva: () => _navigateToSection(1),
+        );
       case 3:
         return const PreferenciasScreen();
       case 4:
-        return const ReservasScreen();
+        return ReservasScreen(
+          initialResourceId: _pendingResourceType == 'reserva'
+              ? _pendingResourceId
+              : null,
+        );
       case 5:
-        return const PedidosScreen();
+        return PedidosScreen(
+          initialResourceId: _pendingResourceType == 'pedido'
+              ? _pendingResourceId
+              : null,
+        );
       case 6:
         return const PerfilScreen();
       case 7:
@@ -130,11 +170,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final userName = ApiClient.instance.userName;
-    final userRole = ApiClient.instance.userRole.isNotEmpty ? ApiClient.instance.userRole : 'CLIENTE';
+    final userRole = ApiClient.instance.userRole.isNotEmpty
+        ? ApiClient.instance.userRole
+        : 'CLIENTE';
 
     return Scaffold(
       key: _scaffoldKey,
@@ -152,50 +193,57 @@ class _HomeScreenState extends State<HomeScreen> {
           if (MediaQuery.of(context).size.width >= 370)
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 90),
-                  child: Text(
-                    userName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textMain,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 90),
+                    child: Text(
+                      userName,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textMain,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: AppTheme.border),
-                  ),
-                  child: Text(
-                    userRole.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textMuted,
-                      letterSpacing: 0.5,
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Text(
+                      userRole.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textMuted,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           IconButton(
-            icon: const Icon(Icons.smart_toy_outlined, size: 20, color: AppTheme.primary),
+            icon: const Icon(
+              Icons.smart_toy_outlined,
+              size: 20,
+              color: AppTheme.primary,
+            ),
             tooltip: 'Asistente IA',
             onPressed: () => _navigateToSection(7),
           ),
@@ -361,8 +409,19 @@ class _WebStyleDrawer extends StatelessWidget {
 
             const Divider(height: 1, color: AppTheme.border),
             ListTile(
-              leading: const Icon(Icons.logout, color: AppTheme.danger, size: 20),
-              title: const Text('Salir', style: TextStyle(color: AppTheme.danger, fontWeight: FontWeight.bold, fontSize: 14)),
+              leading: const Icon(
+                Icons.logout,
+                color: AppTheme.danger,
+                size: 20,
+              ),
+              title: const Text(
+                'Salir',
+                style: TextStyle(
+                  color: AppTheme.danger,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
               onTap: onLogout,
             ),
           ],
@@ -399,7 +458,9 @@ class _WebStyleDrawer extends StatelessWidget {
       decoration: BoxDecoration(
         color: isSelected ? AppTheme.primaryLight : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
-        border: isSelected ? Border.all(color: AppTheme.primary.withValues(alpha: 0.3)) : null,
+        border: isSelected
+            ? Border.all(color: AppTheme.primary.withValues(alpha: 0.3))
+            : null,
       ),
       child: ListTile(
         dense: true,
@@ -447,7 +508,8 @@ class _InicioTabState extends State<_InicioTab> {
 
   Future<void> _loadMetrics() async {
     try {
-      final plans = await PlanificacionService.instance.listarMisPlanificaciones();
+      final plans = await PlanificacionService.instance
+          .listarMisPlanificaciones();
       final reservas = await ReservaService.instance.getMisReservas();
       final pedidos = await PedidoService.instance.getMisPedidos();
 
@@ -471,7 +533,9 @@ class _InicioTabState extends State<_InicioTab> {
   Widget build(BuildContext context) {
     final name = ApiClient.instance.userName;
     final email = ApiClient.instance.userEmail;
-    final role = ApiClient.instance.userRole.isNotEmpty ? ApiClient.instance.userRole : 'CLIENTE';
+    final role = ApiClient.instance.userRole.isNotEmpty
+        ? ApiClient.instance.userRole
+        : 'CLIENTE';
 
     return RefreshIndicator(
       onRefresh: _loadMetrics,
@@ -514,7 +578,11 @@ class _InicioTabState extends State<_InicioTab> {
                         child: const CircleAvatar(
                           radius: 22,
                           backgroundColor: AppTheme.primaryLight,
-                          child: Icon(Icons.person, color: AppTheme.primary, size: 26),
+                          child: Icon(
+                            Icons.person,
+                            color: AppTheme.primary,
+                            size: 26,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -532,20 +600,30 @@ class _InicioTabState extends State<_InicioTab> {
                             ),
                             Text(
                               email,
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
                           role.toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
                     ],
@@ -553,7 +631,11 @@ class _InicioTabState extends State<_InicioTab> {
                   const SizedBox(height: 18),
                   const Text(
                     'Planifica tu comida optimizando presupuesto, ingredientes y reservas en un solo lugar.',
-                    style: TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   SizedBox(
@@ -613,7 +695,11 @@ class _InicioTabState extends State<_InicioTab> {
             // Accesos principales a los módulos
             const Text(
               'Módulos del Cliente',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textMain,
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -739,9 +825,21 @@ class _MetricCard extends StatelessWidget {
             const SizedBox(height: 6),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.textMain)),
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppTheme.textMain,
+                ),
+              ),
             ),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted)),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
+            ),
           ],
         ),
       ),
@@ -784,9 +882,21 @@ class _ModuleCard extends StatelessWidget {
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textMain)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppTheme.textMain,
+              ),
+            ),
             const SizedBox(height: 3),
-            Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+            Text(
+              desc,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+            ),
           ],
         ),
       ),

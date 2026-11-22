@@ -23,6 +23,7 @@ from app.schemas.reserva import (
 )
 from app.services.disponibilidad_mesas_service import DisponibilidadMesasService
 from app.services.bitacora_service import BitacoraService
+from app.services.notificaciones_eventos_service import crear_evento
 
 
 class ReservaService:
@@ -35,8 +36,7 @@ class ReservaService:
 
     @staticmethod
     def validar_capacidad_maxima(capacidad: int, cantidad_personas: int) -> None:
-        tolerancia = max(settings.MAX_EXCESO_CAPACIDAD_MESA, 8)
-        capacidad_maxima = cantidad_personas + tolerancia
+        capacidad_maxima = cantidad_personas + settings.MAX_EXCESO_CAPACIDAD_MESA
         if capacidad > capacidad_maxima:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -244,6 +244,26 @@ class ReservaService:
         )
 
         reserva_creada = ReservaRepository.crear_reserva(db, nueva_reserva, mesas_ordenadas)
+        crear_evento(
+            db,
+            clave=f"reservation.created:{reserva_creada.id_reserva}",
+            destinatario=resto.id_usuario_responsable,
+            tipo="reserva",
+            recurso_id=reserva_creada.id_reserva,
+            titulo="Nueva reserva",
+            cuerpo="Tienes una nueva reserva para revisar.",
+        )
+        # El estado inicial CONFIRMADA es el comportamiento vigente del negocio.
+        # Registrar aquí la confirmación evita esperar una transición que no ocurre.
+        crear_evento(
+            db,
+            clave=f"reservation.confirmed:{reserva_creada.id_reserva}",
+            destinatario=usuario_actual.id_usuario,
+            tipo="reserva",
+            recurso_id=reserva_creada.id_reserva,
+            titulo="Reserva confirmada",
+            cuerpo="Tu reserva está confirmada.",
+        )
         db.commit()
 
         BitacoraService.registrar_evento(
@@ -331,6 +351,20 @@ class ReservaService:
             )
 
         reserva.estado = "CANCELADA"
+        rol = usuario_actual.rol.nombre if usuario_actual.rol else ""
+        if rol == "CLIENTE":
+            destinatario = reserva.restaurante.id_usuario_responsable
+        else:
+            destinatario = reserva.id_usuario
+        crear_evento(
+            db,
+            clave=f"reservation.cancelled:{reserva.id_reserva}",
+            destinatario=destinatario,
+            tipo="reserva",
+            recurso_id=reserva.id_reserva,
+            titulo="Reserva cancelada",
+            cuerpo="Una reserva fue cancelada.",
+        )
         db.commit()
         db.refresh(reserva)
 
@@ -417,6 +451,26 @@ class ReservaService:
             )
 
         reserva.estado = nuevo_upper
+        if nuevo_upper == "CONFIRMADA" and estado_actual != "CONFIRMADA":
+            crear_evento(
+                db,
+                clave=f"reservation.confirmed:{reserva.id_reserva}",
+                destinatario=reserva.id_usuario,
+                tipo="reserva",
+                recurso_id=reserva.id_reserva,
+                titulo="Reserva confirmada",
+                cuerpo="El restaurante confirmó tu reserva.",
+            )
+        elif nuevo_upper == "CANCELADA" and estado_actual != "CANCELADA":
+            crear_evento(
+                db,
+                clave=f"reservation.cancelled:{reserva.id_reserva}",
+                destinatario=reserva.id_usuario,
+                tipo="reserva",
+                recurso_id=reserva.id_reserva,
+                titulo="Reserva cancelada",
+                cuerpo="El restaurante canceló tu reserva.",
+            )
         db.commit()
         db.refresh(reserva)
 

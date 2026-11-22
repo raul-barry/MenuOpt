@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../core/app_theme.dart';
 import '../services/auth_service.dart';
+import '../services/notificaciones_push_service.dart';
 import 'home_screen.dart';
 import 'registro_screen.dart';
 
@@ -44,19 +46,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await AuthService.instance.login(email, pass);
-      final role = (user['rol'] is Map ? user['rol']['nombre'] : null)?.toString().toUpperCase();
+      final role = (user['rol'] is Map ? user['rol']['nombre'] : null)
+          ?.toString()
+          .toUpperCase();
       if (role != null && role != 'CLIENTE') {
         await AuthService.instance.logout();
         if (!mounted) return;
         setState(() {
-          _errorMessage = 'Esta aplicación móvil es exclusiva para clientes. Los usuarios de tipo $role deben ingresar desde la plataforma web.';
+          _errorMessage =
+              'Esta aplicación móvil es exclusiva para clientes. Los usuarios de tipo $role deben ingresar desde la plataforma web.';
         });
         return;
       }
 
       if (!mounted) return;
+      final seccionPendiente = NotificacionesPushService.instance
+          .tomarSeccionPendiente();
+      final tipoRecursoPendiente = NotificacionesPushService.instance
+          .tomarTipoRecursoPendiente();
+      final idRecursoPendiente = NotificacionesPushService.instance
+          .tomarIdRecursoPendiente();
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            initialSection: seccionPendiente ?? 0,
+            initialResourceType: tipoRecursoPendiente,
+            initialResourceId: idRecursoPendiente,
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -82,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _abrirRegistro() async {
     final messenger = ScaffoldMessenger.of(context);
-    final nuevoCorreo = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const RegistroScreen()),
-    );
+    final nuevoCorreo = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const RegistroScreen()));
     if (!mounted) return;
     if (nuevoCorreo != null) {
       setState(() {
@@ -94,7 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('¡Cuenta creada exitosamente! Ingresa tu contraseña para acceder.'),
+          content: Text(
+            '¡Cuenta creada exitosamente! Ingresa tu contraseña para acceder.',
+          ),
           backgroundColor: AppTheme.success,
         ),
       );
@@ -148,28 +167,43 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 6),
                         const Text(
                           'Ingresa con tus credenciales de usuario',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
 
                         if (_errorMessage != null)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               color: AppTheme.dangerLight,
-                              border: Border.all(color: const Color(0xFFFFD1CE)),
+                              border: Border.all(
+                                color: const Color(0xFFFFD1CE),
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline, color: AppTheme.danger, size: 20),
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: AppTheme.danger,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(color: AppTheme.danger, fontSize: 13),
+                                    style: const TextStyle(
+                                      color: AppTheme.danger,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -178,7 +212,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const Text(
                           'Correo Electrónico *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textMain,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         TextField(
@@ -186,14 +224,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
                             hintText: 'ejemplo@menuopt.com',
-                            prefixIcon: Icon(Icons.email_outlined, size: 20, color: AppTheme.textMuted),
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              size: 20,
+                              color: AppTheme.textMuted,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
 
                         const Text(
                           'Contraseña *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textMain),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textMain,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         TextField(
@@ -201,14 +247,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline, size: 20, color: AppTheme.textMuted),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              size: 20,
+                              color: AppTheme.textMuted,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                                 size: 20,
                                 color: AppTheme.textMuted,
                               ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                           ),
                         ),
@@ -219,17 +273,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Text(
                                   'Ingresar a MenuOpt',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                         ),
                         const SizedBox(height: 20),
@@ -241,7 +303,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Text(
                               '¿No tienes cuenta? ',
-                              style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textMuted,
+                              ),
                             ),
                             GestureDetector(
                               onTap: _abrirRegistro,
@@ -265,7 +330,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Center(
                     child: Text(
                       'Cuenta rápida de prueba:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textMuted,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -274,7 +343,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       label: 'Cliente 1',
                       icon: Icons.person,
                       isPrimary: true,
-                      onTap: () => _setCredentials('cliente1@menuopt.com', 'Cliente1234*'),
+                      onTap: () => _setCredentials(
+                        'cliente1@menuopt.com',
+                        'Cliente1234*',
+                      ),
                     ),
                   ),
                 ],
@@ -318,7 +390,11 @@ class _QuickLoginChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: isPrimary ? AppTheme.primary : AppTheme.textMuted),
+            Icon(
+              icon,
+              size: 15,
+              color: isPrimary ? AppTheme.primary : AppTheme.textMuted,
+            ),
             const SizedBox(width: 6),
             Text(
               label,

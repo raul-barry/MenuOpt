@@ -48,6 +48,7 @@ build/
 android/.gradle
 ios/.symlinks/
 *.apk
+mobile/android/app/google-services.json
 
 # Base de datos y respaldos locales
 *.sql
