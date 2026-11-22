@@ -14,6 +14,7 @@ from app.repositories.ingrediente_lugar_compra_repository import IngredienteLuga
 from app.services.recomendacion_algoritmo import son_unidades_compatibles
 from app.ai.proveedor import obtener_proveedor_ia
 from app.ai.proveedor import MockProveedorIA
+from app.ai.formato import normalizar_respuesta
 from app.schemas.receta import (
     RecetaCrearSchema,
     RecetaRespuestaSchema,
@@ -377,7 +378,7 @@ class RecetaService:
 
         return RecetaConsultaIARespuestaSchema(
             mensaje_usuario=mensaje,
-            respuesta_ia=respuesta_ia,
+            respuesta_ia=normalizar_respuesta(respuesta_ia),
             porciones_sugeridas=personas,
             platos_sugeridos=platos_schemas,
             ingredientes_faltantes=ingredientes_faltantes,

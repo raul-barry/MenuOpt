@@ -17,6 +17,7 @@ from app.repositories.planificacion_repository import PlanificacionRepository
 from app.security.propiedad import verificar_propiedad_planificacion
 from app.services.recomendacion_service import RecomendacionService
 from app.ai.proveedor import obtener_proveedor_ia
+from app.ai.formato import normalizar_respuesta
 from app.ai.schemas import (
     SolicitudInterpretar,
     SolicitudInterpretada,
@@ -395,7 +396,7 @@ class AsistenteIAService:
             preferencias_detectadas=preferencias_nombres_detectados,
             preferencias_validadas=preferencias_validadas,
             datos_faltantes=datos_faltantes,
-            mensaje_asistente=mensaje_asistente,
+            mensaje_asistente=normalizar_respuesta(mensaje_asistente),
             listo_para_crear=listo,
             opcion_recomendada=opcion_recomendada
         )
@@ -610,7 +611,7 @@ class AsistenteIAService:
         }
 
         proveedor = obtener_proveedor_ia()
-        explicacion_texto = proveedor.explicar_recomendacion(datos_contexto)
+        explicacion_texto = normalizar_respuesta(proveedor.explicar_recomendacion(datos_contexto))
 
         detalles = [
             f"Costo estimado: {rec.costo_estimado} Bs",
@@ -662,7 +663,7 @@ class AsistenteIAService:
         }
 
         proveedor = obtener_proveedor_ia()
-        explicacion_texto = proveedor.explicar_comparacion(datos_contexto)
+        explicacion_texto = normalizar_respuesta(proveedor.explicar_comparacion(datos_contexto))
 
         detalles = [
             f"Presupuesto: {comparativa.presupuesto} Bs",

@@ -71,7 +71,7 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
       if (prefs.isNotEmpty) criterios.add('Preferencias: ${prefs.join(", ")}');
 
       if (criterios.isNotEmpty) {
-        botResponse += '\n\n📌 Criterios detectados:\n• ${criterios.join("\n• ")}';
+        botResponse += '\n\nCriterios detectados:\n- ${criterios.join("\n- ")}';
       }
 
       Map<String, dynamic>? planData;
@@ -321,6 +321,7 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
                                   ? AppTheme.danger
                                   : Colors.black87,
                           fontSize: 14,
+                          height: 1.45,
                         ),
                       ),
                       if (m.extra != null) ...[
