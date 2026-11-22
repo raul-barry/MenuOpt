@@ -57,8 +57,8 @@ class _AgenteGuiaFlotanteState extends State<AgenteGuiaFlotante> {
         actionId: action['id']?.toString());
   }
 
-  Future<void> _send([String? raw, {String? actionId}]) async {
-    final text = (raw ?? _input.text).trim();
+  Future<void> _send(String raw, {String? actionId}) async {
+    final text = raw.trim();
     if (text.isEmpty || _loading) return;
     _input.clear();
     final history = _messages
@@ -74,7 +74,7 @@ class _AgenteGuiaFlotanteState extends State<AgenteGuiaFlotante> {
       _loading = true;
     });
     try {
-      final result = await AsistenteService.instance.guiaUsuario(
+      final result = await AsistenteService.instance.guiarUsuario(
         mensaje: text,
         accionId: actionId,
         paginaActual: widget.paginaActual,
@@ -235,12 +235,12 @@ class _AgenteGuiaFlotanteState extends State<AgenteGuiaFlotante> {
                               border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(22))),
                               contentPadding: EdgeInsets.symmetric(horizontal: 13, vertical: 10),
                             ),
-                            onSubmitted: (_) => _send(),
+                          onSubmitted: _send,
                           ),
                         ),
                         const SizedBox(width: 7),
                         IconButton.filled(
-                          onPressed: _loading ? null : () => _send(),
+                          onPressed: _loading ? null : () => _send(_input.text),
                           style: IconButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
                           icon: const Icon(Icons.send_rounded, size: 18),
                           tooltip: 'Enviar',

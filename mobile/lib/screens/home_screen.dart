@@ -303,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+        ),
         Positioned(
           right: 12,
           bottom: 92,
