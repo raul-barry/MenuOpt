@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -16,16 +17,43 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
   ApiClient._();
 
-  // Lista de candidatos de conexión automática sin que el usuario deba escribir nada
-  static const String _compileTimeBaseUrl = String.fromEnvironment('BASE_URL', defaultValue: '');
-  
-  static final List<String> _candidateUrls = [
-    if (_compileTimeBaseUrl.isNotEmpty) _compileTimeBaseUrl,
-    'http://192.168.0.4:8000', // IP activa de red local Wi-Fi de la PC
-    'http://10.0.2.2:8000',     // Emulador Android estándar
-    'http://localhost:8000',    // Web / Windows desktop
+  static const bool _isRelease = bool.fromEnvironment('dart.vm.product');
+  static const String _compileTimeBaseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: '',
+  );
+  static const String _productionBaseUrl = 'https://menuopt-api.onrender.com';
+  static const List<String> _localBaseUrls = [
+    'http://192.168.0.4:8000', // API local en la red de desarrollo.
+    'http://10.0.2.2:8000', // Emulador Android.
+    'http://localhost:8000', // Web / Windows desktop.
     'http://127.0.0.1:8000',
   ];
+
+  /// Construye candidatos verificables sin permitir hosts locales en release.
+  static List<String> buildCandidateUrls({
+    required bool release,
+    required String configuredBaseUrl,
+  }) {
+    if (release) {
+      final uri = Uri.tryParse(configuredBaseUrl);
+      final productionUrl =
+          uri?.scheme == 'https' && uri?.host.isNotEmpty == true
+          ? configuredBaseUrl
+          : _productionBaseUrl;
+      return [productionUrl];
+    }
+
+    return [
+      if (configuredBaseUrl.isNotEmpty) configuredBaseUrl,
+      ..._localBaseUrls,
+    ];
+  }
+
+  static final List<String> _candidateUrls = buildCandidateUrls(
+    release: _isRelease,
+    configuredBaseUrl: _compileTimeBaseUrl,
+  );
 
   String baseUrl = _candidateUrls.first;
   bool _hostLocked = false;
@@ -41,6 +69,7 @@ class ApiClient {
     final full = '$n $a'.trim();
     return full.isNotEmpty ? full : (currentUser?['correo'] ?? 'Usuario');
   }
+
   String get userEmail => currentUser?['correo'] ?? '';
 
   void setSession({required String token, required Map<String, dynamic> user}) {
@@ -68,7 +97,9 @@ class ApiClient {
   }
 
   Uri _resolveUri(String base, String path) {
-    final cleanBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final cleanBase = base.endsWith('/')
+        ? base.substring(0, base.length - 1)
+        : base;
     final cleanPath = path.startsWith('/') ? path : '/$path';
     return Uri.parse('$cleanBase$cleanPath');
   }
@@ -97,7 +128,9 @@ class ApiClient {
     }
 
     throw ApiException(
-      'No se pudo conectar con el backend de MenuOpt en la red local. Intentado en: ${tried.join(', ')}. Verifique que su servidor FastAPI esté activo.',
+      _isRelease
+          ? 'No se pudo conectar con la API de MenuOpt en $baseUrl.'
+          : 'No se pudo conectar con el backend de MenuOpt. Intentado en: ${tried.join(', ')}. Verifique que el servidor local esté activo.',
     );
   }
 
@@ -189,7 +222,9 @@ class ApiClient {
     }
     dynamic decoded;
     try {
-      decoded = res.body.isNotEmpty ? jsonDecode(utf8.decode(res.bodyBytes)) : null;
+      decoded = res.body.isNotEmpty
+          ? jsonDecode(utf8.decode(res.bodyBytes))
+          : null;
     } catch (_) {
       decoded = res.body;
     }
@@ -202,13 +237,19 @@ class ApiClient {
     if (decoded is Map<String, dynamic>) {
       if (decoded['detail'] != null) {
         if (decoded['detail'] is List) {
-          final errs = (decoded['detail'] as List).map((e) {
-            if (e is Map && e['msg'] != null) {
-              final loc = e['loc'] is List ? (e['loc'] as List).where((p) => p != 'query' && p != 'body').join('.') : '';
-              return loc.isNotEmpty ? '$loc: ${e['msg']}' : '${e['msg']}';
-            }
-            return e.toString();
-          }).join('\n');
+          final errs = (decoded['detail'] as List)
+              .map((e) {
+                if (e is Map && e['msg'] != null) {
+                  final loc = e['loc'] is List
+                      ? (e['loc'] as List)
+                            .where((p) => p != 'query' && p != 'body')
+                            .join('.')
+                      : '';
+                  return loc.isNotEmpty ? '$loc: ${e['msg']}' : '${e['msg']}';
+                }
+                return e.toString();
+              })
+              .join('\n');
           errorMsg = errs.isNotEmpty ? errs : decoded['detail'].toString();
         } else {
           errorMsg = decoded['detail'].toString();
